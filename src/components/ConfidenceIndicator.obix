@@ -1,0 +1,11 @@
+<script setup lang="ts">
+defineProps<{ confidencePercent: number; confidenceText: string }>();
+</script>
+
+<template>
+  <div class="confidence">
+    <label class="confidence-label" for="confidence-meter">Confidence</label>
+    <meter id="confidence-meter" min="0" max="100" :value="confidencePercent">{{ confidenceText }}</meter>
+    <p class="confidence-text">{{ confidenceText }}</p>
+  </div>
+</template>

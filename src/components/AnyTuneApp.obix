@@ -1,0 +1,62 @@
+<script setup lang="ts">
+import InstrumentSelector from "./InstrumentSelector.obix";
+import TunerDisplay from "./TunerDisplay.obix";
+import InputStatus from "./InputStatus.obix";
+
+// the view of the application state (src/app/view.ts), field by field: the UI binds it and formats nothing
+defineProps<{
+  session: string;
+  sessionText: string;
+  listening: boolean;
+  instrumentId: string;
+  instrumentName: string;
+  instruments: { id: string; name: string; selected: boolean }[];
+  hasReading: boolean;
+  note: string;
+  octaveText: string;
+  targetText: string;
+  frequencyText: string;
+  centsText: string;
+  status: string;
+  statusText: string;
+  stable: boolean;
+  needlePercent: number;
+  confidencePercent: number;
+  confidenceText: string;
+  inputText: string;
+  hasError: boolean;
+  errorText: string;
+  summaryText: string;
+}>();
+
+// the user's intents, for the application service — the UI never starts, stops or tunes anything itself
+const emit = defineEmits<{ (e: "select-instrument", id: string): void; (e: "start"): void; (e: "stop"): void }>();
+</script>
+
+<template>
+  <main class="anytune">
+    <header class="masthead">
+      <h1>AnyTune</h1>
+      <p class="tagline">Tune any instrument</p>
+    </header>
+    <InstrumentSelector :instruments="instruments" @select="(id: string) => emit('select-instrument', id)" />
+    <div class="controls">
+      <button v-if="!listening" type="button" class="start" @click="emit('start')">Start tuning</button>
+      <button v-else type="button" class="stop" @click="emit('stop')">Stop</button>
+    </div>
+    <TunerDisplay
+      :note="note"
+      :octave-text="octaveText"
+      :frequency-text="frequencyText"
+      :cents-text="centsText"
+      :status="status"
+      :status-text="statusText"
+      :stable="stable"
+      :needle-percent="needlePercent"
+      :confidence-percent="confidencePercent"
+      :confidence-text="confidenceText"
+    />
+    <InputStatus :session-text="sessionText" :input-text="inputText" :has-error="hasError" :error-text="errorText" />
+    <p class="summary">{{ summaryText }}</p>
+  </main>
+</template>

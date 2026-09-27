@@ -1,0 +1,38 @@
+<script setup lang="ts">
+import { ref } from "obix";
+import NoteDisplay from "./NoteDisplay.obix";
+import PitchMeter from "./PitchMeter.obix";
+import TuningStatus from "./TuningStatus.obix";
+import ConfidenceIndicator from "./ConfidenceIndicator.obix";
+
+defineProps<{
+  note: string;
+  octaveText: string;
+  frequencyText: string;
+  centsText: string;
+  status: string;
+  statusText: string;
+  stable: boolean;
+  needlePercent: number;
+  confidencePercent: number;
+  confidenceText: string;
+}>();
+
+// a local state of the display, and of nothing else: whether its details are shown
+const showDetails = ref(false);
+function toggleDetails(): void {
+  showDetails.value = !showDetails.value;
+}
+</script>
+
+<template>
+  <section class="tuner-display" aria-label="Tuner">
+    <NoteDisplay :note="note" :octave-text="octaveText" :frequency-text="frequencyText" />
+    <PitchMeter :needle-percent="needlePercent" :cents-text="centsText" :status="status" />
+    <TuningStatus :status="status" :status-text="statusText" :cents-text="centsText" :stable="stable" />
+    <button type="button" class="details-toggle" :aria-expanded="showDetails" @click="toggleDetails">Details</button>
+    <div v-if="showDetails" class="details">
+      <ConfidenceIndicator :confidence-percent="confidencePercent" :confidence-text="confidenceText" />
+    </div>
+  </section>
+</template>

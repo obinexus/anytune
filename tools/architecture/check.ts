@@ -53,7 +53,7 @@ export function loadRules(file = path.join(ROOT, 'architecture.json')): Rules {
 }
 
 /** The script of a source as TypeScript text, with the lines of the whole file kept: an .obix file's markup outside its <script> blocks becomes blank lines. */
-function scriptOf(file: SourceText): string {
+export function scriptOf(file: SourceText): string {
   if (!file.path.endsWith('.obix')) return file.text;
   const lines = file.text.split('\n');
   let inside = false;
@@ -128,7 +128,6 @@ function globalsUsed(file: SourceText, forbidden: readonly string[]): { name: st
   const found: { name: string; line: number }[] = [];
   const visit = (node: ts.Node): void => {
     if (ts.isIdentifier(node) && wanted.has(node.text) && !isNameOnly(node)) found.push({ name: node.text, line: lineOf(sf, node) });
-    // a shorthand property `{ document }` reads the variable of that name
     ts.forEachChild(node, visit);
   };
   visit(sf);

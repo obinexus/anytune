@@ -1,0 +1,11 @@
+<script setup lang="ts">
+defineProps<{ status: string; statusText: string; centsText: string; stable: boolean }>();
+</script>
+
+<template>
+  <div class="tuning-status" :data-status="status" :data-stable="stable">
+    <p class="status-text">{{ statusText }}</p>
+    <p class="cents">{{ centsText }}</p>
+    <p v-if="stable" class="steady">Holding steady</p>
+  </div>
+</template>

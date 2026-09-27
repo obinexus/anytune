@@ -1,0 +1,11 @@
+<script setup lang="ts">
+defineProps<{ sessionText: string; inputText: string; hasError: boolean; errorText: string }>();
+</script>
+
+<template>
+  <div class="input">
+    <p class="session">{{ sessionText }}</p>
+    <p class="input-status">{{ inputText }}</p>
+    <p v-if="hasError" class="error" role="alert">{{ errorText }}</p>
+  </div>
+</template>

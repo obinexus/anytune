@@ -1,0 +1,17 @@
+<script setup lang="ts">
+defineProps<{ instruments: { id: string; name: string; selected: boolean }[] }>();
+const emit = defineEmits<{ (e: "select", id: string): void }>();
+
+function onChange(event: Event): void {
+  emit("select", (event.target as HTMLSelectElement).value);
+}
+</script>
+
+<template>
+  <div class="instrument-selector">
+    <label for="instrument">Instrument</label>
+    <select id="instrument" @change="onChange">
+      <option v-for="instrument in instruments" :key="instrument.id" :value="instrument.id" :selected="instrument.selected">{{ instrument.name }}</option>
+    </select>
+  </div>
+</template>

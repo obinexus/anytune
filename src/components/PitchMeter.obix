@@ -1,0 +1,18 @@
+<script setup lang="ts">
+import { computed } from "obix";
+
+const props = defineProps<{ needlePercent: number; centsText: string; status: string }>();
+// where the needle stands, from −50 (the flat end) to +50 (the sharp end): the meter's value for assistive technology
+const offset = computed(() => Math.round(props.needlePercent - 50));
+</script>
+
+<template>
+  <div class="pitch-meter" role="meter" aria-label="Tuning" aria-valuemin="-50" aria-valuemax="50" :aria-valuenow="offset" :aria-valuetext="centsText" :data-status="status">
+    <span class="scale-flat" aria-hidden="true">← Flat</span>
+    <svg class="track" viewBox="0 0 100 10" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+      <line class="centre" x1="50" y1="0" x2="50" y2="10" />
+      <line class="needle" :x1="needlePercent" y1="0" :x2="needlePercent" y2="10" />
+    </svg>
+    <span class="scale-sharp" aria-hidden="true">Sharp →</span>
+  </div>
+</template>

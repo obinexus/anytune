@@ -1,0 +1,10 @@
+<script setup lang="ts">
+defineProps<{ note: string; octaveText: string; frequencyText: string }>();
+</script>
+
+<template>
+  <div class="note-display">
+    <p class="note"><span class="note-name">{{ note }}</span><span class="note-octave">{{ octaveText }}</span></p>
+    <output class="frequency">{{ frequencyText }}</output>
+  </div>
+</template>
