@@ -34,7 +34,7 @@ async function app(fusion: PitchFusionPort) {
   const host = document.createElement('div');
   document.body.append(host);
   const session = new TuningSession({ fusion, catalog: CATALOG, policy: DEFAULT_POLICY, instrumentId: 'guitar-standard' });
-  const mounted = mountAnyTune(host, { session, catalog: CATALOG });
+  const mounted = mountAnyTune(host, { session, catalog: CATALOG, clock: new ManualScheduler() });
   const text = (selector: string): string => (host.querySelector(selector)?.textContent ?? '').replace(/\s+/g, ' ').trim();
   // the one interaction: start
   (host.querySelector('button.start') as HTMLButtonElement).click();

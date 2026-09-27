@@ -4,7 +4,8 @@
  *
  *   session.subscribe(state) → view = toView(state) → shallowRef → Vue schedules one render per tick → the runtime patches the DOM
  *
- * The UI's intents go back to the session. Nothing here writes markup or attaches listeners by hand; the session knows nothing of Vue.
+ * The UI's intents go back to the session, and the announcement policy (announcer.ts) decides what the live region says. Nothing here writes markup or attaches
+ * listeners by hand; the session knows nothing of Vue.
  */
 import { createApp, h, shallowRef } from 'vue';
 import AnyTuneApp from '../components/AnyTuneApp.obix';
@@ -12,10 +13,14 @@ import type { TuningSession } from '../app/session.ts';
 import { toView } from '../app/view.ts';
 import type { TunerView } from '../app/view.ts';
 import type { InstrumentTuning } from '../domain/tuning.ts';
+import type { Scheduler } from '../domain/ports.ts';
+import { Announcer } from '../app/announcer.ts';
 
 export interface MountDeps {
   readonly session: TuningSession;
   readonly catalog: readonly InstrumentTuning[];
+  /** the time of the announcement policy: real timers in the browser, virtual time in the tests */
+  readonly clock: Scheduler;
 }
 
 export interface MountedAnyTune {
@@ -24,10 +29,23 @@ export interface MountedAnyTune {
   unmount(): void;
 }
 
-export function mountAnyTune(host: Element, { session, catalog }: MountDeps): MountedAnyTune {
-  const view = shallowRef<TunerView>(toView(session.getState(), catalog));
-  const off = session.subscribe((state) => {
-    view.value = toView(state, catalog);
+export function mountAnyTune(host: Element, { session, catalog, clock }: MountDeps): MountedAnyTune {
+  const announcer = new Announcer(clock);
+  let state = session.getState();
+  let announcement = '';
+  const view = shallowRef<TunerView>(toView(state, catalog, announcement));
+  const refresh = (): void => {
+    view.value = toView(state, catalog, announcement);
+  };
+  // the live region changes only when the announcement policy says so; the rest of the view at every state
+  const offAnnouncer = announcer.subscribe((text) => {
+    announcement = text;
+    refresh();
+  });
+  const offSession = session.subscribe((next) => {
+    state = next;
+    announcer.observe(next);
+    refresh();
   });
   let renders = 0;
   const app = createApp({
@@ -45,7 +63,9 @@ export function mountAnyTune(host: Element, { session, catalog }: MountDeps): Mo
   return {
     renders: () => renders,
     unmount(): void {
-      off();
+      offSession();
+      offAnnouncer();
+      announcer.dispose();
       app.unmount();
     },
   };

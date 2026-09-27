@@ -16,6 +16,7 @@ defineProps<{
   needlePercent: number;
   confidencePercent: number;
   confidenceText: string;
+  announcement: string;
 }>();
 
 // a local state of the display, and of nothing else: whether its details are shown
@@ -29,7 +30,7 @@ function toggleDetails(): void {
   <section class="tuner-display" aria-label="Tuner">
     <NoteDisplay :note="note" :octave-text="octaveText" :frequency-text="frequencyText" />
     <PitchMeter :needle-percent="needlePercent" :cents-text="centsText" :status="status" />
-    <TuningStatus :status="status" :status-text="statusText" :cents-text="centsText" :stable="stable" />
+    <TuningStatus :status="status" :status-text="statusText" :cents-text="centsText" :stable="stable" :announcement="announcement" />
     <button type="button" class="details-toggle" :aria-expanded="showDetails" @click="toggleDetails">Details</button>
     <div v-if="showDetails" class="details">
       <ConfidenceIndicator :confidence-percent="confidencePercent" :confidence-text="confidenceText" />

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-defineProps<{ status: string; statusText: string; centsText: string; stable: boolean }>();
+defineProps<{ status: string; statusText: string; centsText: string; stable: boolean; announcement: string }>();
 </script>
 
 <template>
@@ -7,5 +7,7 @@ defineProps<{ status: string; statusText: string; centsText: string; stable: boo
     <p class="status-text">{{ statusText }}</p>
     <p class="cents">{{ centsText }}</p>
     <p v-if="stable" class="steady">Holding steady</p>
+    <!-- the one live region: what the announcement policy says, not every change the eye sees -->
+    <p class="announcement visually-hidden" role="status" aria-live="polite" aria-atomic="true">{{ announcement }}</p>
   </div>
 </template>

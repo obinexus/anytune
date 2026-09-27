@@ -38,6 +38,8 @@ export interface TunerView {
   readonly hasError: boolean;
   readonly errorText: string;
   readonly summaryText: string;
+  /** what the live region says — the announcement policy's words (announcer.ts), not the visual refresh */
+  readonly announcement: string;
 }
 
 const STATUS_TEXT: Readonly<Record<ViewStatus, string>> = { flat: 'Flat', 'in-tune': 'In tune', sharp: 'Sharp', uncertain: 'Signal uncertain', 'no-signal': 'No signal' };
@@ -81,7 +83,7 @@ export function centsText(cents: number): string {
   return `${size.toFixed(1)} cents ${cents < 0 ? 'flat' : 'sharp'}`;
 }
 
-export function toView(state: AnyTuneState, catalog: readonly InstrumentTuning[]): TunerView {
+export function toView(state: AnyTuneState, catalog: readonly InstrumentTuning[], announcement = ''): TunerView {
   const instrumentName = findTuning(catalog, state.instrumentId)?.name ?? state.instrumentId;
   const reading = state.reading;
   const status: ViewStatus = reading?.status ?? 'no-signal';
@@ -109,5 +111,6 @@ export function toView(state: AnyTuneState, catalog: readonly InstrumentTuning[]
     hasError: state.error !== null,
     errorText: errorText(state.error),
     summaryText: reading === null ? instrumentName : `${instrumentName} · ${reading.targetLabel}`,
+    announcement,
   };
 }

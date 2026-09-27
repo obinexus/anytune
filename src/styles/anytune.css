@@ -1,0 +1,199 @@
+/*
+ * AnyTune's stylesheet. The tuning status is always a word on the page; colour only repeats it. Works with forced colours (Windows high contrast) and shows
+ * where the keyboard focus is.
+ */
+:root {
+  color-scheme: light dark;
+  --ink: #1b1b1f;
+  --paper: #fbfaf7;
+  --muted: #5b5b66;
+  --flat: #1f5fbf;
+  --in-tune: #1d7a3a;
+  --sharp: #b3261e;
+  --focus: #6a3fd1;
+  font-family: system-ui, sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ink: #f1f0ec;
+    --paper: #141418;
+    --muted: #b9b8c2;
+    --flat: #8ab4ff;
+    --in-tune: #7fd89a;
+    --sharp: #ff9a8f;
+    --focus: #c2a8ff;
+  }
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.anytune {
+  max-width: 28rem;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 3rem;
+  display: grid;
+  gap: 1.25rem;
+}
+
+.masthead h1 {
+  margin: 0;
+  font-size: 1.75rem;
+}
+
+.tagline,
+.summary,
+.session,
+.input-status {
+  margin: 0;
+  color: var(--muted);
+}
+
+.instrument-selector {
+  display: grid;
+  gap: 0.25rem;
+}
+
+select,
+button {
+  font: inherit;
+  min-height: 2.75rem;
+  padding: 0.5rem 0.75rem;
+  border: 2px solid currentColor;
+  border-radius: 0.5rem;
+  background: transparent;
+  color: inherit;
+}
+
+button.start,
+button.stop {
+  width: 100%;
+  font-weight: 600;
+}
+
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.tuner-display {
+  display: grid;
+  gap: 1rem;
+  justify-items: center;
+  text-align: center;
+}
+
+.note {
+  margin: 0;
+  font-size: 4.5rem;
+  line-height: 1;
+  font-weight: 700;
+}
+
+.note-octave {
+  font-size: 1.75rem;
+  vertical-align: super;
+}
+
+.frequency {
+  display: block;
+  font-size: 1.25rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.pitch-meter {
+  width: 100%;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.pitch-meter .track {
+  width: 100%;
+  height: 2rem;
+}
+
+.pitch-meter .centre {
+  stroke: var(--muted);
+  stroke-width: 0.5;
+}
+
+.pitch-meter .needle {
+  stroke: var(--ink);
+  stroke-width: 1.5;
+}
+
+.status-text {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.tuning-status[data-status='flat'] .status-text {
+  color: var(--flat);
+}
+
+.tuning-status[data-status='in-tune'] .status-text {
+  color: var(--in-tune);
+}
+
+.tuning-status[data-status='sharp'] .status-text {
+  color: var(--sharp);
+}
+
+.cents,
+.steady {
+  margin: 0;
+}
+
+.error {
+  margin: 0;
+  padding: 0.75rem;
+  border: 2px solid var(--sharp);
+  border-radius: 0.5rem;
+}
+
+.confidence {
+  display: grid;
+  gap: 0.25rem;
+  justify-items: center;
+}
+
+/* read by assistive technology, not shown: the live region */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (forced-colors: active) {
+  .tuning-status .status-text,
+  .pitch-meter .needle {
+    color: CanvasText;
+    stroke: CanvasText;
+  }
+
+  :focus-visible {
+    outline-color: Highlight;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+  }
+}

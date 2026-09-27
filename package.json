@@ -31,6 +31,7 @@
     "@obinexusltd/obix-compiler-template": "file:../obix-recovery/compiler/obix-compiler-template",
     "@obinexusltd/obix-compiler-typescript": "file:../obix-recovery/compiler/obix-compiler-typescript",
     "@types/node": "22.20.4",
+    "axe-core": "4.13.0",
     "jsdom": "30.1.1",
     "typescript": "6.0.3"
   },
