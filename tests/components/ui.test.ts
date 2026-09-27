@@ -35,6 +35,7 @@ function mount(state: AnyTuneState, source: InputSource | null = null) {
       h(AnyTuneApp, {
         ...view.value,
         onSelectInstrument: (id: string) => intents.push(`select ${id}`),
+        onSelectInput: (id: string) => intents.push(`input ${id}`),
         onStart: () => intents.push('start'),
         onStop: () => intents.push('stop'),
       }),
@@ -162,4 +163,30 @@ test('what supplies the measurements is said on the page, in words: a simulation
   assert.equal(recorded.$('.input-source').textContent?.trim(), 'Input: Recorded — Standard Guitar, the A string rising to pitch: 108, 109, 110, 110 Hz (simulated data)');
   const simulated = mount(IDLE, { kind: 'simulated', name: 'Violin, the G3 string rising to pitch' });
   assert.equal(simulated.$('.input-source').textContent?.trim(), 'Input: Simulated — Violin, the G3 string rising to pitch');
+});
+
+const CHOICES: AnyTuneState = { ...IDLE, inputId: 'demo', inputs: [{ id: 'microphone', label: 'Microphone' }, { id: 'demo', label: 'Demo (recorded / simulated)' }] };
+const PRIVACY = 'Microphone audio is processed locally for pitch detection. AnyTune does not upload or persist raw microphone audio.';
+
+test('input selection: the inputs are offered in order, the active one selected, and choosing one is an intent for the app — a labelled native select', async () => {
+  const ui = mount(CHOICES);
+  const select = ui.$('select#input-source') as HTMLSelectElement;
+  assert.deepEqual([...select.options].map((o) => [o.value, o.textContent, o.selected]), [['microphone', 'Microphone', false], ['demo', 'Demo (recorded / simulated)', true]]);
+  assert.equal(ui.text('label[for="input-source"]'), 'Input');
+  select.value = 'microphone';
+  select.dispatchEvent(new window.Event('change', { bubbles: true }));
+  assert.deepEqual(ui.intents, ['input microphone']);
+  await ui.show({ ...CHOICES, inputId: 'microphone' });
+  assert.equal((ui.$('select#input-source') as HTMLSelectElement).value, 'microphone');
+  ui.unmount();
+});
+
+test('with the microphone as the input, the page says how its audio is treated — and only then', () => {
+  const mic = mount({ ...CHOICES, inputId: 'microphone' }, { kind: 'microphone', name: 'Default microphone, 48 kHz' });
+  assert.equal(mic.text('.input-source'), 'Input: Microphone — Default microphone, 48 kHz');
+  assert.equal(mic.text('.privacy'), PRIVACY);
+  mic.unmount();
+  const demo = mount(CHOICES, { kind: 'recorded', name: 'Standard Guitar, the A string rising to pitch: 108, 109, 110, 110 Hz (simulated data)' });
+  assert.equal(demo.host.querySelector('.privacy'), null);
+  demo.unmount();
 });

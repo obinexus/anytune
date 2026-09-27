@@ -27,6 +27,7 @@ test('what the current OBIX pipeline makes of each component: what it can expres
     // InstrumentSelector's output told from its change handler
     AnyTuneApp: ['compiled', []],
     ConfidenceIndicator: ['compiled', []],
+    InputSelector: ['compiled', []],
     InputStatus: ['compiled', []],
     InstrumentSelector: ['compiled', []],
     NoteDisplay: ['compiled', []],

@@ -145,10 +145,11 @@ test('keyboard: every control is a native, focusable, labelled control; nothing 
   const fusion = SimulatedPitchFusion(clock);
   const ui = await app(fusion.port, clock);
   const controls = [...ui.host.querySelectorAll<HTMLElement>('button, select, input, a[href], [tabindex]')];
-  assert.deepEqual(controls.map((c) => `${c.tagName.toLowerCase()}.${c.className}`), ['select.', 'button.stop', 'button.details-toggle']);
+  assert.deepEqual(controls.map((c) => `${c.tagName.toLowerCase()}.${c.className}`), ['select.', 'select.', 'button.stop', 'button.details-toggle']);
   assert.ok(controls.every((c) => !c.hasAttribute('tabindex') || Number(c.getAttribute('tabindex')) <= 0));
   assert.ok(controls.filter((c) => c.tagName === 'BUTTON').every((b) => b.getAttribute('type') === 'button' && (b.textContent ?? '').trim() !== ''));
   assert.equal(ui.$('label[for="instrument"]').textContent, 'Instrument');
+  assert.equal(ui.$('label[for="input-source"]').textContent, 'Input');
   const toggle = ui.$('button.details-toggle');
   toggle.focus();
   assert.equal(document.activeElement, toggle);

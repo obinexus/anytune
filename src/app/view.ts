@@ -47,6 +47,8 @@ export interface TunerView {
   /** the input chosen, and what can be chosen */
   readonly inputId: string;
   readonly inputOptions: readonly InputOption[];
+  /** how the microphone's audio is treated — said while the microphone is the input, and empty otherwise */
+  readonly privacyText: string;
   readonly hasError: boolean;
   readonly errorText: string;
   readonly summaryText: string;
@@ -74,6 +76,9 @@ const INPUT_TEXT: Readonly<Record<AnyTuneState['input']['state'], string>> = {
 };
 
 const SOURCE_KIND: Readonly<Record<InputSourceKind, string>> = { simulated: 'Simulated', recorded: 'Recorded', microphone: 'Microphone' };
+
+/** True of the microphone provider (src/audio/microphone-provider.ts): its samples go to the pitch detector and nowhere else. */
+export const MICROPHONE_PRIVACY = 'Microphone audio is processed locally for pitch detection. AnyTune does not upload or persist raw microphone audio.';
 
 export function inputSourceText(source: InputSource | null): string {
   return source === null ? 'Input: none' : `Input: ${SOURCE_KIND[source.kind]} — ${source.name}`;
@@ -143,6 +148,7 @@ export function toView(state: AnyTuneState, catalog: readonly InstrumentTuning[]
     inputSourceText: inputSourceText(source),
     inputId: state.inputId,
     inputOptions: state.inputs.map((i) => ({ id: i.id, label: i.label, selected: i.id === state.inputId })),
+    privacyText: source?.kind === 'microphone' ? MICROPHONE_PRIVACY : '',
     hasError: state.error !== null,
     errorText: errorText(state.error),
     summaryText: reading === null ? instrumentName : `${instrumentName} · ${reading.targetLabel}`,

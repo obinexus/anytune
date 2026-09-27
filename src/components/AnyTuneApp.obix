@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import InstrumentSelector from "./InstrumentSelector.obix";
+import InputSelector from "./InputSelector.obix";
 import TunerDisplay from "./TunerDisplay.obix";
 import InputStatus from "./InputStatus.obix";
 
@@ -27,6 +28,7 @@ defineProps<{
   inputSourceText: string;
   inputId: string;
   inputOptions: { id: string; label: string; selected: boolean }[];
+  privacyText: string;
   hasError: boolean;
   errorText: string;
   summaryText: string;
@@ -34,7 +36,7 @@ defineProps<{
 }>();
 
 // the user's intents, for the application service — the UI never starts, stops or tunes anything itself
-const emit = defineEmits<{ (e: "select-instrument", id: string): void; (e: "start"): void; (e: "stop"): void }>();
+const emit = defineEmits<{ (e: "select-instrument", id: string): void; (e: "select-input", id: string): void; (e: "start"): void; (e: "stop"): void }>();
 </script>
 
 <template>
@@ -44,6 +46,7 @@ const emit = defineEmits<{ (e: "select-instrument", id: string): void; (e: "star
       <p class="tagline">Tune any instrument</p>
     </header>
     <InstrumentSelector :instruments="instruments" @select="(id: string) => emit('select-instrument', id)" />
+    <InputSelector :inputs="inputOptions" @select="(id: string) => emit('select-input', id)" />
     <div class="controls">
       <button v-if="!listening" type="button" class="start" @click="emit('start')">Start tuning</button>
       <button v-else type="button" class="stop" @click="emit('stop')">Stop</button>
@@ -61,7 +64,7 @@ const emit = defineEmits<{ (e: "select-instrument", id: string): void; (e: "star
       :confidence-text="confidenceText"
       :announcement="announcement"
     />
-    <InputStatus :session-text="sessionText" :input-source-text="inputSourceText" :input-text="inputText" :has-error="hasError" :error-text="errorText" />
+    <InputStatus :session-text="sessionText" :input-source-text="inputSourceText" :privacy-text="privacyText" :input-text="inputText" :has-error="hasError" :error-text="errorText" />
     <p class="summary">{{ summaryText }}</p>
   </main>
 </template>

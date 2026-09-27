@@ -56,6 +56,7 @@ export function mountAnyTune(host: Element, { session, catalog, clock, input = (
       return h(AnyTuneApp, {
         ...view.value,
         onSelectInstrument: (id: string) => session.selectInstrument(id),
+        onSelectInput: (id: string) => void session.selectInput(id),
         onStart: () => void session.start(),
         onStop: () => void session.stop(),
       });

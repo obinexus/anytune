@@ -11,7 +11,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { build } from 'vite';
-import { runtimeManifest } from '../../tools/obix/compile.ts';
+import { componentFiles, runtimeManifest } from '../../tools/obix/compile.ts';
 
 const ROOT = path.resolve(import.meta.dirname, '..', '..');
 
@@ -26,7 +26,7 @@ test('the production build: a page, its script and stylesheet, and the runtime m
 
     const manifest = JSON.parse(fs.readFileSync(path.join(outDir, 'obix-runtime-manifest.json'), 'utf8'));
     assert.deepEqual(manifest.components, runtimeManifest(ROOT));
-    assert.equal(manifest.components.length, 8);
+    assert.equal(manifest.components.length, componentFiles(ROOT).length);
 
     const assets = fs.readdirSync(path.join(outDir, 'assets'));
     const js = assets.filter((f) => f.endsWith('.js')).map((f) => fs.readFileSync(path.join(outDir, 'assets', f), 'utf8')).join('\n');

@@ -48,12 +48,14 @@ body {
 .tagline,
 .summary,
 .session,
+.privacy,
 .input-status {
   margin: 0;
   color: var(--muted);
 }
 
-.instrument-selector {
+.instrument-selector,
+.input-selector {
   display: grid;
   gap: 0.25rem;
 }

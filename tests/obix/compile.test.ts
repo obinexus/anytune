@@ -20,6 +20,7 @@ test('the components of the directive, and no other: small components with one r
   assert.deepEqual(componentFiles(ROOT).map((f) => path.basename(f)), [
     'AnyTuneApp.obix',
     'ConfidenceIndicator.obix',
+    'InputSelector.obix',
     'InputStatus.obix',
     'InstrumentSelector.obix',
     'NoteDisplay.obix',
