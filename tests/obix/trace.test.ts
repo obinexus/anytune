@@ -17,7 +17,7 @@ import { TRACE_SCHEMA, traceComponent, writeTrace } from '../../tools/obix/trace
 const ROOT = path.resolve(import.meta.dirname, '..', '..');
 const sha = (text: string): string => crypto.createHash('sha256').update(text).digest('hex');
 
-test('what the current OBIX pipeline makes of each component: the presentational ones lower to IR; what emits events or uses the "obix" alias is deferred, with the lowering’s own code', () => {
+test('what the current OBIX pipeline makes of each component: what it can express lowers to IR; what emits events or calls a function is deferred, with the lowering’s own code', () => {
   const statuses = Object.fromEntries(componentFiles(ROOT).map((file) => {
     const t = traceComponent(file, ROOT);
     return [path.basename(file, '.obix'), [t.status, t.diagnostics.map((d) => d.code)]];
@@ -29,9 +29,10 @@ test('what the current OBIX pipeline makes of each component: the presentational
     InputStatus: ['compiled', []],
     InstrumentSelector: ['deferred', ['OBIX_DOP_DEFERRED_SCRIPT']],
     NoteDisplay: ['compiled', []],
-    // `computed` / `ref` imported from "obix": the alias is not lowered yet (deferred by the owner, D-47 / D-57 of the OBIX record)
-    PitchMeter: ['deferred', ['OBIX_DOP_DEFERRED_ALIAS']],
-    TunerDisplay: ['deferred', ['OBIX_DOP_DEFERRED_ALIAS']],
+    // since OBIX C1 the frontend resolves `ref` / `computed` from "obix": PitchMeter's `computed` now lowers as far as its `Math.round(…)` — the IR has no call
+    // expressions, an honest limit of the IR, not of AnyTune; TunerDisplay's `ref` is a state and its toggle an action
+    PitchMeter: ['deferred', ['OBIX_DOP_DEFERRED_EXPRESSION']],
+    TunerDisplay: ['compiled', []],
     TuningStatus: ['compiled', []],
   });
 });
