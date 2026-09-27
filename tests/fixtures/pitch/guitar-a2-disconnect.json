@@ -1,0 +1,35 @@
+{
+  "format": "anytune-pitch-recording/1",
+  "origin": "simulated",
+  "description": "The A string in tune, then silence, then the input is disconnected. Simulated.",
+  "instrument": "guitar-standard",
+  "entries": [
+    {
+      "kind": "observation",
+      "timestampMs": 0,
+      "sourceId": "simulated-microphone",
+      "frequencyHz": 110,
+      "varianceHz2": 0.04,
+      "confidence": 0.95
+    },
+    {
+      "kind": "observation",
+      "timestampMs": 250,
+      "sourceId": "simulated-microphone",
+      "frequencyHz": 110,
+      "varianceHz2": 0.04,
+      "confidence": 0.95
+    },
+    {
+      "kind": "silence",
+      "timestampMs": 500,
+      "sourceId": "simulated-microphone"
+    },
+    {
+      "kind": "state",
+      "timestampMs": 750,
+      "sourceId": "simulated-microphone",
+      "state": "disconnected"
+    }
+  ]
+}

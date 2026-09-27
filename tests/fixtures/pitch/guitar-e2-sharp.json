@@ -1,0 +1,32 @@
+{
+  "format": "anytune-pitch-recording/1",
+  "origin": "simulated",
+  "description": "The low E string held sharp at 84 Hz. Simulated.",
+  "instrument": "guitar-standard",
+  "entries": [
+    {
+      "kind": "observation",
+      "timestampMs": 0,
+      "sourceId": "simulated-microphone",
+      "frequencyHz": 84,
+      "varianceHz2": 0.04,
+      "confidence": 0.95
+    },
+    {
+      "kind": "observation",
+      "timestampMs": 250,
+      "sourceId": "simulated-microphone",
+      "frequencyHz": 84,
+      "varianceHz2": 0.04,
+      "confidence": 0.95
+    },
+    {
+      "kind": "observation",
+      "timestampMs": 500,
+      "sourceId": "simulated-microphone",
+      "frequencyHz": 84,
+      "varianceHz2": 0.04,
+      "confidence": 0.95
+    }
+  ]
+}

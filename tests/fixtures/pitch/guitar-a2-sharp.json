@@ -1,0 +1,32 @@
+{
+  "format": "anytune-pitch-recording/1",
+  "origin": "simulated",
+  "description": "The A string held sharp at 111.5 Hz. Simulated.",
+  "instrument": "guitar-standard",
+  "entries": [
+    {
+      "kind": "observation",
+      "timestampMs": 0,
+      "sourceId": "simulated-microphone",
+      "frequencyHz": 111.5,
+      "varianceHz2": 0.04,
+      "confidence": 0.95
+    },
+    {
+      "kind": "observation",
+      "timestampMs": 250,
+      "sourceId": "simulated-microphone",
+      "frequencyHz": 111.5,
+      "varianceHz2": 0.04,
+      "confidence": 0.95
+    },
+    {
+      "kind": "observation",
+      "timestampMs": 500,
+      "sourceId": "simulated-microphone",
+      "frequencyHz": 111.5,
+      "varianceHz2": 0.04,
+      "confidence": 0.95
+    }
+  ]
+}

@@ -1,5 +1,5 @@
 {
-  "about": "The layers of AnyTune and what each may depend on. Checked by tools/architecture/check.ts (npm run test:architecture). A file of src/ belongs to exactly one layer; a relative import must land in the same layer or in one the layer may import; a bare module specifier must be allowed for the layer; the globals a layer may not name are listed. Dependency direction: components -> app -> domain <- fusion / audio / adapters; the harness is the only code that sees everything, and the only TypeScript that may import Vue.",
+  "about": "The layers of AnyTune and what each may depend on. Checked by tools/architecture/check.ts (npm run test:architecture). A file of src/ belongs to exactly one layer; a relative import must land in the same layer or in one the layer may import; a bare module specifier must be allowed for the layer; the globals a layer may not name are listed. Dependency direction: components -> app -> domain <- fusion -> audio -> domain, adapters -> domain; the harness is the only code that sees everything, and the only TypeScript that may import Vue.",
   "domGlobals": ["document", "window", "navigator", "HTMLElement", "Element", "Node", "Event", "EventTarget", "localStorage", "sessionStorage", "requestAnimationFrame", "AudioContext", "MediaStream", "fetch", "XMLHttpRequest", "WebSocket"],
   "layers": [
     {
@@ -29,10 +29,10 @@
     {
       "name": "fusion",
       "paths": ["src/fusion/"],
-      "mayImport": ["domain"],
+      "mayImport": ["domain", "audio"],
       "modules": [],
       "forbiddenGlobals": "domGlobals",
-      "why": "implementations of the domain's PitchFusionPort; no DOM, no UI"
+      "why": "implementations of the domain's PitchFusionPort, composed over pitch providers; no DOM, no UI"
     },
     {
       "name": "adapters",

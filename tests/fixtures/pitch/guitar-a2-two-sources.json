@@ -1,0 +1,40 @@
+{
+  "format": "anytune-pitch-recording/1",
+  "origin": "simulated",
+  "description": "Two simulated sources hearing the A string at once, one surer than the other: what inverse-variance fusion combines. Simulated.",
+  "instrument": "guitar-standard",
+  "entries": [
+    {
+      "kind": "observation",
+      "timestampMs": 0,
+      "sourceId": "simulated-microphone",
+      "frequencyHz": 109.8,
+      "varianceHz2": 0.04,
+      "confidence": 0.95
+    },
+    {
+      "kind": "observation",
+      "timestampMs": 10,
+      "sourceId": "simulated-contact-pickup",
+      "frequencyHz": 110.3,
+      "varianceHz2": 0.16,
+      "confidence": 0.95
+    },
+    {
+      "kind": "observation",
+      "timestampMs": 250,
+      "sourceId": "simulated-microphone",
+      "frequencyHz": 109.9,
+      "varianceHz2": 0.04,
+      "confidence": 0.95
+    },
+    {
+      "kind": "observation",
+      "timestampMs": 260,
+      "sourceId": "simulated-contact-pickup",
+      "frequencyHz": 110.2,
+      "varianceHz2": 0.16,
+      "confidence": 0.95
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "format": "anytune-pitch-recording/1",
+  "origin": "simulated",
+  "description": "The acceptance sequence of the AnyTune directive: the A string rising to pitch, 108, 109, 110, 110 Hz, a reading every 250 ms. Simulated, not recorded from an instrument.",
+  "instrument": "guitar-standard",
+  "entries": [
+    {
+      "kind": "observation",
+      "timestampMs": 0,
+      "sourceId": "simulated-microphone",
+      "frequencyHz": 108,
+      "varianceHz2": 0.04,
+      "confidence": 0.95
+    },
+    {
+      "kind": "observation",
+      "timestampMs": 250,
+      "sourceId": "simulated-microphone",
+      "frequencyHz": 109,
+      "varianceHz2": 0.04,
+      "confidence": 0.95
+    },
+    {
+      "kind": "observation",
+      "timestampMs": 500,
+      "sourceId": "simulated-microphone",
+      "frequencyHz": 110,
+      "varianceHz2": 0.04,
+      "confidence": 0.95
+    },
+    {
+      "kind": "observation",
+      "timestampMs": 750,
+      "sourceId": "simulated-microphone",
+      "frequencyHz": 110,
+      "varianceHz2": 0.04,
+      "confidence": 0.95
+    }
+  ]
+}
