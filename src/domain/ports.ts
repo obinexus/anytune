@@ -32,8 +32,26 @@ export interface InputSource {
   readonly name: string;
 }
 
-/** What a source of pitch can be: the failures an input really has — permission denied, no device, disconnected — are states. */
-export type SourceState = 'starting' | 'listening' | 'ended' | 'stopped' | 'permission-denied' | 'no-device' | 'disconnected';
+/**
+ * What a source of pitch can be: the failures an input really has are states — permission denied, no device, disconnected; and a microphone's: a page
+ * that is not secure (getUserMedia needs https or localhost), a browser without getUserMedia or Web Audio, a microphone that cannot be opened, audio that
+ * cannot start.
+ */
+export type SourceState =
+  | 'starting'
+  | 'listening'
+  | 'ended'
+  | 'stopped'
+  | 'permission-denied'
+  | 'no-device'
+  | 'disconnected'
+  | 'insecure-context'
+  | 'unsupported'
+  | 'microphone-unavailable'
+  | 'audio-failed';
+
+/** The states of a source that are failures: the fusion and the session read them from here, and from nowhere else. */
+export const SOURCE_FAILURES: readonly SourceState[] = Object.freeze(['permission-denied', 'no-device', 'disconnected', 'insecure-context', 'unsupported', 'microphone-unavailable', 'audio-failed']);
 
 export type ProviderEvent =
   | { readonly kind: 'observation'; readonly observation: PitchObservation }

@@ -4,12 +4,23 @@
  * (view.ts) and the demo harness bridges it into the UI's reactivity. The fusion is injected: this layer never names a provider, an Obicall reader or Vue.
  */
 import type { FusionEvent, FusionState, PitchFusionPort } from '../domain/ports.ts';
+import { SOURCE_FAILURES } from '../domain/ports.ts';
 import { findTuning, isStable, readPitch, validateTuning } from '../domain/tuning.ts';
 import type { InstrumentTuning, TuningPolicy, TuningReading } from '../domain/tuning.ts';
 
 export type SessionState = 'idle' | 'starting' | 'listening' | 'error';
 
-export type AppErrorKind = 'permission-denied' | 'no-device' | 'disconnected' | 'unavailable' | 'unsupported-instrument' | 'invalid-tuning';
+export type AppErrorKind =
+  | 'permission-denied'
+  | 'no-device'
+  | 'disconnected'
+  | 'insecure-context'
+  | 'unsupported'
+  | 'microphone-unavailable'
+  | 'audio-failed'
+  | 'unavailable'
+  | 'unsupported-instrument'
+  | 'invalid-tuning';
 
 export interface AppError {
   readonly kind: AppErrorKind;
@@ -35,7 +46,7 @@ export interface SessionDeps {
   readonly instrumentId: string;
 }
 
-const INPUT_FAILURES: readonly FusionState[] = ['permission-denied', 'no-device', 'disconnected', 'unavailable'];
+const INPUT_FAILURES: readonly FusionState[] = [...SOURCE_FAILURES, 'unavailable'];
 const INSTRUMENT_ERRORS: readonly AppErrorKind[] = ['unsupported-instrument', 'invalid-tuning'];
 
 const freeze = (state: AnyTuneState): AnyTuneState => Object.freeze({ ...state, input: Object.freeze({ ...state.input }), ...(state.error === null ? {} : { error: Object.freeze({ ...state.error }) }) });

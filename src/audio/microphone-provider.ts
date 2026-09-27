@@ -101,6 +101,18 @@ interface Running {
 
 const flag = (value: unknown): boolean | null => (typeof value === 'boolean' ? value : null);
 
+/**
+ * A refusal of getUserMedia, as a state — by the name of its DOMException (Media Capture and Streams): the permission refused (NotAllowedError, and
+ * SecurityError for a document the user agent will not let use it), no device that fits (NotFoundError, OverconstrainedError), and anything else — the
+ * device busy or failing (NotReadableError), the request aborted (AbortError), what a browser has not named yet — a microphone that cannot be opened.
+ */
+function stateOfRefusal(error: unknown): SourceState {
+  const name = typeof error === 'object' && error !== null ? (error as { name?: unknown }).name : undefined;
+  if (name === 'NotAllowedError' || name === 'SecurityError') return 'permission-denied';
+  if (name === 'NotFoundError' || name === 'OverconstrainedError') return 'no-device';
+  return 'microphone-unavailable';
+}
+
 export class MicrophonePitchProvider implements PitchProvider {
   readonly id = 'microphone';
   readonly #events = new Emitter<ProviderEvent>();
@@ -141,29 +153,47 @@ export class MicrophonePitchProvider implements PitchProvider {
   async #start(): Promise<void> {
     const generation = this.#generation;
     this.#become('starting');
-    const { mediaDevices, createAudioContext } = this.#environment;
-    if (mediaDevices === undefined || createAudioContext === undefined) throw new Error('M4: an unsupported browser is not mapped yet');
+    const { secureContext, mediaDevices, createAudioContext } = this.#environment;
+    // what cannot work is said before the permission is asked for
+    if (!secureContext) return this.#become('insecure-context');
+    if (mediaDevices === undefined || createAudioContext === undefined) return this.#become('unsupported');
     let stream: MediaStreamLike;
     try {
       stream = await mediaDevices.getUserMedia(MICROPHONE_CONSTRAINTS);
     } catch (error) {
-      if (generation !== this.#generation) return;
-      const name = (error as { name?: unknown }).name;
-      if (name === 'NotAllowedError' || name === 'SecurityError') return this.#become('permission-denied');
-      if (name === 'NotFoundError' || name === 'OverconstrainedError') return this.#become('no-device');
-      throw error;
+      if (generation === this.#generation) this.#become(stateOfRefusal(error));
+      return;
     }
     const tracks = stream.getTracks();
     if (generation !== this.#generation) {
       for (const track of tracks) track.stop();
       return;
     }
-    const context = createAudioContext();
-    const source = context.createMediaStreamSource(stream);
-    const analyser = context.createAnalyser();
-    analyser.fftSize = DETECTOR_FRAME_SIZE;
-    source.connect(analyser);
-    if (context.state === 'suspended') await context.resume();
+    let context: AudioContextLike | null = null;
+    let source: SourceNodeLike | null = null;
+    let analyser: AnalyserLike | null = null;
+    try {
+      context = createAudioContext();
+      source = context.createMediaStreamSource(stream);
+      analyser = context.createAnalyser();
+      analyser.fftSize = DETECTOR_FRAME_SIZE;
+      source.connect(analyser);
+      if (context.state === 'suspended') await context.resume();
+    } catch {
+      source?.disconnect();
+      analyser?.disconnect();
+      for (const track of tracks) track.stop();
+      await context?.close().catch(() => undefined);
+      if (generation === this.#generation) this.#become('audio-failed');
+      return;
+    }
+    if (generation !== this.#generation) {
+      source.disconnect();
+      analyser.disconnect();
+      for (const track of tracks) track.stop();
+      await context.close().catch(() => undefined);
+      return;
+    }
     const onEnded = (): void => {
       void this.#release().then(() => this.#become('disconnected'));
     };

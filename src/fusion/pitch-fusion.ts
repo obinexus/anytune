@@ -5,6 +5,7 @@
  * (docs/OBICALL.md) — a future `NativeObicallPitchFusion` belongs here once it is.
  */
 import type { FusionEvent, FusionState, PitchFusionPort, PitchObservation, PitchProvider, ProviderEvent, Scheduler, SourceState } from '../domain/ports.ts';
+import { SOURCE_FAILURES } from '../domain/ports.ts';
 import { Emitter } from '../audio/emitter.ts';
 import { SimulatedPitchProvider } from '../audio/simulated-provider.ts';
 import type { SimulatedOptions } from '../audio/simulated-provider.ts';
@@ -19,7 +20,6 @@ export interface FusionOptions {
 
 export const DEFAULT_FUSION: FusionOptions = Object.freeze({ windowMs: 100 });
 
-const FAILURES: readonly SourceState[] = ['permission-denied', 'no-device', 'disconnected'];
 
 export class InverseVarianceFusion implements PitchFusionPort {
   private readonly events = new Emitter<FusionEvent>();
@@ -115,7 +115,7 @@ export class InverseVarianceFusion implements PitchFusionPort {
     const listening = this.states.filter((s) => s === 'listening').length;
     if (listening === this.states.length) return 'listening';
     if (listening > 0) return 'degraded';
-    return this.states.find((s) => FAILURES.includes(s)) ?? (this.states.every((s) => s === 'ended') ? 'ended' : 'stopped');
+    return this.states.find((s) => SOURCE_FAILURES.includes(s)) ?? (this.states.every((s) => s === 'ended') ? 'ended' : 'stopped');
   }
 
   private become(state: FusionState, timestampMs: number): void {

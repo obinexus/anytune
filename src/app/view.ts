@@ -57,6 +57,10 @@ const INPUT_TEXT: Readonly<Record<AnyTuneState['input']['state'], string>> = {
   'permission-denied': 'Microphone permission denied',
   'no-device': 'No microphone',
   disconnected: 'Input disconnected',
+  'insecure-context': 'Microphone needs a secure page',
+  unsupported: 'Microphone not supported',
+  'microphone-unavailable': 'Microphone unavailable',
+  'audio-failed': 'Audio could not start',
   unavailable: 'No pitch source',
 };
 
@@ -75,6 +79,14 @@ export function errorText(error: AppError | null): string {
       return 'No microphone was found. Connect one to tune.';
     case 'disconnected':
       return 'The input was disconnected. Start again to tune.';
+    case 'insecure-context':
+      return 'The microphone works only on a secure page: https, or localhost. Open AnyTune over https to tune with it.';
+    case 'unsupported':
+      return 'This browser cannot give AnyTune the microphone. Use a current Edge, Chrome, Firefox or Safari — or the demo input.';
+    case 'microphone-unavailable':
+      return 'The microphone could not be opened — another application may be using it. Close it, then start again.';
+    case 'audio-failed':
+      return 'The browser could not start its audio processing. Start again, or reload the page.';
     case 'unavailable':
       return 'No pitch source is available.';
     case 'unsupported-instrument':
