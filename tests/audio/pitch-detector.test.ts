@@ -156,9 +156,9 @@ test('a tone in noise at 20 dB SNR is still tuned: within ±2 cents, and confide
   }
 });
 
-test('a harmonic-rich tone gives its fundamental — a plucked string (partials at 1/k), one whose second harmonic is louder than its fundamental, and one with no fundamental at all', () => {
+test('a harmonic-rich tone gives its fundamental within ±2 cents, whatever the phases of its partials — a plucked string (partials at 1/k), one whose second harmonic is louder than its fundamental, and one with no fundamental at all', () => {
   const detector = createYinDetector();
-  const partials = (f: number, amplitudes: readonly number[]) => amplitudes.map((a, k) => [f * (k + 1), a, 0.7 * k] as const);
+  const partials = (f: number, amplitudes: readonly number[], seed: number) => amplitudes.map((a, k) => [f * (k + 1), a, seed * (k + 1)] as const);
   for (const rate of RATES) {
     for (const [name, f] of TARGETS) {
       for (const [what, amplitudes] of [
@@ -166,10 +166,12 @@ test('a harmonic-rich tone gives its fundamental — a plucked string (partials 
         ['weak fundamental', [0.3, 1, 0.8, 0.5, 0.3]],
         ['no fundamental', [0, 1, 0.8, 0.6, 0.4, 0.2]],
       ] as const) {
-        const signal = tone(rate, partials(f, amplitudes).filter(([freq]) => freq < rate / 2).map(([freq, a, p]) => [freq, a * 0.2, p]));
-        const found = detector.detect(signal, rate);
-        assert.ok(found, `${name} ${what} at ${rate}`);
-        assert.ok(Math.abs(cents(found.frequencyHz, f)) <= 1, `${name} ${what} at ${rate}: ${found.frequencyHz.toFixed(3)} Hz for ${f.toFixed(3)}`);
+        for (let seed = 1; seed <= 8; seed++) {
+          const signal = tone(rate, partials(f, amplitudes, seed).filter(([freq]) => freq < rate / 2).map(([freq, a, p]) => [freq, a * 0.2, p]));
+          const found = detector.detect(signal, rate);
+          assert.ok(found, `${name} ${what} at ${rate}`);
+          assert.ok(Math.abs(cents(found.frequencyHz, f)) <= 2, `${name} ${what} at ${rate}, seed ${seed}: ${found.frequencyHz.toFixed(3)} Hz for ${f.toFixed(3)}`);
+        }
       }
     }
   }
@@ -193,4 +195,28 @@ test('outside the range looked for is no pitch: 30 Hz is below it, and a frame t
   const short = sine(48000, 110).subarray(0, 512);
   assert.equal(detector.detect(short, 48000), null, 'a 512-sample frame holds a 110 Hz period (436 samples) in half of it only if it is 872 long');
   assert.equal(detector.detect(sine(48000, 110), 0), null, 'no sample rate, no frequency');
+});
+
+test('noise never names the wrong note with confidence: sines, plucks and weak-fundamental tones of the guitar at 10 and 20 dB SNR — and at 3 and 6 dB, at most 1 in 100', () => {
+  const detector = createYinDetector();
+  const shapes: readonly (readonly number[])[] = [[1], [1, 0.5, 0.33, 0.25, 0.2], [0.3, 1, 0.8, 0.5]];
+  for (const snr of [3, 6, 10, 20]) {
+    let wrong = 0;
+    let total = 0;
+    for (const rate of RATES) {
+      for (const [, f] of TARGETS) {
+        for (const shape of shapes) {
+          for (let seed = 1; seed <= 6; seed++) {
+            const clean = tone(rate, shape.map((a, k) => [f * (k + 1), 0.2 * a, seed * (k + 1)] as const));
+            const noisy = plus(clean, noise((rms(clean) / 10 ** (snr / 20)) * Math.sqrt(3), seed * 31 + Math.round(f)));
+            const found = detector.detect(noisy, rate);
+            total++;
+            if (found !== null && found.confidence >= 0.6 && Math.abs(cents(found.frequencyHz, f)) > 50) wrong++;
+          }
+        }
+      }
+    }
+    if (snr >= 10) assert.equal(wrong, 0, `${snr} dB: ${wrong} of ${total} confidently wrong`);
+    else assert.ok(wrong <= total / 100, `${snr} dB: ${wrong} of ${total} confidently wrong`);
+  }
 });

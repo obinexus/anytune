@@ -8,8 +8,9 @@
  *
  *   1. the difference function      d(τ) = Σ_{j<W} (x_j − x_{j+τ})²,   W = half the frame, the frame's mean removed first
  *   2. its cumulative-mean normalization   d′(0) = 1,   d′(τ) = d(τ) · τ / Σ_{k=1..τ} d(k)   — which removes the bias towards τ = 0, and with it most octave errors
- *   3. the absolute threshold: the first τ ≥ τmin with d′(τ) < `threshold`, then on down to the bottom of that dip; when no τ goes below the threshold, the
- *      smallest d′ — a pitch the detector is unsure of, and says so in its confidence
+ *   3. the absolute threshold: the first τ ≥ τmin with d′(τ) < `threshold`, then on down to the bottom of that dip; when no τ goes below the threshold (a
+ *      noisy frame), the deepest dip; then the octave check — the shortest dip whose RAW difference is within 10% of the chosen one's, since in noise the
+ *      normalization can prefer a multiple of the period, an octave low
  *   4. a parabola fitted by least squares to d over ±τ/24 samples around that τ: the period to a fraction of a sample, which is what makes cents out of
  *      samples — over a neighbourhood scaled to the period, since a low note's dip is wide and three points of it fit noise more than the dip
  *   5. frequency = sampleRate / period
@@ -23,7 +24,15 @@
  *   silence           a frame whose RMS, its mean removed, is below `silenceRms` 0.004 (−48 dBFS) is no pitch at all: null
  *   interpolation     a least-squares parabola on d(τ) over ±τ/24 samples around the chosen τ; a frame with no dip at all (confidence 0) is null
  *
- * Accuracy, on clean tones of the guitar's open strings and A4 at 44.1 and 48 kHz: within ±1 cent (tests) — a fifth of the domain's ±5-cent in-tune window.
+ * Accuracy, measured at 44.1 and 48 kHz from E1 (41.2 Hz) to A5 (880 Hz) — the targets are what the tests hold it to:
+ *
+ *   clean pure tone                 ≤ 0.5 cent     target ±1 cent — a fifth of the domain's ±5-cent in-tune window
+ *   clean harmonic-rich tone        ≤ 1.7 cents    target ±2 cents (the guitar's strings: ≤ 1.3) — plucked, weak or missing fundamental
+ *   tone in white noise, 20 dB SNR  ≤ 2.1 cents    target ±2 cents for the guitar's pure tones (1.2 measured)
+ *   below 10 dB SNR                 the error grows (tens of cents at 3 dB); the confidence falls with the SNR, and no wrong note is named confidently from
+ *                                   10 dB up on the guitar's range (at 3 and 6 dB, under 1 in 100)
+ *
+ * The domain's ±5-cent window is not widened for the detector: a string within ±3 cents of its note reads in tune, one outside ±7 does not.
  */
 
 export interface PitchDetection {
@@ -49,6 +58,9 @@ export const DEFAULT_DETECTOR_OPTIONS: DetectorOptions = Object.freeze({ minFreq
 
 /** The frame the detector is meant for: a power of two whose half holds the longest period it looks for, at the usual sample rates. */
 export const DETECTOR_FRAME_SIZE = 4096;
+
+/** The octave check: a shorter dip whose raw difference is within this ratio of the chosen dip's is the period (see step 3). */
+const OCTAVE_RATIO = 1.1;
 
 /** The neighbourhood of the least-squares refinement: ±τ/SPREAD samples around the dip — τ/24 measured best: at 20 dB SNR within 1.7 cents from E1 to A5, and 0.5 on clean tones (τ/16: 2.1 and 1.2; τ/32: 2.9 and 0.3). */
 const SPREAD = 24;
@@ -108,6 +120,18 @@ export function createYinDetector(options: Partial<DetectorOptions> = {}): Pitch
       if (best === -1) {
         best = tauMin;
         for (let tau = tauMin + 1; tau <= tauMax; tau++) if ((normalized[tau] as number) < (normalized[best] as number)) best = tau;
+      }
+      // the octave check: the normalization favours longer lags, so in noise the dip chosen — below the threshold or the deepest — can be a multiple of the
+      // period, an octave or more low. At the true period and at its multiples the RAW difference is the same (the noise's power); the shortest dip whose raw
+      // difference is within OCTAVE_RATIO of the chosen one's is the period. On a clean tone the raw difference at the period is near zero, and no shorter
+      // dip comes near it. (At 3 dB SNR this took confident wrong notes from 172 in 252 to none; the ratio measured best of 1.05, 1.1, 1.2, 1.3.)
+      const chosen = best;
+      for (let tau = tauMin + 1; tau < chosen; tau++) {
+        const value = normalized[tau] as number;
+        if (value <= (normalized[tau - 1] as number) && value <= (normalized[tau + 1] as number) && (d[tau] as number) <= (d[chosen] as number) * OCTAVE_RATIO) {
+          best = tau;
+          break;
+        }
       }
 
       const confidence = Math.max(0, Math.min(1, 1 - (normalized[best] as number)));
