@@ -1,0 +1,78 @@
+{
+  "about": "The layers of AnyTune and what each may depend on. Checked by tools/architecture/check.ts (npm run test:architecture). A file of src/ belongs to exactly one layer; a relative import must land in the same layer or in one the layer may import; a bare module specifier must be allowed for the layer; the globals a layer may not name are listed. Dependency direction: components -> app -> domain <- fusion / audio / adapters; the harness is the only code that sees everything, and the only TypeScript that may import Vue.",
+  "domGlobals": ["document", "window", "navigator", "HTMLElement", "Element", "Node", "Event", "EventTarget", "localStorage", "sessionStorage", "requestAnimationFrame", "AudioContext", "MediaStream", "fetch", "XMLHttpRequest", "WebSocket"],
+  "layers": [
+    {
+      "name": "domain",
+      "paths": ["src/domain/"],
+      "mayImport": [],
+      "modules": [],
+      "forbiddenGlobals": "domGlobals",
+      "why": "the musical tuning domain: pure, framework-neutral, testable without a browser, Vue, Obicall or a microphone"
+    },
+    {
+      "name": "instruments",
+      "paths": ["src/instruments/"],
+      "mayImport": ["domain"],
+      "modules": [],
+      "forbiddenGlobals": "domGlobals",
+      "why": "instrument tunings as data, typed by the domain"
+    },
+    {
+      "name": "audio",
+      "paths": ["src/audio/"],
+      "mayImport": ["domain"],
+      "modules": [],
+      "forbiddenGlobals": ["document", "window", "HTMLElement", "Element", "localStorage", "sessionStorage", "fetch", "XMLHttpRequest", "WebSocket"],
+      "why": "pitch providers (simulated, recorded, later a microphone): the only layer that may reach audio input — never the DOM"
+    },
+    {
+      "name": "fusion",
+      "paths": ["src/fusion/"],
+      "mayImport": ["domain"],
+      "modules": [],
+      "forbiddenGlobals": "domGlobals",
+      "why": "implementations of the domain's PitchFusionPort; no DOM, no UI"
+    },
+    {
+      "name": "adapters",
+      "paths": ["src/adapters/"],
+      "mayImport": ["domain"],
+      "modules": [],
+      "forbiddenGlobals": "domGlobals",
+      "why": "readers of foreign formats (the Obicall replay format); never a component, never the DOM"
+    },
+    {
+      "name": "app",
+      "paths": ["src/app/"],
+      "mayImport": ["domain", "instruments"],
+      "modules": [],
+      "forbiddenGlobals": "domGlobals",
+      "why": "the application service and its state: framework-neutral; providers and fusion are injected, never imported"
+    },
+    {
+      "name": "components",
+      "paths": ["src/components/"],
+      "mayImport": ["app"],
+      "modules": ["obix"],
+      "forbiddenGlobals": ["document", "window", "navigator", "localStorage", "sessionStorage", "fetch", "AudioContext"],
+      "why": "the Vue-flavoured .obix UI: reads application state, emits intents; imports only \"obix\" and the app's view types"
+    },
+    {
+      "name": "harness",
+      "paths": ["src/harness/"],
+      "mayImport": ["domain", "instruments", "audio", "fusion", "adapters", "app", "components"],
+      "modules": ["vue"],
+      "forbiddenGlobals": [],
+      "why": "the demo execution boundary: composes the layers and mounts the UI on the official Vue runtime — the one TypeScript place that may import vue"
+    },
+    {
+      "name": "styles",
+      "paths": ["src/styles/"],
+      "mayImport": [],
+      "modules": [],
+      "forbiddenGlobals": [],
+      "why": "stylesheets"
+    }
+  ]
+}
