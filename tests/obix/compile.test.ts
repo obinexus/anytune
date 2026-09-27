@@ -47,7 +47,7 @@ test('AnyTuneApp declares exactly the fields of the view as its props — the vi
   assert.ok(file);
   const bindings = stagesOf(fs.readFileSync(file, 'utf8'), 'AnyTuneApp.obix').script.artifact?.bindings ?? {};
   const props = Object.entries(bindings).filter(([, kind]) => kind === 'props').map(([name]) => name).sort();
-  const view = toView({ session: 'idle', instrumentId: 'guitar-standard', reading: null, stable: false, signal: 'none', input: { state: 'idle', connected: false, confidence: 0 }, error: null }, CATALOG);
+  const view = toView({ session: 'idle', instrumentId: 'guitar-standard', reading: null, stable: false, signal: 'none', input: { state: 'idle', connected: false, confidence: 0 }, error: null, inputId: 'default', inputs: [{ id: 'default', label: 'Input' }] }, CATALOG);
   assert.deepEqual(props, Object.keys(view).sort());
 });
 

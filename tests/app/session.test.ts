@@ -41,8 +41,11 @@ test('the initial state: idle, Standard Guitar, no reading, no input', () => {
     signal: 'none',
     input: { state: 'idle', connected: false, confidence: 0 },
     error: null,
+    inputId: 'default',
+    inputs: [{ id: 'default', label: 'Input' }],
   });
   assert.ok(Object.isFrozen(state));
+  assert.ok(Object.isFrozen(state.inputs) && Object.isFrozen(state.inputs[0]));
 });
 
 test('start: starting, then listening — and every pitch after that updates the reading with no further intent', async () => {

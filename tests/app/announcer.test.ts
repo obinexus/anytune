@@ -19,7 +19,7 @@ import { ManualScheduler } from '../support/manual-scheduler.ts';
 
 const guitar = findTuning(CATALOG, 'guitar-standard');
 assert.ok(guitar);
-const IDLE: AnyTuneState = { session: 'idle', instrumentId: 'guitar-standard', reading: null, stable: false, signal: 'none', input: { state: 'idle', connected: false, confidence: 0 }, error: null };
+const IDLE: AnyTuneState = { session: 'idle', instrumentId: 'guitar-standard', reading: null, stable: false, signal: 'none', input: { state: 'idle', connected: false, confidence: 0 }, error: null, inputId: 'default', inputs: [{ id: 'default', label: 'Input' }] };
 const LISTENING: AnyTuneState = { ...IDLE, session: 'listening', input: { state: 'listening', connected: true, confidence: 0 } };
 const at = (hz: number, stable = false, confidence = 0.95): AnyTuneState => {
   const reading = readPitch({ frequencyHz: hz, confidence }, guitar, DEFAULT_POLICY) as TuningReading;

@@ -25,6 +25,8 @@ defineProps<{
   confidenceText: string;
   inputText: string;
   inputSourceText: string;
+  inputId: string;
+  inputOptions: { id: string; label: string; selected: boolean }[];
   hasError: boolean;
   errorText: string;
   summaryText: string;

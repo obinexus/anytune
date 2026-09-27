@@ -19,6 +19,7 @@ export type AppErrorKind =
   | 'microphone-unavailable'
   | 'audio-failed'
   | 'unavailable'
+  | 'unsupported-input'
   | 'unsupported-instrument'
   | 'invalid-tuning';
 
@@ -37,10 +38,24 @@ export interface AnyTuneState {
   readonly signal: 'none' | 'present' | 'uncertain';
   readonly input: { readonly state: FusionState | 'idle'; readonly connected: boolean; readonly confidence: number };
   readonly error: AppError | null;
+  /** the input the session listens to — one of `inputs` */
+  readonly inputId: string;
+  /** the inputs the session was given, in order: what the user can choose from */
+  readonly inputs: readonly { readonly id: string; readonly label: string }[];
 }
 
-export interface SessionDeps {
+/** An input the session can listen to: a PitchFusionPort — the microphone's, the demo's — with the id and the label the user chooses it by. */
+export interface SessionInput {
+  readonly id: string;
+  readonly label: string;
   readonly fusion: PitchFusionPort;
+}
+
+/** One fusion — the input "default" — or several inputs to choose from, and the one to begin with (the first when none is named). */
+export interface SessionDeps {
+  readonly fusion?: PitchFusionPort;
+  readonly inputs?: readonly SessionInput[];
+  readonly inputId?: string;
   readonly catalog: readonly InstrumentTuning[];
   readonly policy: TuningPolicy;
   readonly instrumentId: string;
@@ -49,17 +64,23 @@ export interface SessionDeps {
 const INPUT_FAILURES: readonly FusionState[] = [...SOURCE_FAILURES, 'unavailable'];
 const INSTRUMENT_ERRORS: readonly AppErrorKind[] = ['unsupported-instrument', 'invalid-tuning'];
 
-const freeze = (state: AnyTuneState): AnyTuneState => Object.freeze({ ...state, input: Object.freeze({ ...state.input }), ...(state.error === null ? {} : { error: Object.freeze({ ...state.error }) }) });
+const freeze = (state: AnyTuneState): AnyTuneState =>
+  Object.freeze({ ...state, input: Object.freeze({ ...state.input }), inputs: Object.freeze(state.inputs.map((i) => Object.freeze({ ...i }))), ...(state.error === null ? {} : { error: Object.freeze({ ...state.error }) }) });
 
 export class TuningSession {
   private state: AnyTuneState;
   private recent: TuningReading[] = [];
   private readonly listeners = new Set<(state: AnyTuneState) => void>();
-  private subscribed = false;
+  private readonly subscribed = new Set<string>();
   private readonly deps: SessionDeps;
+  private readonly inputs: readonly SessionInput[];
 
   constructor(deps: SessionDeps) {
     this.deps = deps;
+    const inputs = deps.inputs ?? (deps.fusion === undefined ? [] : [{ id: 'default', label: 'Input', fusion: deps.fusion }]);
+    const first = inputs.find((i) => i.id === deps.inputId) ?? inputs[0];
+    if (first === undefined) throw new Error('TuningSession: no input — give it a fusion, or inputs');
+    this.inputs = inputs;
     this.state = freeze({
       session: 'idle',
       instrumentId: deps.instrumentId,
@@ -68,7 +89,41 @@ export class TuningSession {
       signal: 'none',
       input: { state: 'idle', connected: false, confidence: 0 },
       error: null,
+      inputId: first.id,
+      inputs: inputs.map((i) => ({ id: i.id, label: i.label })),
     });
+  }
+
+  /** The input listened to now. */
+  private active(): SessionInput {
+    return this.inputs.find((i) => i.id === this.state.inputId) as SessionInput;
+  }
+
+  /**
+   * Listen to another input. One the session was not given is an error, and the input does not change. The one that was active is stopped first — a
+   * microphone gives its stream back — so the session is idle, with no reading; Start begins the new one. Choosing asks nothing of the input itself.
+   */
+  async selectInput(id: string): Promise<void> {
+    if (!this.inputs.some((i) => i.id === id)) return this.set({ error: { kind: 'unsupported-input', detail: id } });
+    const inputError = this.state.error !== null && !INSTRUMENT_ERRORS.includes(this.state.error.kind);
+    if (id === this.state.inputId) {
+      if (inputError) this.set({ error: null });
+      return;
+    }
+    // the choice takes effect at once — a Start that follows at once starts the input chosen — and the one before is stopped after it: what it says while
+    // it stops is not the active input's, and moves nothing
+    const previous = this.active();
+    this.recent = [];
+    this.set({
+      inputId: id,
+      session: 'idle',
+      reading: null,
+      stable: false,
+      signal: 'none',
+      input: { state: 'idle', connected: false, confidence: 0 },
+      error: inputError ? null : this.state.error,
+    });
+    await previous.fusion.stop();
   }
 
   getState(): AnyTuneState {
@@ -101,15 +156,19 @@ export class TuningSession {
     const issues = validateTuning(tuning);
     if (issues.length > 0) return this.set({ session: 'error', error: { kind: 'invalid-tuning', detail: issues.join(',') } });
     if (this.state.error !== null) this.set({ error: null });
-    if (!this.subscribed) {
-      this.deps.fusion.subscribe((event) => this.onFusion(event));
-      this.subscribed = true;
+    const input = this.active();
+    if (!this.subscribed.has(input.id)) {
+      // only the active input moves the state: one that was switched away from is heard no more
+      input.fusion.subscribe((event) => {
+        if (this.state.inputId === input.id) this.onFusion(event);
+      });
+      this.subscribed.add(input.id);
     }
-    await this.deps.fusion.start();
+    await input.fusion.start();
   }
 
   async stop(): Promise<void> {
-    await this.deps.fusion.stop();
+    await this.active().fusion.stop();
   }
 
   private onFusion(event: FusionEvent): void {

@@ -9,6 +9,12 @@ import type { AnyTuneState, AppError, SessionState } from './session.ts';
 
 export type ViewStatus = TuningStatus | 'no-signal';
 
+export interface InputOption {
+  readonly id: string;
+  readonly label: string;
+  readonly selected: boolean;
+}
+
 export interface InstrumentOption {
   readonly id: string;
   readonly name: string;
@@ -38,6 +44,9 @@ export interface TunerView {
   readonly inputText: string;
   /** what is supplying the measurements — simulated, recorded or a microphone — in words */
   readonly inputSourceText: string;
+  /** the input chosen, and what can be chosen */
+  readonly inputId: string;
+  readonly inputOptions: readonly InputOption[];
   readonly hasError: boolean;
   readonly errorText: string;
   readonly summaryText: string;
@@ -89,6 +98,8 @@ export function errorText(error: AppError | null): string {
       return 'The browser could not start its audio processing. Start again, or reload the page.';
     case 'unavailable':
       return 'No pitch source is available.';
+    case 'unsupported-input':
+      return `This input is not available: ${error.detail ?? ''}.`;
     case 'unsupported-instrument':
       return `This instrument is not supported: ${error.detail ?? ''}.`;
     case 'invalid-tuning':
@@ -130,6 +141,8 @@ export function toView(state: AnyTuneState, catalog: readonly InstrumentTuning[]
     confidenceText: `${confidencePercent}% confidence`,
     inputText: INPUT_TEXT[state.input.state],
     inputSourceText: inputSourceText(source),
+    inputId: state.inputId,
+    inputOptions: state.inputs.map((i) => ({ id: i.id, label: i.label, selected: i.id === state.inputId })),
     hasError: state.error !== null,
     errorText: errorText(state.error),
     summaryText: reading === null ? instrumentName : `${instrumentName} · ${reading.targetLabel}`,
