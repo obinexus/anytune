@@ -48,6 +48,10 @@ It can't today. This document separates what AnyTune does with Obicall now from 
 - All the pitch AnyTune plays: the demo's input (`src/harness/demo-input.ts`) and the committed pitch recordings (`tests/fixtures/pitch/*.json`, format `anytune-pitch-recording/1`, origin `simulated`). These are AnyTune's own JSON, never `.obr`, and never "produced by Obicall". The page says so: *Input: Recorded — … (simulated data)*.
 - `SimulatedPitchFusion` and `RecordedPitchFusion` implement the domain's `PitchFusionPort` with AnyTune's compatibility fusion.
 
+### The microphone is AnyTune's, not Obicall's
+
+AnyTune can now listen through the microphone (`docs/MICROPHONE.md`). That is AnyTune's own input: microphone → AnyTune's pitch detector → an AnyTune `PitchObservation` → AnyTune's compatibility fusion. Nothing of it passes through Obicall. A detected pitch is never relabelled as metres, radians or a 2-D position to reach Obicall.
+
 ### Blocked by Obicall's current capabilities
 
 Obicall's observation has these units: `UNSPECIFIED`, `METERS`, `METERS_PER_SECOND` and `RADIANS`. Validation rejects `UNSPECIFIED`. Its payload shapes are `POSITION_1D`, `POSITION_2D`, `POSITION_2D_VELOCITY` and `RANGE_1D`. Its broker's estimator is a 2-D constant-velocity position Kalman filter.

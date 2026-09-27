@@ -27,13 +27,19 @@ npm ci
 npm run dev
 ```
 
-Open the address Vite prints (`http://localhost:5173/`) in Edge, Chrome or Firefox, and press **Start tuning**:
+Open the address Vite prints (`http://localhost:5173/`) in Edge, Chrome or Firefox.
+
+**To tune your guitar**, choose Instrument: **Standard Guitar** and Input: **Microphone**, then press **Start tuning** and allow the microphone. Pluck one open string at a time: the note, its frequency, the cents flat or sharp, and *Flat* / *In tune* / *Sharp* follow the peg as you turn it. **Details** shows the confidence. The full procedure is in `docs/MICROPHONE.md`.
+
+> The microphone input is implemented and tested on generated signals through a fake browser. It has **not yet been checked with a physical guitar**: the procedure above is that check.
+
+**Without a microphone**, the default input is the demo. Press **Start tuning**:
 
 - **Standard Guitar** plays the A string rising to pitch, 108 → 109 → 110 → 110 Hz: *Flat*, *Flat*, *In tune*, then *In tune*, *Holding steady*.
 - **Chromatic** plays 440 Hz: **A4**, in tune.
 - **Bass, violin, ukulele** play a simulation of their first string rising to pitch.
 
-The page says what it is hearing, for example *Input: Recorded — Standard Guitar, the A string rising to pitch: 108, 109, 110, 110 Hz (simulated data)*. **It isn't listening to your instrument yet.** A microphone input is the next milestone (`docs/ARCHITECTURE.md`).
+The page always says what it is hearing, for example *Input: Microphone — …* or *Input: Recorded — … (simulated data)*. With the microphone it also says: *Microphone audio is processed locally for pitch detection. AnyTune does not upload or persist raw microphone audio.*
 
 The production build, and a local server for it:
 
@@ -66,8 +72,8 @@ Until those packages are published under their scope, a clone of AnyTune alone c
 
 | | |
 |---|---|
-| Vue-flavoured OBIX UI (8 `.obix` components) | **implemented** |
-| OBIX DOP IR trace (`npm run trace`) | **implemented**: 7 components lower. `PitchMeter` is deferred (`OBIX_DOP_DEFERRED_EXPRESSION`: its `Math.round` is a call, and the IR has no call expression yet) |
+| Vue-flavoured OBIX UI (9 `.obix` components) | **implemented** |
+| OBIX DOP IR trace (`npm run trace`) | **implemented**: 8 of the 9 components lower. `PitchMeter` is deferred (`OBIX_DOP_DEFERRED_EXPRESSION`: its `Math.round` is a call, and the IR has no call expression yet) |
 | Vue compatibility runtime | **the demo's execution path**: an allowlisted `"obix"` → Vue alias at build time, with no source rewritten |
 | Browser demo (`npm run dev`, `build`, `preview`) | **implemented** |
 | Musical domain: equal temperament, cents, nearest note, strings, the tuning policy | **implemented and tested** (`docs/TUNING_MODEL.md`) |
@@ -75,7 +81,7 @@ Until those packages are published under their scope, a clone of AnyTune alone c
 | Real Obicall `.obr` parsing | **conformance-tested** against Obicall's real `demo.obr` and the real `obicall replay` |
 | Inverse-variance fusion | **tested against Obicall**: equal to the native `obicall_static_fuse_1d`, bit for bit, on 2 050 cases |
 | Native Obicall pitch transport | **not implemented**: Obicall has no frequency unit (`docs/OBICALL.md`) |
-| Microphone pitch detection | **not implemented**: the next milestone, a `MicrophonePitchProvider` |
+| Microphone pitch detection | **implemented**: `MicrophonePitchProvider` with a YIN detector (`docs/MICROPHONE.md`), tested on generated signals through a fake browser. **Validation with a physical guitar: not performed yet** |
 | OBIX native runtime | **not implemented** |
 | OBIX hybrid runtime | **not implemented** |
 
@@ -98,7 +104,8 @@ PitchProvider(s) → PitchFusionPort → tuning domain → application state →
 
 | Document | About |
 |---|---|
-| `docs/ARCHITECTURE.md` | the layers, the two proof paths, the demo input, and the next adapter (`MicrophonePitchProvider`) |
+| `docs/ARCHITECTURE.md` | the layers, the two proof paths, and the inputs: the microphone and the demo |
+| `docs/MICROPHONE.md` | the microphone input: the pitch detector and its measured accuracy, the lifecycle, the failures, privacy, browsers, and the manual guitar test |
 | `docs/TUNING_MODEL.md` | the mathematics and the policy |
 | `docs/OBICALL.md` | what AnyTune does with Obicall now, what is simulated, and what Obicall must gain to carry pitch |
 | `docs/ACCESSIBILITY.md` | semantics, the live region and its policy, and how it is tested |
@@ -107,7 +114,7 @@ PitchProvider(s) → PitchFusionPort → tuning domain → application state →
 
 ## Remaining work
 
-- **A microphone input** (`MicrophonePitchProvider`: `getUserMedia` → Web Audio → a pitch detector → `PitchObservation`), behind the existing contract.
+- **The physical-guitar check** of the microphone input (`docs/MICROPHONE.md`), and whatever it finds.
 - **PitchMeter's IR**, once OBIX lowers call expressions: a compiler slice, not an AnyTune change.
 - **Publishing** the OBIX compiler packages under their scope, so that AnyTune installs on its own.
 - **Testing with a screen reader and real people**, beyond the automated checks.

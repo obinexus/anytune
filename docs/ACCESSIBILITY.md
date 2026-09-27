@@ -6,8 +6,9 @@ A tuner is used hands-free, often by someone looking at the instrument rather th
 
 - **Semantics.** One `main` landmark with its heading. The detected frequency is an `output`. The tuning meter is a `meter` whose value is the cents off the target, with its value also in words (`aria-valuetext`).
 - **Not colour alone.** Every tuning status (*Flat*, *In tune*, *Sharp*, *Signal uncertain*, *No signal*) is a word on the page. The colour of the stylesheet follows it; it doesn't replace it.
-- **Keyboard.** Every control is a native, focusable, labelled control: the instrument select, Start/Stop, and the Details toggle. No positive `tabindex`. The Details toggle says whether it is open (`aria-expanded`).
-- **Errors** are an `alert`, in words: permission denied, no device, disconnected, unsupported instrument.
+- **Keyboard.** Every control is a native, focusable, labelled control: the instrument select, the input select (*Input*: Microphone or Demo), Start/Stop, and the Details toggle. No positive `tabindex`. The Details toggle says whether it is open (`aria-expanded`).
+- **Errors** are an `alert`, in words: a microphone refused, missing, busy, disconnected, unsupported or on an insecure page; audio that can't start; an unsupported instrument. The words are in `docs/MICROPHONE.md`.
+- **Hands-free with a microphone.** After one press of Start, tuning needs no further interaction: the reading follows the string, and the live region speaks at most once a second, whatever the microphone's frame rate.
 - **The input is stated.** *Input: Simulated — …*, *Input: Recorded — … (simulated data)*, or later *Input: Microphone — …*, so that no one mistakes a demonstration for their instrument being heard.
 
 ## What is announced, and when

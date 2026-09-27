@@ -27,6 +27,13 @@ npm run dev         # the browser demo
 6. **Accessibility is a feature.** Every state in words, one polite live region governed by the announcement policy, native labelled controls, and no violation from axe (`docs/ACCESSIBILITY.md`).
 7. **No markup by hand.** No `innerHTML`, `outerHTML`, `insertAdjacentHTML` or `document.write` anywhere in `src/`. A test checks this.
 
+## The microphone, without a microphone
+
+No test needs a microphone, and none may: the tests must run anywhere.
+- **The pitch detector** is pure, and is tested on signals generated from their mathematics. The expected frequency is the one the signal was made with, never one the detector computed.
+- **`MicrophonePitchProvider`** is given the browser's APIs, and is tested on a fake browser (`tests/support/fake-audio.ts`). The fake grants, refuses or waits, unplugs tracks, and counts every track, context, node and timer, so that a leak fails a test.
+- **A physical instrument** is tested by hand, following `docs/MICROPHONE.md`. Say whether it was done; never assume it.
+
 ## The Obicall conformance fixtures
 
 `tests/fixtures/obicall/` holds Obicall's own `demo.obr` and the answers of the real Obicall build: `replay-oracle.json` from `obicall replay`, and `fuse-oracle.json` from `obicall_static_fuse_1d`. They are regenerated, never edited:
