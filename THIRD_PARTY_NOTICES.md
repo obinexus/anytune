@@ -1,0 +1,31 @@
+# Third-party notices
+
+AnyTune is MIT-licensed (`LICENSE`, `SPDX-License-Identifier: MIT`). It uses the works below under their own licences. The versions are the exact pins of `package.json` and `package-lock.json`.
+
+## Shipped in the browser build (`dist/app`)
+
+| Work | Version | Licence | Copyright |
+|---|---|---|---|
+| Vue: `vue`, `@vue/runtime-dom`, `@vue/runtime-core`, `@vue/reactivity`, `@vue/shared` | 3.5.43 | MIT | © 2018-present, Yuxi (Evan) You and Vue contributors |
+| Vite's module-preload helper, inlined by the build | 8.3.1 | MIT | © 2019-present, VoidZero Inc. and Vite contributors |
+
+The build ships no fonts (the stylesheet uses the system font) and no images. The page's icon is an inline SVG written for AnyTune.
+
+## Used to build, never shipped
+
+| Work | Version | Licence | Role |
+|---|---|---|---|
+| Vite | 8.3.1 | MIT | development server and production build |
+| OBIX compiler packages (`@obinexusltd/obix-compiler-*`) | 0.5.0 | MIT, © OBINexus Computing | compile the `.obix` components for the Vue runtime, and lower them to the OBIX DOP IR trace |
+| TypeScript | 6.0.3 | Apache-2.0 | typecheck |
+
+## Used by the tests only, never shipped
+
+| Work | Version | Licence | Role |
+|---|---|---|---|
+| jsdom | 30.1.1 | MIT | a DOM for the UI tests |
+| axe-core | 4.13.0 | MPL-2.0 | automated accessibility checks. Used unmodified, as a development dependency; nothing of it is distributed. |
+| Obicall `demo.obr` (`tests/fixtures/obicall/demo.obr`) | obicall `ae5581a`, 0.1.1, ABI 1.0 | MIT, © 2026 Nnamdi Michael Okpala / OBINexus Computing | Obicall's own demonstration journal, copied unchanged (SHA-256 `3838115346787cfacb55674dd738b5437ec01858a6fd28651ccad417786c79b4`), for the conformance of the replay reader. It is 2-D position data, not pitch. |
+| Obicall's staged `obicall.exe` and `obicall.dll` | same build | MIT | run by the conformance tools from the maintainer's local Obicall build, never copied into this repository. Their answers are committed as `tests/fixtures/obicall/replay-oracle.json` and `fuse-oracle.json`. |
+
+The full MIT licence text is in `LICENSE`. The same text applies to every MIT work above, with that work's copyright line. The Apache-2.0 and MPL-2.0 texts come with their packages in `node_modules/typescript/LICENSE.txt` and `node_modules/axe-core/LICENSE`.
