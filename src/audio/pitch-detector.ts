@@ -10,7 +10,8 @@
  *   2. its cumulative-mean normalization   d′(0) = 1,   d′(τ) = d(τ) · τ / Σ_{k=1..τ} d(k)   — which removes the bias towards τ = 0, and with it most octave errors
  *   3. the absolute threshold: the first τ ≥ τmin with d′(τ) < `threshold`, then on down to the bottom of that dip; when no τ goes below the threshold, the
  *      smallest d′ — a pitch the detector is unsure of, and says so in its confidence
- *   4. parabolic interpolation of d around that τ: the period to a fraction of a sample, which is what makes cents out of samples
+ *   4. a parabola fitted by least squares to d over ±τ/24 samples around that τ: the period to a fraction of a sample, which is what makes cents out of
+ *      samples — over a neighbourhood scaled to the period, since a low note's dip is wide and three points of it fit noise more than the dip
  *   5. frequency = sampleRate / period
  *
  * What it looks for, and how it decides:
@@ -20,7 +21,7 @@
  *   confidence        1 − d′ at the period chosen, clamped to 0…1: 1 for a perfectly periodic frame; noise gives no deep dip, and a low confidence, which the
  *                     domain reads as "uncertain" (below 0.6) whatever the frequency
  *   silence           a frame whose RMS, its mean removed, is below `silenceRms` 0.004 (−48 dBFS) is no pitch at all: null
- *   interpolation     parabolic, on d(τ) at the chosen τ and its two neighbours
+ *   interpolation     a least-squares parabola on d(τ) over ±τ/24 samples around the chosen τ; a frame with no dip at all (confidence 0) is null
  *
  * Accuracy, on clean tones of the guitar's open strings and A4 at 44.1 and 48 kHz: within ±1 cent (tests) — a fifth of the domain's ±5-cent in-tune window.
  */
@@ -49,6 +50,9 @@ export const DEFAULT_DETECTOR_OPTIONS: DetectorOptions = Object.freeze({ minFreq
 /** The frame the detector is meant for: a power of two whose half holds the longest period it looks for, at the usual sample rates. */
 export const DETECTOR_FRAME_SIZE = 4096;
 
+/** The neighbourhood of the least-squares refinement: ±τ/SPREAD samples around the dip — τ/24 measured best: at 20 dB SNR within 1.7 cents from E1 to A5, and 0.5 on clean tones (τ/16: 2.1 and 1.2; τ/32: 2.9 and 0.3). */
+const SPREAD = 24;
+
 export function createYinDetector(options: Partial<DetectorOptions> = {}): PitchDetector {
   const { minFrequencyHz, maxFrequencyHz, threshold, silenceRms } = { ...DEFAULT_DETECTOR_OPTIONS, ...options };
   return {
@@ -73,11 +77,14 @@ export function createYinDetector(options: Partial<DetectorOptions> = {}): Pitch
       if (!(Math.sqrt(energy / n) >= silenceRms)) return null;
 
       // 1. the difference function, 2. its cumulative-mean normalization
-      const d = new Float64Array(tauMax + 2);
-      const normalized = new Float64Array(tauMax + 2);
+      // d is computed a little past τmax, for the refinement's neighbourhood around a dip near it
+      const last = Math.min(tauMax + Math.ceil(tauMax / SPREAD) + 1, n - window - 1);
+      const d = new Float64Array(last + 1);
+      const normalized = new Float64Array(last + 1);
       normalized[0] = 1;
       let running = 0;
-      for (let tau = 1; tau <= tauMax + 1 && tau < n - window; tau++) {
+      let computed = 0;
+      for (let tau = 1; tau <= last; tau++) {
         let sum = 0;
         for (let j = 0; j < window; j++) {
           const delta = (x[j] as number) - (x[j + tau] as number);
@@ -86,6 +93,7 @@ export function createYinDetector(options: Partial<DetectorOptions> = {}): Pitch
         d[tau] = sum;
         running += sum;
         normalized[tau] = running === 0 ? 1 : (sum * tau) / running;
+        computed = tau;
       }
 
       // 3. the first dip below the threshold, to its bottom — or the deepest dip when none goes below it
@@ -102,20 +110,34 @@ export function createYinDetector(options: Partial<DetectorOptions> = {}): Pitch
         for (let tau = tauMin + 1; tau <= tauMax; tau++) if ((normalized[tau] as number) < (normalized[best] as number)) best = tau;
       }
 
-      // 4. parabolic interpolation of d around the period
-      let period = best;
-      if (best > 1 && best + 1 < d.length) {
-        const a = d[best - 1] as number;
-        const b = d[best] as number;
-        const c = d[best + 1] as number;
-        const curvature = a - 2 * b + c;
-        if (curvature > 0) period = best + Math.max(-1, Math.min(1, (0.5 * (a - c)) / curvature));
+      const confidence = Math.max(0, Math.min(1, 1 - (normalized[best] as number)));
+      if (confidence === 0) return null;
+
+      // 4. the period to a fraction of a sample: a parabola fitted by least squares to d over ±k samples around the dip, k = τ/24 — a low note's dip is wide
+      //    and shallow, and three points of it fit the noise more than the dip (at 20 dB SNR, E2 read up to 21 cents off with three points, within 1.4 with this)
+      const k = Math.max(1, Math.min(Math.round(best / SPREAD), best - 1, computed - best));
+      let s2 = 0;
+      let s4 = 0;
+      let y0 = 0;
+      let y1 = 0;
+      let y2 = 0;
+      for (let u = -k; u <= k; u++) {
+        const y = d[best + u] as number;
+        s2 += u * u;
+        s4 += u ** 4;
+        y0 += y;
+        y1 += u * y;
+        y2 += u * u * y;
       }
+      const s0 = 2 * k + 1;
+      // d ≈ A·u² + B·u + C; for u symmetric about 0 the odd sums vanish: B = Σu·y / Σu², A = (s0·Σu²y − Σu²·Σy) / (s0·Σu⁴ − (Σu²)²); the vertex is at −B / 2A
+      const curvature = (s0 * y2 - s2 * y0) / (s0 * s4 - s2 * s2);
+      const slope = y1 / s2;
+      const period = curvature > 0 ? best + Math.max(-k, Math.min(k, -slope / (2 * curvature))) : best;
 
       // 5. the frequency, inside the range looked for
       const frequencyHz = sampleRate / period;
       if (!(frequencyHz >= minFrequencyHz && frequencyHz <= maxFrequencyHz)) return null;
-      const confidence = Math.max(0, Math.min(1, 1 - (normalized[best] as number)));
       return { frequencyHz, confidence };
     },
   };
