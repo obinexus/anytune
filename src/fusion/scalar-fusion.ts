@@ -1,7 +1,8 @@
 /**
  * Inverse-variance fusion of independent scalar estimates — a MATHEMATICAL COMPATIBILITY implementation of Obicall's `obicall_static_fuse_1d`
  * (src/core/estimator.c, obicall ae5581a): the same rule, the same checks in the same order, the same order of operations, so that it gives the same doubles.
- * It is not Obicall execution, and it does not make pitch an Obicall observation type (docs/OBICALL.md). The native comparison: A7.
+ * It is not Obicall execution, and it does not make pitch an Obicall observation type (docs/OBICALL.md). The native comparison — bit for bit, against the
+ * staged obicall.dll: tests/fusion/native-conformance.test.ts (A8).
  */
 
 export type FuseResult = { readonly ok: true; readonly mean: number; readonly variance: number } | { readonly ok: false; readonly error: 'invalid-argument' | 'validation-non-finite' };

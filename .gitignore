@@ -2,3 +2,4 @@
 .obix-tmp/
 dist/
 node_modules/
+.native/
