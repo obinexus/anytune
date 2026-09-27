@@ -10,6 +10,7 @@ import type { TunerView } from '../../src/app/view.ts';
 import { toView } from '../../src/app/view.ts';
 import type { AnyTuneState } from '../../src/app/session.ts';
 import type { TuningReading } from '../../src/domain/tuning.ts';
+import type { InputSource } from '../../src/domain/ports.ts';
 import { DEFAULT_POLICY, findTuning, readPitch } from '../../src/domain/tuning.ts';
 import { CATALOG } from '../../src/instruments/catalog.ts';
 
@@ -24,10 +25,10 @@ const hearing = (hz: number, confidence = 0.95, extra: Partial<AnyTuneState> = {
   return { ...IDLE, session: 'listening', reading, signal: reading.status === 'uncertain' ? 'uncertain' : 'present', input: { state: 'listening', connected: true, confidence }, ...extra };
 };
 
-function mount(state: AnyTuneState) {
+function mount(state: AnyTuneState, source: InputSource | null = null) {
   const host = document.createElement('div');
   document.body.append(host);
-  const view = shallowRef<TunerView>(toView(state, CATALOG));
+  const view = shallowRef<TunerView>(toView(state, CATALOG, '', source));
   const intents: string[] = [];
   const app = createApp({
     render: () =>
@@ -154,4 +155,11 @@ test('the details of the reading can be shown and hidden — a local UI state of
   assert.equal(toggle.getAttribute('aria-expanded'), 'true');
   assert.equal(ui.text('.confidence-text'), '95% confidence');
   ui.unmount();
+});
+
+test('what supplies the measurements is said on the page, in words: a simulation or a recording never passes for a real instrument being heard', async () => {
+  const recorded = mount(hearing(110), { kind: 'recorded', name: 'Standard Guitar, the A string rising to pitch: 108, 109, 110, 110 Hz (simulated data)' });
+  assert.equal(recorded.$('.input-source').textContent?.trim(), 'Input: Recorded — Standard Guitar, the A string rising to pitch: 108, 109, 110, 110 Hz (simulated data)');
+  const simulated = mount(IDLE, { kind: 'simulated', name: 'Violin, the G3 string rising to pitch' });
+  assert.equal(simulated.$('.input-source').textContent?.trim(), 'Input: Simulated — Violin, the G3 string rising to pitch');
 });

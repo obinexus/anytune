@@ -22,6 +22,16 @@ export interface PitchObservation {
   readonly timestampMs: number;
 }
 
+/**
+ * What is supplying the measurements, as the user is told it: a simulation, a recording played back, or (a later provider) a microphone. A simulation must
+ * never look like a real instrument being heard.
+ */
+export type InputSourceKind = 'simulated' | 'recorded' | 'microphone';
+export interface InputSource {
+  readonly kind: InputSourceKind;
+  readonly name: string;
+}
+
 /** What a source of pitch can be: the failures an input really has — permission denied, no device, disconnected — are states. */
 export type SourceState = 'starting' | 'listening' | 'ended' | 'stopped' | 'permission-denied' | 'no-device' | 'disconnected';
 

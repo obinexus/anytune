@@ -13,7 +13,7 @@ import type { TuningSession } from '../app/session.ts';
 import { toView } from '../app/view.ts';
 import type { TunerView } from '../app/view.ts';
 import type { InstrumentTuning } from '../domain/tuning.ts';
-import type { Scheduler } from '../domain/ports.ts';
+import type { InputSource, Scheduler } from '../domain/ports.ts';
 import { Announcer } from '../app/announcer.ts';
 
 export interface MountDeps {
@@ -21,6 +21,8 @@ export interface MountDeps {
   readonly catalog: readonly InstrumentTuning[];
   /** the time of the announcement policy: real timers in the browser, virtual time in the tests */
   readonly clock: Scheduler;
+  /** what is supplying the measurements, said on the page — read at every change of the state, since the demo's input follows the instrument */
+  readonly input?: () => InputSource | null;
 }
 
 export interface MountedAnyTune {
@@ -29,13 +31,13 @@ export interface MountedAnyTune {
   unmount(): void;
 }
 
-export function mountAnyTune(host: Element, { session, catalog, clock }: MountDeps): MountedAnyTune {
+export function mountAnyTune(host: Element, { session, catalog, clock, input = () => null }: MountDeps): MountedAnyTune {
   const announcer = new Announcer(clock);
   let state = session.getState();
   let announcement = '';
-  const view = shallowRef<TunerView>(toView(state, catalog, announcement));
+  const view = shallowRef<TunerView>(toView(state, catalog, announcement, input()));
   const refresh = (): void => {
-    view.value = toView(state, catalog, announcement);
+    view.value = toView(state, catalog, announcement, input());
   };
   // the live region changes only when the announcement policy says so; the rest of the view at every state
   const offAnnouncer = announcer.subscribe((text) => {

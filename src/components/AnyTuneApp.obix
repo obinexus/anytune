@@ -24,6 +24,7 @@ defineProps<{
   confidencePercent: number;
   confidenceText: string;
   inputText: string;
+  inputSourceText: string;
   hasError: boolean;
   errorText: string;
   summaryText: string;
@@ -58,7 +59,7 @@ const emit = defineEmits<{ (e: "select-instrument", id: string): void; (e: "star
       :confidence-text="confidenceText"
       :announcement="announcement"
     />
-    <InputStatus :session-text="sessionText" :input-text="inputText" :has-error="hasError" :error-text="errorText" />
+    <InputStatus :session-text="sessionText" :input-source-text="inputSourceText" :input-text="inputText" :has-error="hasError" :error-text="errorText" />
     <p class="summary">{{ summaryText }}</p>
   </main>
 </template>

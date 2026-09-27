@@ -3,6 +3,7 @@
  * pitch, not text) and not in the components (which only place and bind what they are given, so that they lower to the OBIX DOP IR, which has no calls).
  */
 import { findTuning } from '../domain/tuning.ts';
+import type { InputSource, InputSourceKind } from '../domain/ports.ts';
 import type { InstrumentTuning, TuningStatus } from '../domain/tuning.ts';
 import type { AnyTuneState, AppError, SessionState } from './session.ts';
 
@@ -35,6 +36,8 @@ export interface TunerView {
   readonly confidencePercent: number;
   readonly confidenceText: string;
   readonly inputText: string;
+  /** what is supplying the measurements — simulated, recorded or a microphone — in words */
+  readonly inputSourceText: string;
   readonly hasError: boolean;
   readonly errorText: string;
   readonly summaryText: string;
@@ -56,6 +59,12 @@ const INPUT_TEXT: Readonly<Record<AnyTuneState['input']['state'], string>> = {
   disconnected: 'Input disconnected',
   unavailable: 'No pitch source',
 };
+
+const SOURCE_KIND: Readonly<Record<InputSourceKind, string>> = { simulated: 'Simulated', recorded: 'Recorded', microphone: 'Microphone' };
+
+export function inputSourceText(source: InputSource | null): string {
+  return source === null ? 'Input: none' : `Input: ${SOURCE_KIND[source.kind]} — ${source.name}`;
+}
 
 export function errorText(error: AppError | null): string {
   if (error === null) return '';
@@ -83,7 +92,7 @@ export function centsText(cents: number): string {
   return `${size.toFixed(1)} cents ${cents < 0 ? 'flat' : 'sharp'}`;
 }
 
-export function toView(state: AnyTuneState, catalog: readonly InstrumentTuning[], announcement = ''): TunerView {
+export function toView(state: AnyTuneState, catalog: readonly InstrumentTuning[], announcement = '', source: InputSource | null = null): TunerView {
   const instrumentName = findTuning(catalog, state.instrumentId)?.name ?? state.instrumentId;
   const reading = state.reading;
   const status: ViewStatus = reading?.status ?? 'no-signal';
@@ -108,6 +117,7 @@ export function toView(state: AnyTuneState, catalog: readonly InstrumentTuning[]
     confidencePercent,
     confidenceText: `${confidencePercent}% confidence`,
     inputText: INPUT_TEXT[state.input.state],
+    inputSourceText: inputSourceText(source),
     hasError: state.error !== null,
     errorText: errorText(state.error),
     summaryText: reading === null ? instrumentName : `${instrumentName} · ${reading.targetLabel}`,
