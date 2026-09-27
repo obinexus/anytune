@@ -1,6 +1,6 @@
 /**
  * The OBIX semantic proof path: every .obix component of AnyTune is lowered by the real OBIX Vue frontend and DOP lowering (`lowerVueToDop`) into the canonical
- * `obix-dop-ir/1`, and the trace — one JSON document per component under dist/obix-ir — is GENERATED from the sources, never written by hand. What the current
+ * `obix-dop-ir/2`, and the trace — one JSON document per component under dist/obix-ir — is GENERATED from the sources, never written by hand. What the current
  * IR cannot express is a `deferred` entry with the lowering's own diagnostics, never a hidden omission.
  *
  * And the integration test the directive asks for: the runtime build and the trace come from the SAME source file of each component.
@@ -17,17 +17,18 @@ import { TRACE_SCHEMA, traceComponent, writeTrace } from '../../tools/obix/trace
 const ROOT = path.resolve(import.meta.dirname, '..', '..');
 const sha = (text: string): string => crypto.createHash('sha256').update(text).digest('hex');
 
-test('what the current OBIX pipeline makes of each component: what it can express lowers to IR; what emits events or calls a function is deferred, with the lowering’s own code', () => {
+test('what the current OBIX pipeline makes of each component: what it can express lowers to IR; what calls a function is deferred, with the lowering’s own code', () => {
   const statuses = Object.fromEntries(componentFiles(ROOT).map((file) => {
     const t = traceComponent(file, ROOT);
     return [path.basename(file, '.obix'), [t.status, t.diagnostics.map((d) => d.code)]];
   }));
   assert.deepEqual(statuses, {
-    // what a component emits is not a concept of the IR yet (an IR extension, the owner's to rule on)
-    AnyTuneApp: ['deferred', ['OBIX_DOP_DEFERRED_SCRIPT', 'OBIX_DOP_DEFERRED_EVENT']],
+    // since OBIX C2 (obix-dop-ir/2) what a component tells its invoker is IR: AnyTuneApp's outputs and its interaction with InstrumentSelector,
+    // InstrumentSelector's output told from its change handler
+    AnyTuneApp: ['compiled', []],
     ConfidenceIndicator: ['compiled', []],
     InputStatus: ['compiled', []],
-    InstrumentSelector: ['deferred', ['OBIX_DOP_DEFERRED_SCRIPT']],
+    InstrumentSelector: ['compiled', []],
     NoteDisplay: ['compiled', []],
     // since OBIX C1 the frontend resolves `ref` / `computed` from "obix": PitchMeter's `computed` now lowers as far as its `Math.round(…)` — the IR has no call
     // expressions, an honest limit of the IR, not of AnyTune; TunerDisplay's `ref` is a state and its toggle an action

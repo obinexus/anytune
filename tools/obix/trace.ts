@@ -1,5 +1,5 @@
 /**
- * The OBIX semantic proof path: every .obix component lowered by the real OBIX Vue frontend and `lowerVueToDop` into the canonical `obix-dop-ir/1`, written as a
+ * The OBIX semantic proof path: every .obix component lowered by the real OBIX Vue frontend and `lowerVueToDop` into the canonical `obix-dop-ir/2`, written as a
  * reviewable trace — one JSON document per component, and an index — under dist/obix-ir. GENERATED from the sources; never written by hand. A component the
  * current IR cannot express is a `deferred` entry with the lowering's own diagnostics and no IR (never a partial one).
  */
