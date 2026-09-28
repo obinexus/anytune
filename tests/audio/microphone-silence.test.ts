@@ -130,3 +130,15 @@ test('the page says when the browser’s processing is on: the input names the m
   assert.equal(app.session.getState().reading?.targetLabel, 'A2');
   await app.session.stop();
 });
+
+test('two separate silences: a tone below the musical threshold (−48 dBFS) is valid audio with no useful pitch — "No signal", still listening — never the device failure that only digital silence (−120 dBFS) is', async () => {
+  // a real 110 Hz tone at −60 dBFS RMS: below the detector's silence, far above digital silence
+  const faint: Signal = (t) => 0.001 * Math.SQRT2 * Math.sin(2 * Math.PI * 110 * t);
+  const { clock, browser, events, settle, states, mic } = await listening({ signal: faint });
+  clock.advance(10_000);
+  await settle();
+  assert.equal(events.filter((e) => e.kind === 'observation').length, 0, 'no pitch: below the musical silence threshold');
+  assert.equal(browser.requests.length, 1, 'no retry: it is not digital silence');
+  assert.deepEqual(states(), ['starting', 'listening'], 'no failure: the device works');
+  await mic.stop();
+});

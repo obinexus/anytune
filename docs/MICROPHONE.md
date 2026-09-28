@@ -94,11 +94,48 @@ This is what the implementation does. A frame's samples live in one buffer, whic
 - The page needs a current Edge, Chrome, Firefox or Safari. Older Safari's `webkitAudioContext` is accepted.
 - The first Start asks for permission. A browser remembers the answer per site, and a refusal is changed in the site's settings (the icon by the address).
 - Laptop microphones differ. Some ignore the request to switch automatic gain and noise suppression off. `mic.info.processing` records what the browser reports.
-- **Not verified here:** the in-app browser used to test this work blocks microphone access by design. The failure path was seen working there: a denied permission, said in words. Audio capture from a real microphone has only been tested on a fake browser.
+- The in-app browser used to develop AnyTune blocks microphone access by design. The failure path was seen working there: a denied permission, said in words.
+
+## What has been seen on real hardware
+
+### Physical guitar validation: PERFORMED in Microsoft Edge
+
+The owner performed it on 2026-09-28, with a nylon-string classical guitar in standard tuning.
+
+| | |
+|---|---|
+| Browser | Microsoft Edge, `http://localhost:5173/` (`npm run dev`) |
+| Device | Default - Microphone Array (AMD Audio Device), 48 kHz |
+| Real observation | the D string detected at about **145.1 Hz**, about **20 cents flat** of D3 (146.83 Hz): *FLAT*, *20.2 cents flat*, *Holding steady* |
+| Result | AnyTune received and classified a physical guitar through the laptop microphone |
+
+This is one string, one observation. The rest of the procedure below (every open string tuned to *In tune*, compared against another tuner) has not been recorded yet.
+
+### Firefox with this microphone array: not validated
+
+On the same laptop, Firefox opened the same microphone, and its track reported live and running while it delivered **effectively digital-silent PCM**. The owner's measurement of the raw audio: quietest −180 dBFS, loudest −154 dBFS.
+
+AnyTune now:
+
+- detects sustained digital silence (every sample below −120 dBFS for two seconds);
+- retries once with the browser's audio processing;
+- says which processing mode is active (*…, browser processing on*);
+- shows an explicit failure, *The microphone is sending no sound at all…*, if the audio is still silent.
+
+Whether the processed-audio retry gives sound in Firefox on this machine **has not been observed yet**. Until it has, tune in Edge (or Chrome) on this laptop.
+
+### Two silences, kept apart
+
+| | Threshold | What it means | What the page says |
+|---|---|---|---|
+| **Digital silence** | every sample below −120 dBFS, sustained for 2 s | the audio is not arriving: a device, driver or permission failure | the retry with processing, then *The microphone is sending no sound…* |
+| **Musical silence** | frame RMS below −48 dBFS | valid audio with no useful musical signal: the room between notes, or a note too faint | *No signal*, still listening |
+
+Neither is loosened for the other. The YIN detector and its −48 dBFS threshold were not weakened for Firefox's zero-valued stream. `tests/audio/microphone-silence.test.ts` checks both: a −60 dBFS tone gives no pitch and triggers no retry, and a −70 dBFS room is never "muted".
 
 ## Tuning a guitar with the microphone: the manual acceptance test
 
-**Status: physical-guitar validation NOT PERFORMED.** The automated tests use generated signals. This is the procedure for a person with a guitar.
+**Status:** performed in Edge for one string (above); the full procedure has not been recorded yet. The automated tests use generated signals. This is the procedure for a person with a guitar.
 
 1. `cd D:\Projects\anytune`, then `npm run dev`.
 2. Open the address it prints (`http://localhost:5173/`) in Edge or Chrome.

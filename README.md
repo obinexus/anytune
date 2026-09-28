@@ -31,7 +31,7 @@ Open the address Vite prints (`http://localhost:5173/`) in Edge, Chrome or Firef
 
 **To tune your guitar**, choose Instrument: **Standard Guitar** and Input: **Microphone**, then press **Start tuning** and allow the microphone. Pluck one open string at a time: the note, its frequency, the cents flat or sharp, and *Flat* / *In tune* / *Sharp* follow the peg as you turn it. **Details** shows the confidence. The full procedure is in `docs/MICROPHONE.md`.
 
-> The microphone input is implemented and tested on generated signals through a fake browser. It has **not yet been checked with a physical guitar**: the procedure above is that check.
+> The microphone input is tested on generated signals through a fake browser, and it has heard a **physical guitar**: in Microsoft Edge, on a laptop's AMD microphone array at 48 kHz, the D string was read at 145.1 Hz, 20 cents flat. In **Firefox** on that laptop the microphone delivered digital silence. AnyTune now detects that and says so; tune in Edge or Chrome there (`docs/MICROPHONE.md`).
 
 **Without a microphone**, the default input is the demo. Press **Start tuning**:
 
@@ -81,7 +81,7 @@ Until those packages are published under their scope, a clone of AnyTune alone c
 | Real Obicall `.obr` parsing | **conformance-tested** against Obicall's real `demo.obr` and the real `obicall replay` |
 | Inverse-variance fusion | **tested against Obicall**: equal to the native `obicall_static_fuse_1d`, bit for bit, on 2 050 cases |
 | Native Obicall pitch transport | **not implemented**: Obicall has no frequency unit (`docs/OBICALL.md`) |
-| Microphone pitch detection | **implemented**: `MicrophonePitchProvider` with a YIN detector (`docs/MICROPHONE.md`), tested on generated signals through a fake browser. **Validation with a physical guitar: not performed yet** |
+| Microphone pitch detection | **implemented**: `MicrophonePitchProvider` with a YIN detector (`docs/MICROPHONE.md`), tested on generated signals through a fake browser. **Physical guitar: performed in Edge** (AMD microphone array, 48 kHz; D string read 145.1 Hz, 20 cents flat). **Firefox on that machine: not validated**, since the microphone delivered digital silence, now detected and said |
 | OBIX native runtime | **not implemented** |
 | OBIX hybrid runtime | **not implemented** |
 
@@ -114,7 +114,7 @@ PitchProvider(s) → PitchFusionPort → tuning domain → application state →
 
 ## Remaining work
 
-- **The physical-guitar check** of the microphone input (`docs/MICROPHONE.md`), and whatever it finds.
+- **The full physical-guitar check**: every open string to *In tune* against another tuner. Also whether Firefox's processed-audio retry gives sound on the AMD array (`docs/MICROPHONE.md`).
 - **PitchMeter's IR**, once OBIX lowers call expressions: a compiler slice, not an AnyTune change.
 - **Publishing** the OBIX compiler packages under their scope, so that AnyTune installs on its own.
 - **Testing with a screen reader and real people**, beyond the automated checks.
