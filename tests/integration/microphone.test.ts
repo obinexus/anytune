@@ -1,7 +1,8 @@
 /**
  * M7 — the microphone through the whole application, as the browser demo composes it (src/harness/compose.ts), on a fake browser in jsdom:
  *
- *   fake microphone signal → MicrophonePitchProvider → PitchFusionPort → tuning domain → session → view → the .obix UI on the Vue runtime
+ *   fake microphone signal → MicrophonePitchProvider → PitchFusionPort → tuning domain → session → view → the .obix UI — on the Vue runtime and on OBIX's native runtime
+ *   (Phase 6, N11: every scenario runs on both; tests/support/runtimes.ts)
  *
  * The user chooses "Microphone" and presses Start — and from then on turning the peg is all: the note, the frequency, the cents, the status and the
  * confidence follow the string, with no further interaction.
@@ -14,11 +15,11 @@ import { FakeBrowser, sineSignal } from '../support/fake-audio.ts';
 import type { Signal } from '../support/fake-audio.ts';
 import { ManualScheduler } from '../support/manual-scheduler.ts';
 
-const { nextTick } = await import('vue');
 // (after the hooks are registered: a static import chain that reaches an .obix file is linked before any module body runs)
 const { composeAnyTune } = await import('../../src/harness/compose.ts');
-const { mountAnyTune } = await import('../../src/harness/mount.ts');
+const { RUNTIMES } = await import('../support/runtimes.ts');
 
+for (const runtime of RUNTIMES) {
 async function app(signal: Signal = sineSignal(110)) {
   const clock = new ManualScheduler();
   clock.advance(1000);
@@ -26,16 +27,16 @@ async function app(signal: Signal = sineSignal(110)) {
   const composed = composeAnyTune({ clock, microphone: browser.environment });
   const host = document.createElement('div');
   document.body.append(host);
-  const mounted = mountAnyTune(host, { session: composed.session, catalog: composed.catalog, clock, input: composed.input });
+  const mounted = runtime.mount(host, { session: composed.session, catalog: composed.catalog, clock, input: composed.input });
   const text = (selector: string): string => (host.querySelector(selector)?.textContent ?? '').replace(/\s+/g, ' ').trim();
   const settle = async (): Promise<void> => {
     for (let i = 0; i < 4; i++) await Promise.resolve();
-    await nextTick();
+    await mounted.settled();
   };
   return { clock, browser, composed, host, mounted, text, settle };
 }
 
-test('the demo composes two inputs — the microphone, and the demo that plays without one — and starts on the demo: nothing asks for the microphone before the user chooses it', async () => {
+test(`[${runtime.name}] the demo composes two inputs — the microphone, and the demo that plays without one — and starts on the demo: nothing asks for the microphone before the user chooses it`, async () => {
   const { composed, browser, text, host, mounted } = await app();
   assert.deepEqual(composed.session.getState().inputs, [{ id: 'microphone', label: 'Microphone' }, { id: 'demo', label: 'Demo (recorded / simulated)' }]);
   assert.equal(composed.session.getState().inputId, 'demo');
@@ -46,7 +47,7 @@ test('the demo composes two inputs — the microphone, and the demo that plays w
   host.remove();
 });
 
-test('choose Microphone, press Start once: the page says it is the microphone, how its audio is treated, and then — turning the peg — flat, then in tune and steady, with no other press', async () => {
+test(`[${runtime.name}] choose Microphone, press Start once: the page says it is the microphone, how its audio is treated, and then — turning the peg — flat, then in tune and steady, with no other press`, async () => {
   // the A string 20 cents flat, brought up to pitch after a second
   let cents = -20;
   const peg: Signal = (t) => 0.3 * Math.sin(2 * Math.PI * 110 * 2 ** (cents / 1200) * t);
@@ -83,7 +84,7 @@ test('choose Microphone, press Start once: the page says it is the microphone, h
   host.remove();
 });
 
-test('every open string of the guitar, heard through the microphone, is named and in tune', async () => {
+test(`[${runtime.name}] every open string of the guitar, heard through the microphone, is named and in tune`, async () => {
   const strings: [string, number][] = [['E2', 82.41], ['A2', 110], ['D3', 146.83], ['G3', 196], ['B3', 246.94], ['E4', 329.63]];
   let f = 82.41;
   const { clock, composed, settle, mounted, host } = await app((t) => 0.3 * Math.sin(2 * Math.PI * f * t));
@@ -100,7 +101,7 @@ test('every open string of the guitar, heard through the microphone, is named an
   host.remove();
 });
 
-test('the UI is not the audio’s rate: a second of microphone frames (20) renders the UI at most once a frame, and the live region speaks at most once a second', async () => {
+test(`[${runtime.name}] the UI is not the audio’s rate: a second of microphone frames (20) renders the UI at most once a frame, and the live region speaks at most once a second`, async () => {
   const { clock, composed, settle, mounted, host } = await app(sineSignal(110));
   await composed.session.selectInput('microphone');
   await composed.session.start();
@@ -123,7 +124,7 @@ test('the UI is not the audio’s rate: a second of microphone frames (20) rende
   host.remove();
 });
 
-test('the microphone refused: the page says so in words, and the demo can still be chosen and played', async () => {
+test(`[${runtime.name}] the microphone refused: the page says so in words, and the demo can still be chosen and played`, async () => {
   const clock = new ManualScheduler();
   clock.advance(1000);
   const browser = new FakeBrowser(clock, { refuse: 'NotAllowedError' });
@@ -138,3 +139,4 @@ test('the microphone refused: the page says so in words, and the demo can still 
   clock.advance(2000);
   assert.deepEqual([composed.session.getState().reading?.detectedFrequencyHz, composed.session.getState().stable], [110, true]);
 });
+}

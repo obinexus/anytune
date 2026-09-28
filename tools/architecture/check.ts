@@ -150,11 +150,13 @@ export function check(files: readonly SourceText[], rules: Rules): Violation[] {
     }
     for (const ref of importsOf(file)) {
       if (ref.specifier.startsWith('.')) {
-        if (!/\.(ts|obix|css|json|svg)$/.test(ref.specifier)) {
+        // an .obix component may be imported as its IR (`?ir`, for OBIX's native runtime — tools/obix/ir-module.ts): the one query the build understands
+        const [named, query] = ref.specifier.split('?') as [string, string | undefined];
+        if (!/\.(ts|obix|css|json|svg)$/.test(named) || (query !== undefined && !(query === 'ir' && named.endsWith('.obix')))) {
           violations.push({ kind: 'extension', file: file.path, line: ref.line, detail: `${ref.specifier}: a relative import names its file, with its extension` });
           continue;
         }
-        const target = path.posix.normalize(path.posix.join(path.posix.dirname(file.path), ref.specifier));
+        const target = path.posix.normalize(path.posix.join(path.posix.dirname(file.path), named));
         if (!known.has(target)) {
           violations.push({ kind: 'unresolved', file: file.path, line: ref.line, detail: `${ref.specifier} is no source file (${target})` });
           continue;

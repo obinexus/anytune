@@ -160,3 +160,7 @@ Neither is loosened for the other. The YIN detector and its −48 dBFS threshold
 10. Press **Stop**. The browser's microphone indicator should go out.
 
 A comparison against another tuner (a clip-on, or a phone app) on the same string is the best check of the cents.
+
+## On OBIX's native runtime (Phase 6)
+
+The same microphone path runs on OBIX's native runtime (`npm run dev:native`): the provider, the session and the page are the same, only the runtime that draws the page differs. It is tested on generated signals through the fake browser, on both runtimes, and the two pages are compared (`tests/integration/microphone.test.ts`, `tests/native/vue-vs-native.test.ts`); in the in-app browser, which blocks the microphone, the native page shows the permission alert. **A physical instrument through the microphone on the native runtime has not been tried**: the physical reading above was on the Vue runtime.

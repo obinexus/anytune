@@ -1,5 +1,5 @@
 /**
- * Accessibility, on the rendered UI (the official Vue runtime in jsdom, the demo's execution path): the tuning status is text, not colour; a polite live region
+ * Accessibility, on the rendered UI — on the official Vue runtime and on OBIX's native runtime, from the same .obix files (Phase 6, N11), in jsdom: the tuning status is text, not colour; a polite live region
  * carries the announcement policy's words — and only it, so a screen reader is not flooded by the visual refresh; outputs and the meter are semantic; every
  * control is a native, labelled control reachable by keyboard; an error is an alert. And axe-core finds no violation in any state.
  *
@@ -20,16 +20,17 @@ import type { PitchFusionPort } from '../../src/domain/ports.ts';
 import { parseRecording } from '../../src/audio/recording.ts';
 import { ManualScheduler } from '../support/manual-scheduler.ts';
 
-const { nextTick } = await import('vue');
-const { mountAnyTune } = await import('../../src/harness/mount.ts');
+const { RUNTIMES } = await import('../support/runtimes.ts');
 const axe = (await import('axe-core')).default;
 const ROOT = path.resolve(import.meta.dirname, '..', '..');
 
+for (const runtime of RUNTIMES) {
+const nextTick = runtime.settle;
 async function app(fusion: PitchFusionPort, clock: ManualScheduler) {
   const host = document.createElement('div');
   document.body.append(host);
   const session = new TuningSession({ fusion, catalog: CATALOG, policy: DEFAULT_POLICY, instrumentId: 'guitar-standard' });
-  const mounted = mountAnyTune(host, { session, catalog: CATALOG, clock });
+  const mounted = runtime.mount(host, { session, catalog: CATALOG, clock });
   const $ = (selector: string): HTMLElement => {
     const el = host.querySelector<HTMLElement>(selector);
     assert.ok(el, selector);
@@ -47,7 +48,7 @@ async function violations(host: Element): Promise<string[]> {
   return result.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`);
 }
 
-test('the live region: one polite status region, present and empty from the first render, that says only what the announcement policy says', async () => {
+test(`[${runtime.name}] the live region: one polite status region, present and empty from the first render, that says only what the announcement policy says`, async () => {
   const clock = new ManualScheduler();
   const fusion = SimulatedPitchFusion(clock);
   const ui = await app(fusion.port, clock);
@@ -74,7 +75,7 @@ test('the live region: one polite status region, present and empty from the firs
   ui.mounted.unmount();
 });
 
-test('hands-free announcements of the acceptance sequence played live: "Listening", then — the string in tune within the second — "A2, in tune and steady"', async () => {
+test(`[${runtime.name}] hands-free announcements of the acceptance sequence played live: "Listening", then — the string in tune within the second — "A2, in tune and steady"`, async () => {
   const clock = new ManualScheduler();
   const fusion = SimulatedPitchFusion(clock);
   const ui = await app(fusion.port, clock);
@@ -95,7 +96,7 @@ test('hands-free announcements of the acceptance sequence played live: "Listenin
   ui.mounted.unmount();
 });
 
-test('the acceptance recording replayed to its end: the last thing said is that the recording ended — not that the user stopped', async () => {
+test(`[${runtime.name}] the acceptance recording replayed to its end: the last thing said is that the recording ended — not that the user stopped`, async () => {
   const clock = new ManualScheduler();
   const parsed = parseRecording(JSON.parse(fs.readFileSync(path.join(ROOT, 'tests', 'fixtures', 'pitch', 'guitar-a2-acceptance.json'), 'utf8')));
   assert.ok(parsed.ok);
@@ -107,7 +108,7 @@ test('the acceptance recording replayed to its end: the last thing said is that 
   ui.mounted.unmount();
 });
 
-test('semantics: a main landmark with its heading, the frequency an output, the tuning meter a meter with its value in cents and in words', async () => {
+test(`[${runtime.name}] semantics: a main landmark with its heading, the frequency an output, the tuning meter a meter with its value in cents and in words`, async () => {
   const clock = new ManualScheduler();
   const fusion = SimulatedPitchFusion(clock);
   const ui = await app(fusion.port, clock);
@@ -124,7 +125,7 @@ test('semantics: a main landmark with its heading, the frequency an output, the 
   ui.mounted.unmount();
 });
 
-test('not colour alone: every tuning status is also a word on the page, and the status element carries it as data for the stylesheet', async () => {
+test(`[${runtime.name}] not colour alone: every tuning status is also a word on the page, and the status element carries it as data for the stylesheet`, async () => {
   const clock = new ManualScheduler();
   const fusion = SimulatedPitchFusion(clock);
   const ui = await app(fusion.port, clock);
@@ -140,7 +141,7 @@ test('not colour alone: every tuning status is also a word on the page, and the 
   ui.mounted.unmount();
 });
 
-test('keyboard: every control is a native, focusable, labelled control; nothing has a positive tabindex; the details toggle says whether it is open', async () => {
+test(`[${runtime.name}] keyboard: every control is a native, focusable, labelled control; nothing has a positive tabindex; the details toggle says whether it is open`, async () => {
   const clock = new ManualScheduler();
   const fusion = SimulatedPitchFusion(clock);
   const ui = await app(fusion.port, clock);
@@ -160,7 +161,7 @@ test('keyboard: every control is a native, focusable, labelled control; nothing 
   ui.mounted.unmount();
 });
 
-test('an error is an alert, in words', async () => {
+test(`[${runtime.name}] an error is an alert, in words`, async () => {
   const clock = new ManualScheduler();
   const fusion = SimulatedPitchFusion(clock, { startOutcome: 'permission-denied' });
   const ui = await app(fusion.port, clock);
@@ -169,7 +170,7 @@ test('an error is an alert, in words', async () => {
   ui.mounted.unmount();
 });
 
-test('axe-core (automated) finds no violation: idle, listening flat, in tune and steady with the details open, and in error', async () => {
+test(`[${runtime.name}] axe-core (automated) finds no violation: idle, listening flat, in tune and steady with the details open, and in error`, async () => {
   // a document with AnyTune alone in it: landmarks are checked across the whole document
   document.body.replaceChildren();
   const clock = new ManualScheduler();
@@ -177,7 +178,7 @@ test('axe-core (automated) finds no violation: idle, listening flat, in tune and
   const host = document.createElement('div');
   document.body.append(host);
   const session = new TuningSession({ fusion: fusion.port, catalog: CATALOG, policy: DEFAULT_POLICY, instrumentId: 'guitar-standard' });
-  const mounted = mountAnyTune(host, { session, catalog: CATALOG, clock });
+  const mounted = runtime.mount(host, { session, catalog: CATALOG, clock });
   const found: Record<string, string[]> = {};
   found['idle'] = await violations(host);
   await session.start();
@@ -195,3 +196,4 @@ test('axe-core (automated) finds no violation: idle, listening flat, in tune and
   assert.deepEqual(found, { idle: [], flat: [], 'steady, details open': [], error: [] });
   mounted.unmount();
 });
+}

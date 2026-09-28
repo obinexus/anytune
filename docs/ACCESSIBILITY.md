@@ -25,7 +25,7 @@ In words, when the acceptance sequence (108, 109, 110, 110 Hz, 250 ms apart) pla
 ## How it is tested
 
 - `tests/app/announcer.test.ts`: the policy in virtual time.
-- `tests/components/a11y.test.ts`, on the real Vue runtime in jsdom:
+- `tests/components/a11y.test.ts`, on the real Vue runtime and on OBIX's native runtime (Phase 6), each in jsdom:
   - the live region, and the hands-free announcements played live;
   - the semantics, words as well as colour, the keyboard, and errors as alerts;
   - **axe-core** (automated) finds no violation in four states: idle, listening flat, in tune and steady with the details open, and in error.

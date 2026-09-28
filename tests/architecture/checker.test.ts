@@ -118,3 +118,23 @@ test('the rules themselves are checked: every layer the rules name exists, and n
   const paths = rules.layers.flatMap((l) => l.paths);
   assert.equal(new Set(paths).size, paths.length);
 });
+
+test('Phase 6: an .obix component may be imported as its IR (`?ir`), a query the build understands; any other query is not a file', () => {
+  const files = [
+    file('src/components/A.obix', '<template>\n  <p>a</p>\n</template>\n'),
+    file('src/harness/mount-native.ts', "import A, { registry } from '../components/A.obix?ir';\nexport const x = [A, registry];"),
+    file('src/harness/other.ts', "import A from '../components/A.obix?raw';\nexport const y = A;"),
+  ];
+  assert.deepEqual(kinds(check(files, rules)), ['extension src/harness/other.ts']);
+});
+
+test('Phase 6: the native harness may import OBIX\'s native runtime and never Vue — the one harness file that runs the UI without it', () => {
+  const files = [
+    file('src/harness/mount-native.ts', "import { createObixApp } from '@obinexusltd/obix-runtime-browser';\nimport { h } from 'vue';\nexport const x = [createObixApp, h];"),
+    file('src/harness/mount.ts', "import { createObixApp } from '@obinexusltd/obix-runtime-browser';\nexport const y = createObixApp;"),
+  ];
+  assert.deepEqual(check(files, rules).map((v) => `${v.kind} ${v.file} ${v.detail}`), [
+    'module src/harness/mount-native.ts native-harness may not import the module "vue"',
+    'module src/harness/mount.ts harness may not import the module "@obinexusltd/obix-runtime-browser"',
+  ]);
+});

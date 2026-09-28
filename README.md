@@ -8,13 +8,15 @@ Press **Start** once, then play. The note, its frequency, how many cents flat or
 >
 > | | |
 > |---|---|
-> | UI runtime | the official Vue runtime |
+> | UI runtime | the official Vue runtime (the default); OBIX's native runtime from the same files (`npm run dev:native`, Phase 6 — awaiting review) |
 > | Authoring | Vue-flavoured `.obix` |
 > | Semantic proof | the OBIX DOP IR (`obix-dop-ir/3`) |
-> | OBIX native runtime | not implemented |
+> | OBIX native runtime | implemented (Phase 6), not the default |
 > | OBIX hybrid runtime | not implemented |
 
 AnyTune is currently authored as Vue-flavoured OBIX. The Phase-5 demonstration executes the UI with the official Vue runtime through a development-time compatibility alias, while the same .obix components are independently lowered through the OBIX compiler to canonical obix-dop-ir/2. OBIX native and hybrid runtime backends are not implemented yet.
+
+> **Update, Phase 6 (2026-09-28; awaiting the owner's review — the paragraph above is the owner's, and is kept as written until the owner rewords it):** the IR is now `obix-dop-ir/3`, and OBIX has a **native runtime** (`@obinexusltd/obix-runtime-*`): `npm run dev:native` runs the same nine `.obix` components, lowered to that IR, with no Vue at all. The Vue runtime stays the default (`npm run dev`). The hybrid runtime is still not implemented.
 
 ## How to run AnyTune
 
@@ -28,6 +30,8 @@ npm run dev
 ```
 
 Open the address Vite prints (`http://localhost:5173/`) in Edge, Chrome or Firefox.
+
+**The same UI on OBIX's native runtime** (no Vue in the page): `npm run dev:native` (build: `npm run build:native`, into `dist/app-native`; serve the build: `npm run preview:native`). `npm run dev:vue` is the default made explicit. The native path needs the OBIX runtime packages built in `../obix-recovery` as well.
 
 **To tune your guitar**, choose Instrument: **Standard Guitar** and Input: **Microphone**, then press **Start tuning** and allow the microphone. Pluck one open string at a time: the note, its frequency, the cents flat or sharp, and *Flat* / *In tune* / *Sharp* follow the peg as you turn it. **Details** shows the confidence. The full procedure is in `docs/MICROPHONE.md`.
 
@@ -75,14 +79,14 @@ Until those packages are published under their scope, a clone of AnyTune alone c
 | Vue-flavoured OBIX UI (9 `.obix` components) | **implemented** |
 | OBIX DOP IR trace (`npm run trace`) | **implemented**: all 9 components lower. `PitchMeter`'s `Math.round` is the IR's call of its intrinsic `round` (OBIX C3, `obix-dop-ir/3`); until C3 it was deferred |
 | Vue compatibility runtime | **the demo's execution path**: an allowlisted `"obix"` → Vue alias at build time, with no source rewritten |
-| Browser demo (`npm run dev`, `build`, `preview`) | **implemented** |
+| Browser demo (`npm run dev`, `build`, `preview`) | **implemented** — on the Vue runtime (the default, also `dev:vue`) and on OBIX's native runtime (`dev:native`, `build:native`, `preview:native`) |
 | Musical domain: equal temperament, cents, nearest note, strings, the tuning policy | **implemented and tested** (`docs/TUNING_MODEL.md`) |
 | Simulated and recorded pitch input | **implemented**: AnyTune's own JSON recordings, origin *simulated* |
 | Real Obicall `.obr` parsing | **conformance-tested** against Obicall's real `demo.obr` and the real `obicall replay` |
 | Inverse-variance fusion | **tested against Obicall**: equal to the native `obicall_static_fuse_1d`, bit for bit, on 2 050 cases |
 | Native Obicall pitch transport | **not implemented**: Obicall has no frequency unit (`docs/OBICALL.md`) |
 | Microphone pitch detection | **implemented**: `MicrophonePitchProvider` with a YIN detector (`docs/MICROPHONE.md`), tested on generated signals through a fake browser. **Physical guitar: performed in Edge** (AMD microphone array, 48 kHz; D string read 145.1 Hz, 20 cents flat). **Firefox on that machine: not validated**, since the microphone delivered digital silence, now detected and said |
-| OBIX native runtime | **not implemented** |
+| OBIX native runtime | **implemented (Phase 6), awaiting review; not the default**: the same 9 `.obix` files, lowered to `obix-dop-ir/3` (`Component.obix?ir`), run by `@obinexusltd/obix-runtime-browser` with no Vue in the bundle (audited from the bundler's module graph). The hands-free, microphone (fake browser) and accessibility suites run on both runtimes, and the two pages are compared after every step (`tests/native/`). **Physical microphone on the native runtime: not performed** |
 | OBIX hybrid runtime | **not implemented** |
 
 ## How it is built

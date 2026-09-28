@@ -15,8 +15,13 @@
   },
   "scripts": {
     "dev": "vite",
+    "dev:vue": "vite",
+    "dev:native": "vite --mode native",
     "build": "vite build",
+    "build:vue": "vite build",
+    "build:native": "vite build --mode native",
     "preview": "vite preview",
+    "preview:native": "vite preview --mode native",
     "test": "node --test \"tests/**/*.test.ts\"",
     "test:architecture": "node --test \"tests/architecture/*.test.ts\"",
     "typecheck": "tsc -p tsconfig.json",
@@ -40,6 +45,13 @@
     "vite": "8.3.1"
   },
   "dependencies": {
+    "@obinexusltd/obix-runtime-browser": "file:../obix-recovery/runtime/obix-runtime-browser",
+    "@obinexusltd/obix-runtime-component": "file:../obix-recovery/runtime/obix-runtime-component",
+    "@obinexusltd/obix-runtime-dom": "file:../obix-recovery/runtime/obix-runtime-dom",
+    "@obinexusltd/obix-runtime-reactivity": "file:../obix-recovery/runtime/obix-runtime-reactivity",
     "vue": "3.5.43"
+  },
+  "imports": {
+    "#anytune-mount": "./src/harness/mount.ts"
   }
 }
