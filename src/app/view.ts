@@ -1,6 +1,6 @@
 /**
  * The view of the application state: everything the UI shows, already in words and numbers. Formatting belongs here — not in the tuning domain (which knows
- * pitch, not text) and not in the components (which only place and bind what they are given, so that they lower to the OBIX DOP IR, which has no calls).
+ * pitch, not text) and not in the components (which only place and bind what they are given, so that they lower to the OBIX DOP IR, which calls nothing but its intrinsic round).
  */
 import { findTuning } from '../domain/tuning.ts';
 import type { InputSource, InputSourceKind } from '../domain/ports.ts';

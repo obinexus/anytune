@@ -1,6 +1,6 @@
 /**
  * The OBIX semantic proof path: every .obix component of AnyTune is lowered by the real OBIX Vue frontend and DOP lowering (`lowerVueToDop`) into the canonical
- * `obix-dop-ir/2`, and the trace — one JSON document per component under dist/obix-ir — is GENERATED from the sources, never written by hand. What the current
+ * `obix-dop-ir/3`, and the trace — one JSON document per component under dist/obix-ir — is GENERATED from the sources, never written by hand. What the current
  * IR cannot express is a `deferred` entry with the lowering's own diagnostics, never a hidden omission.
  *
  * And the integration test the directive asks for: the runtime build and the trace come from the SAME source file of each component.
@@ -31,9 +31,9 @@ test('what the current OBIX pipeline makes of each component: what it can expres
     InputStatus: ['compiled', []],
     InstrumentSelector: ['compiled', []],
     NoteDisplay: ['compiled', []],
-    // since OBIX C1 the frontend resolves `ref` / `computed` from "obix": PitchMeter's `computed` now lowers as far as its `Math.round(…)` — the IR has no call
-    // expressions, an honest limit of the IR, not of AnyTune; TunerDisplay's `ref` is a state and its toggle an action
-    PitchMeter: ['deferred', ['OBIX_DOP_DEFERRED_EXPRESSION']],
+    // since OBIX C1 the frontend resolves `ref` / `computed` from "obix"; since OBIX C3 (obix-dop-ir/3) PitchMeter's `Math.round(…)` is the IR's call of its
+    // intrinsic `round` — the limit was the IR's, fixed there, generically; TunerDisplay's `ref` is a state and its toggle an action
+    PitchMeter: ['compiled', []],
     TunerDisplay: ['compiled', []],
     TuningStatus: ['compiled', []],
   });
@@ -64,6 +64,20 @@ test('what a compiled component is, in the IR: NoteDisplay has its props and sho
   assert.ok(t.ir);
   assert.deepEqual(t.ir.props.map((p: { name: string; type: string }) => [p.name, p.type]), [['note', 'string'], ['octaveText', 'string'], ['frequencyText', 'string']]);
   assert.doesNotMatch(JSON.stringify(t.ir), /v-if|v-for|v-bind|__vue|createVNode/);
+});
+
+test('what PitchMeter is, in the IR (OBIX C3): its offset is the call of the intrinsic round of needlePercent − 50 — round, never Math.round, Vue or TypeScript', () => {
+  const file = componentFiles(ROOT).find((f) => f.endsWith('PitchMeter.obix'));
+  assert.ok(file);
+  const t = traceComponent(file, ROOT);
+  assert.ok(t.ir);
+  assert.equal(t.ir.schema, 'obix-dop-ir/3');
+  assert.deepEqual(t.ir.derived.find((d: { name: string }) => d.name === 'offset').expression, {
+    kind: 'call',
+    function: 'round',
+    arguments: [{ kind: 'binary', operator: '-', left: { kind: 'reference', scope: 'prop', name: 'needlePercent' }, right: { kind: 'literal', value: 50 } }],
+  });
+  assert.doesNotMatch(JSON.stringify(t.ir), /Math|computed|__vue|createVNode|v-bind/);
 });
 
 test('the trace is deterministic: written twice, the same bytes; one file per component, named after it', () => {

@@ -47,13 +47,13 @@ Every component is one `.obix` file, and there is no `.vue` file anywhere.
    OBIX Vue frontend stages          OBIX Vue frontend → lowerVueToDop
    (tools/obix/compile.ts)           (tools/obix/trace.ts)
                │                                │
-   official Vue runtime               canonical obix-dop-ir/2
+   official Vue runtime               canonical obix-dop-ir/3
                │                                │
           browser UI                  dist/obix-ir/<Name>.obix.json
 ```
 
 - **Execution.** The `.obix` sources are compiled by the real OBIX Vue frontend stages and run on the **official Vue runtime**: in the browser through the Vite plugin (`tools/obix/vite-plugin.ts`), and in the Node tests through module hooks (`tools/obix/register.ts`). `"obix"` resolves to an **allowlist** of Vue-compatible primitives (`tools/obix/allowlist.ts`). Any other name from `"obix"`, and any import of it outside a component, fails the build. No source is rewritten. This is a compatibility alias for the demo, not an OBIX runtime: **OBIX has no native or hybrid runtime yet**.
-- **Semantics.** The same files are lowered by the OBIX compiler to its canonical, framework-neutral IR, **`obix-dop-ir/2`** (`npm run trace`). What the IR can't express yet is recorded as a deferral with the compiler's own diagnostic, never hidden. Today 8 of 9 components lower. **PitchMeter** is deferred (`OBIX_DOP_DEFERRED_EXPRESSION`): its `computed` calls `Math.round`, and the IR has no call expression yet. That is a compiler limitation, left to a later compiler slice and not special-cased here.
+- **Semantics.** The same files are lowered by the OBIX compiler to its canonical, framework-neutral IR, **`obix-dop-ir/3`** (`npm run trace`). What the IR can't express is recorded as a deferral with the compiler's own diagnostic, never hidden. Today all 9 components lower. **PitchMeter** was the last deferred (`OBIX_DOP_DEFERRED_EXPRESSION`): its `computed` calls `Math.round`, and the IR had no call expression. OBIX C3 added one generically, in the compiler and not here: the call of an intrinsic function from a closed vocabulary (`round` alone today), so PitchMeter's offset is `round(needlePercent − 50)` in the IR.
 - **The two agree on their sources**: the production build writes `obix-runtime-manifest.json` (every component by the SHA-256 of its source), and a test checks it equals the trace's list (`tests/build/vite-build.test.ts`, `tests/obix/trace.test.ts`).
 
 Component interaction (a selector telling the app which instrument was chosen) became IR in OBIX C2 (`obix-dop-ir/2`: outputs, output steps and interactions). It was proven equivalent between OBIX's Vue and React frontends before AnyTune relied on it.

@@ -10,7 +10,7 @@ Press **Start** once, then play. The note, its frequency, how many cents flat or
 > |---|---|
 > | UI runtime | the official Vue runtime |
 > | Authoring | Vue-flavoured `.obix` |
-> | Semantic proof | the OBIX DOP IR (`obix-dop-ir/2`) |
+> | Semantic proof | the OBIX DOP IR (`obix-dop-ir/3`) |
 > | OBIX native runtime | not implemented |
 > | OBIX hybrid runtime | not implemented |
 
@@ -73,7 +73,7 @@ Until those packages are published under their scope, a clone of AnyTune alone c
 | | |
 |---|---|
 | Vue-flavoured OBIX UI (9 `.obix` components) | **implemented** |
-| OBIX DOP IR trace (`npm run trace`) | **implemented**: 8 of the 9 components lower. `PitchMeter` is deferred (`OBIX_DOP_DEFERRED_EXPRESSION`: its `Math.round` is a call, and the IR has no call expression yet) |
+| OBIX DOP IR trace (`npm run trace`) | **implemented**: all 9 components lower. `PitchMeter`'s `Math.round` is the IR's call of its intrinsic `round` (OBIX C3, `obix-dop-ir/3`); until C3 it was deferred |
 | Vue compatibility runtime | **the demo's execution path**: an allowlisted `"obix"` → Vue alias at build time, with no source rewritten |
 | Browser demo (`npm run dev`, `build`, `preview`) | **implemented** |
 | Musical domain: equal temperament, cents, nearest note, strings, the tuning policy | **implemented and tested** (`docs/TUNING_MODEL.md`) |

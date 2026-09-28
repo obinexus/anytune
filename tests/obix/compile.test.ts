@@ -3,7 +3,7 @@
  * binding metadata → TypeScript phase):
  *
  *   EXECUTION     AnyTune .obix → OBIX Vue frontend output → demo-only "obix" → "vue" alias → official Vue runtime
- *   SEMANTICS     AnyTune .obix → OBIX Vue frontend → lowerVueToDop → canonical obix-dop-ir/2 → the trace (dist/obix-ir)
+ *   SEMANTICS     AnyTune .obix → OBIX Vue frontend → lowerVueToDop → canonical obix-dop-ir/3 → the trace (dist/obix-ir)
  *
  * Every component compiles for the runtime with no diagnostic, and imports from "obix" only the allowlist.
  */
