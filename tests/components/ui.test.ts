@@ -140,6 +140,8 @@ test('an error is shown in words, with the input status', async () => {
   await ui.show({ ...IDLE, session: 'error', error: { kind: 'permission-denied' }, input: { state: 'permission-denied', connected: false, confidence: 0 } });
   assert.equal(ui.text('.error'), 'Microphone permission was denied. Allow the microphone to tune.');
   assert.equal(ui.text('.input-status'), 'Microphone permission denied');
+  // where it is seen: right under Start — found on a real laptop, where the message below the tuner was out of sight and Start seemed to do nothing
+  assert.equal(ui.$('.controls').nextElementSibling, ui.$('.error'));
   await ui.show(IDLE);
   assert.equal(ui.host.querySelector('.error'), null);
   ui.unmount();

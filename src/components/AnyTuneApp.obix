@@ -51,6 +51,8 @@ const emit = defineEmits<{ (e: "select-instrument", id: string): void; (e: "sele
       <button v-if="!listening" type="button" class="start" @click="emit('start')">Start tuning</button>
       <button v-else type="button" class="stop" @click="emit('stop')">Stop</button>
     </div>
+    <!-- right under Start: an error far below the tuner is out of sight, and Start seems to do nothing -->
+    <p v-if="hasError" class="error" role="alert">{{ errorText }}</p>
     <TunerDisplay
       :note="note"
       :octave-text="octaveText"
@@ -64,7 +66,7 @@ const emit = defineEmits<{ (e: "select-instrument", id: string): void; (e: "sele
       :confidence-text="confidenceText"
       :announcement="announcement"
     />
-    <InputStatus :session-text="sessionText" :input-source-text="inputSourceText" :privacy-text="privacyText" :input-text="inputText" :has-error="hasError" :error-text="errorText" />
+    <InputStatus :session-text="sessionText" :input-source-text="inputSourceText" :privacy-text="privacyText" :input-text="inputText" />
     <p class="summary">{{ summaryText }}</p>
   </main>
 </template>
