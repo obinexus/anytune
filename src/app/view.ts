@@ -72,6 +72,7 @@ const INPUT_TEXT: Readonly<Record<AnyTuneState['input']['state'], string>> = {
   unsupported: 'Microphone not supported',
   'microphone-unavailable': 'Microphone unavailable',
   'audio-failed': 'Audio could not start',
+  'microphone-muted': 'Microphone sends no sound',
   unavailable: 'No pitch source',
 };
 
@@ -101,6 +102,8 @@ export function errorText(error: AppError | null): string {
       return 'The microphone could not be opened — another application may be using it. Close it, then start again.';
     case 'audio-failed':
       return 'The browser could not start its audio processing. Start again, or reload the page.';
+    case 'microphone-muted':
+      return 'The microphone is sending no sound at all — it may be muted. Check the microphone mute key, and your system’s microphone privacy settings (on Windows: Settings → Privacy & security → Microphone → “Let desktop apps access your microphone”). Then start again.';
     case 'unavailable':
       return 'No pitch source is available.';
     case 'unsupported-input':

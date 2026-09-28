@@ -51,7 +51,9 @@ export function composeAnyTune({ clock, microphone: environment, instrumentId = 
   const input = (): InputSource => {
     if (session.getState().inputId !== 'microphone') return demo.source;
     const info = microphone.info;
-    return { kind: 'microphone', name: info === null ? 'your microphone, once Start is pressed' : `${info.device ?? 'microphone'}, ${info.sampleRate / 1000} kHz` };
+    if (info === null) return { kind: 'microphone', name: 'your microphone, once Start is pressed' };
+    // the browser's processing is said when it is on: it was asked for because the raw audio was silent, and noise suppression can colour a sustained tone
+    return { kind: 'microphone', name: `${info.device ?? 'microphone'}, ${info.sampleRate / 1000} kHz${info.mode === 'processed' ? ', browser processing on' : ''}` };
   };
   return { session, catalog: CATALOG, microphone, demo, input };
 }

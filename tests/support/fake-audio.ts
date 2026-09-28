@@ -44,8 +44,11 @@ export class FakeTrack implements MicrophoneTrackLike {
 
 class FakeStream implements MediaStreamLike {
   readonly tracks: FakeTrack[];
-  constructor(tracks: FakeTrack[]) {
+  /** a stream that delivers digital silence — zeros — whatever is played to the microphone */
+  readonly silent: boolean;
+  constructor(tracks: FakeTrack[], silent = false) {
     this.tracks = tracks;
+    this.silent = silent;
   }
   getAudioTracks(): readonly FakeTrack[] {
     return this.tracks;
@@ -66,7 +69,7 @@ export class FakeAnalyser implements AnalyserLike {
     // the last `out.length` samples before now
     const rate = this.context.sampleRate;
     const end = this.context.clock.now() / 1000;
-    for (let i = 0; i < out.length; i++) out[i] = this.context.signal(end - (out.length - i) / rate);
+    for (let i = 0; i < out.length; i++) out[i] = this.context.silentStream ? 0 : this.context.signal(end - (out.length - i) / rate);
   }
   disconnect(): void {
     this.connected = false;
@@ -91,13 +94,15 @@ export class FakeAudioContext implements AudioContextLike {
   readonly sources: FakeSourceNode[] = [];
   readonly analysers: FakeAnalyser[] = [];
   resumed = 0;
+  silentStream = false;
   constructor(sampleRate: number, clock: Scheduler, signal: Signal, state: 'running' | 'suspended') {
     this.sampleRate = sampleRate;
     this.clock = clock;
     this.signal = signal;
     this.state = state;
   }
-  createMediaStreamSource(_stream: MediaStreamLike): FakeSourceNode {
+  createMediaStreamSource(stream: MediaStreamLike): FakeSourceNode {
+    this.silentStream = (stream as FakeStream).silent;
     const node = new FakeSourceNode();
     this.sources.push(node);
     return node;
@@ -130,6 +135,8 @@ export interface FakeBrowserOptions {
   /** getUserMedia waits until the test calls `grant()` */
   readonly manualGrant?: boolean;
   readonly settings?: Record<string, unknown>;
+  /** the microphone delivers digital silence: for the raw request only (a laptop array that needs the system's processing), or always (muted) */
+  readonly silentWhen?: 'raw' | 'always';
 }
 
 /** A fake browser: the environment for the provider, and what it handed out. */
@@ -156,10 +163,12 @@ export class FakeBrowser {
           getUserMedia: (constraints) => {
             this.requests.push(constraints);
             if (o.refuse !== undefined) return Promise.reject(Object.assign(new Error(`fake ${o.refuse}`), { name: o.refuse }));
+            const raw = typeof constraints.audio === 'object' && constraints.audio.echoCancellation === false;
             const make = (): MediaStreamLike => {
-              const track = new FakeTrack('Fake microphone', o.settings ?? { sampleRate: o.sampleRate ?? 48000, echoCancellation: false, noiseSuppression: false, autoGainControl: false });
+              const processing = !raw;
+              const track = new FakeTrack('Fake microphone', o.settings ?? { sampleRate: o.sampleRate ?? 48000, echoCancellation: processing, noiseSuppression: processing, autoGainControl: processing });
               this.tracks.push(track);
-              return new FakeStream([track]);
+              return new FakeStream([track], o.silentWhen === 'always' || (o.silentWhen === 'raw' && raw));
             };
             if (!o.manualGrant) return Promise.resolve(make());
             return new Promise((resolve) => this.pending.push(() => resolve(make())));

@@ -18,6 +18,7 @@ export type AppErrorKind =
   | 'unsupported'
   | 'microphone-unavailable'
   | 'audio-failed'
+  | 'microphone-muted'
   | 'unavailable'
   | 'unsupported-input'
   | 'unsupported-instrument'

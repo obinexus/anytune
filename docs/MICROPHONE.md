@@ -54,6 +54,11 @@ The domain's ±5-cent in-tune window was not widened for the detector.
 
 - **`start()`** first checks what can't work (an insecure page, no `getUserMedia`, no Web Audio) *before* asking for the permission. Then it asks for the microphone. For a tuner, echo cancellation, noise suppression and automatic gain are **preferences, never requirements**: a browser may ignore them, and `mic.info.processing` records what it reports (or `null` where it doesn't say). Next it builds the context and the analyser, resuming a context the browser starts suspended, records the sample rate actually used (`mic.info.sampleRate`), says *listening*, and reads frames.
 - **`stop()`** stops the frames, disconnects the nodes, stops every track, closes the context, removes the `ended` listener, and publishes nothing afterwards.
+- **Digital silence.** A real microphone always has a noise floor, far above −120 dBFS. So two seconds of samples all below that mean the audio is not arriving; a pause between plucks never looks like this.
+  - With raw audio, the provider asks once more with the browser's processing on (`{ audio: true }`), since some laptop microphone arrays give sound only through it. The page then says *…, browser processing on*.
+  - Still silent, the state is `microphone-muted`, and the page says so instead of *Listening*.
+
+  This was found on a real laptop: an AMD microphone array in Firefox was opened and "listened" to while every sample was zero (loudest −154 dBFS).
 - **Start and stop are idempotent.** Rounds of them leak no track, context, node, timer or listener, and a `stop()` while the permission prompt is open releases whatever is granted afterwards. `tests/audio/microphone-provider.test.ts` checks this on a fake browser that counts what it hands out.
 
 ## When it doesn't work
@@ -69,6 +74,7 @@ Every failure is a **state**. `start()` never rejects, and the page says what ha
 | `microphone-unavailable` | `NotReadableError`, `AbortError`, anything else | *The microphone could not be opened — another application may be using it. Close it, then start again.* |
 | `audio-failed` | the AudioContext can't be made or won't resume | *The browser could not start its audio processing. Start again, or reload the page.* |
 | `disconnected` | the track ends: unplugged, or the permission revoked | *The input was disconnected. Start again to tune.* |
+| `microphone-muted` | two seconds of **digital silence** (every sample below −120 dBFS), with raw audio *and* with the browser's processing | *The microphone is sending no sound at all — it may be muted. Check the microphone mute key, and your system’s microphone privacy settings (on Windows: Settings → Privacy & security → Microphone → “Let desktop apps access your microphone”). Then start again.* |
 | no signal | silence | *No signal* |
 | low confidence | a noisy room | *Signal uncertain* |
 

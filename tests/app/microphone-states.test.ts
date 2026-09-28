@@ -26,7 +26,7 @@ function session(options: FakeBrowserOptions) {
 }
 
 test('the input failures are one list, the domain’s: permission, device, disconnection — and what a microphone adds: an insecure page, an unsupported browser, a microphone that cannot be opened, audio that cannot start', () => {
-  assert.deepEqual([...SOURCE_FAILURES], ['permission-denied', 'no-device', 'disconnected', 'insecure-context', 'unsupported', 'microphone-unavailable', 'audio-failed']);
+  assert.deepEqual([...SOURCE_FAILURES], ['permission-denied', 'no-device', 'disconnected', 'insecure-context', 'unsupported', 'microphone-unavailable', 'audio-failed', 'microphone-muted']);
 });
 
 test('each failure is an error of the session, said in words — the browser’s own exception text never reaches the page', async () => {

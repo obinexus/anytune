@@ -35,7 +35,7 @@ export interface MediaStreamLike {
   getTracks(): readonly MicrophoneTrackLike[];
 }
 export interface MediaDevicesLike {
-  getUserMedia(constraints: typeof MICROPHONE_CONSTRAINTS): Promise<MediaStreamLike>;
+  getUserMedia(constraints: MicrophoneConstraints): Promise<MediaStreamLike>;
 }
 export interface AnalyserLike {
   fftSize: number;
@@ -67,6 +67,19 @@ export const MICROPHONE_CONSTRAINTS = Object.freeze({
   video: false,
 } as const);
 
+/** What is asked of the browser when the raw audio is digitally silent: audio with the browser's own processing, which some laptop arrays need to give sound. */
+export const PROCESSED_MICROPHONE_CONSTRAINTS = Object.freeze({ audio: true, video: false } as const);
+
+export type MicrophoneConstraints = typeof MICROPHONE_CONSTRAINTS | typeof PROCESSED_MICROPHONE_CONSTRAINTS;
+
+/**
+ * How long a microphone may send digital silence before it is taken to send nothing: a real microphone always has a noise floor, far above
+ * DIGITAL_SILENCE_PEAK, so this is never a pause between plucks — it is a microphone muted, blocked, or silent in raw mode.
+ */
+export const DIGITAL_SILENCE_MS = 2000;
+/** A frame none of whose samples reaches this magnitude — −120 dBFS — is digital silence. */
+const DIGITAL_SILENCE_PEAK = 1e-6;
+
 /** How often a frame is read and its pitch detected. */
 export const FRAME_INTERVAL_MS = 50;
 
@@ -86,6 +99,8 @@ export interface MicrophoneInfo {
   readonly device: string | null;
   /** what the browser says it does to the audio; null where it does not say */
   readonly processing: { readonly echoCancellation: boolean | null; readonly noiseSuppression: boolean | null; readonly autoGainControl: boolean | null };
+  /** raw, as asked first; processed, when the raw audio was digitally silent and the browser's processing was asked for instead */
+  readonly mode: 'raw' | 'processed';
 }
 
 interface Running {
@@ -95,8 +110,11 @@ interface Running {
   readonly tracks: readonly MicrophoneTrackLike[];
   readonly onEnded: () => void;
   readonly frame: Float32Array;
+  readonly mode: 'raw' | 'processed';
   cancelTimer: (() => void) | null;
   heard: boolean;
+  /** when the digital silence began, or null while there is sound */
+  silentSince: number | null;
 }
 
 const flag = (value: unknown): boolean | null => (typeof value === 'boolean' ? value : null);
@@ -157,17 +175,29 @@ export class MicrophonePitchProvider implements PitchProvider {
     // what cannot work is said before the permission is asked for
     if (!secureContext) return this.#become('insecure-context');
     if (mediaDevices === undefined || createAudioContext === undefined) return this.#become('unsupported');
+    const acquired = await this.#acquire('raw', generation, mediaDevices, createAudioContext);
+    if (acquired === 'abandoned') return;
+    if (typeof acquired === 'string') return this.#become(acquired);
+    this.#running = acquired;
+    this.#become('listening');
+    this.#schedule();
+  }
+
+  /**
+   * Open the microphone and build the analyser on it — raw, or with the browser's processing — or say why not: a state, or `abandoned` when a stop came
+   * meanwhile (and then whatever was given is given back).
+   */
+  async #acquire(mode: 'raw' | 'processed', generation: number, mediaDevices: MediaDevicesLike, createAudioContext: () => AudioContextLike): Promise<Running | SourceState | 'abandoned'> {
     let stream: MediaStreamLike;
     try {
-      stream = await mediaDevices.getUserMedia(MICROPHONE_CONSTRAINTS);
+      stream = await mediaDevices.getUserMedia(mode === 'raw' ? MICROPHONE_CONSTRAINTS : PROCESSED_MICROPHONE_CONSTRAINTS);
     } catch (error) {
-      if (generation === this.#generation) this.#become(stateOfRefusal(error));
-      return;
+      return generation === this.#generation ? stateOfRefusal(error) : 'abandoned';
     }
     const tracks = stream.getTracks();
     if (generation !== this.#generation) {
       for (const track of tracks) track.stop();
-      return;
+      return 'abandoned';
     }
     let context: AudioContextLike | null = null;
     let source: SourceNodeLike | null = null;
@@ -184,15 +214,14 @@ export class MicrophonePitchProvider implements PitchProvider {
       analyser?.disconnect();
       for (const track of tracks) track.stop();
       await context?.close().catch(() => undefined);
-      if (generation === this.#generation) this.#become('audio-failed');
-      return;
+      return generation === this.#generation ? 'audio-failed' : 'abandoned';
     }
     if (generation !== this.#generation) {
       source.disconnect();
       analyser.disconnect();
       for (const track of tracks) track.stop();
       await context.close().catch(() => undefined);
-      return;
+      return 'abandoned';
     }
     const onEnded = (): void => {
       void this.#release().then(() => this.#become('disconnected'));
@@ -203,9 +232,25 @@ export class MicrophonePitchProvider implements PitchProvider {
       sampleRate: context.sampleRate,
       device: stream.getAudioTracks()[0]?.label || null,
       processing: { echoCancellation: flag(settings['echoCancellation']), noiseSuppression: flag(settings['noiseSuppression']), autoGainControl: flag(settings['autoGainControl']) },
+      mode,
     };
-    this.#running = { context, source, analyser, tracks, onEnded, frame: new Float32Array(DETECTOR_FRAME_SIZE), cancelTimer: null, heard: false };
-    this.#become('listening');
+    return { context, source, analyser, tracks, onEnded, frame: new Float32Array(DETECTOR_FRAME_SIZE), mode, cancelTimer: null, heard: false, silentSince: null };
+  }
+
+  /**
+   * Two seconds of digital silence: the audio is not arriving. Raw, it is asked for once more with the browser's processing on — some laptop microphone
+   * arrays give sound only through it; processed and still silent, the microphone is muted (or blocked), and that is said — never "listening".
+   */
+  async #silent(running: Running): Promise<void> {
+    const generation = this.#generation;
+    await this.#release();
+    if (generation !== this.#generation) return;
+    const { mediaDevices, createAudioContext } = this.#environment;
+    if (running.mode === 'processed' || mediaDevices === undefined || createAudioContext === undefined) return this.#become('microphone-muted');
+    const acquired = await this.#acquire('processed', generation, mediaDevices, createAudioContext);
+    if (acquired === 'abandoned') return;
+    if (typeof acquired === 'string') return this.#become(acquired);
+    this.#running = acquired;
     this.#schedule();
   }
 
@@ -223,8 +268,16 @@ export class MicrophonePitchProvider implements PitchProvider {
     running.cancelTimer = this.#clock.setTimeout(() => {
       if (this.#running !== running) return;
       running.analyser.getFloatTimeDomainData(running.frame);
-      const found = this.#detector.detect(running.frame, running.context.sampleRate);
       const timestampMs = this.#clock.now();
+      let peak = 0;
+      for (const sample of running.frame) peak = Math.max(peak, Math.abs(sample));
+      if (peak > DIGITAL_SILENCE_PEAK) running.silentSince = null;
+      else if (running.silentSince === null) running.silentSince = timestampMs;
+      else if (timestampMs - running.silentSince >= DIGITAL_SILENCE_MS) {
+        void this.#silent(running);
+        return;
+      }
+      const found = this.#detector.detect(running.frame, running.context.sampleRate);
       if (found !== null) {
         running.heard = true;
         this.#events.emit({

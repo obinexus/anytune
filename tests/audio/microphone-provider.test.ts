@@ -128,7 +128,7 @@ test('a context the browser starts suspended is resumed; what is recorded of the
   assert.equal(mic.info, null, 'nothing is known before start');
   await mic.start();
   assert.equal(browser.contexts[0]?.resumed, 1);
-  assert.deepEqual(mic.info, { sampleRate: 44100, device: 'Fake microphone', processing: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
+  assert.deepEqual(mic.info, { sampleRate: 44100, device: 'Fake microphone', processing: { echoCancellation: false, noiseSuppression: false, autoGainControl: false }, mode: 'raw' });
   await mic.stop();
 });
 

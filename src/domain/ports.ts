@@ -48,10 +48,11 @@ export type SourceState =
   | 'insecure-context'
   | 'unsupported'
   | 'microphone-unavailable'
-  | 'audio-failed';
+  | 'audio-failed'
+  | 'microphone-muted';
 
 /** The states of a source that are failures: the fusion and the session read them from here, and from nowhere else. */
-export const SOURCE_FAILURES: readonly SourceState[] = Object.freeze(['permission-denied', 'no-device', 'disconnected', 'insecure-context', 'unsupported', 'microphone-unavailable', 'audio-failed']);
+export const SOURCE_FAILURES: readonly SourceState[] = Object.freeze(['permission-denied', 'no-device', 'disconnected', 'insecure-context', 'unsupported', 'microphone-unavailable', 'audio-failed', 'microphone-muted']);
 
 export type ProviderEvent =
   | { readonly kind: 'observation'; readonly observation: PitchObservation }
