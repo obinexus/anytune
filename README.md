@@ -8,15 +8,26 @@ Press **Start** once, then play. The note, its frequency, how many cents flat or
 >
 > | | |
 > |---|---|
-> | UI runtime | the official Vue runtime (the default); OBIX's native runtime from the same files (`npm run dev:native`, Phase 6 — awaiting review) |
+> | UI runtime | the official Vue runtime (the default); OBIX's experimental native runtime from the same files (`npm run dev:native`), under final validation |
 > | Authoring | Vue-flavoured `.obix` |
 > | Semantic proof | the OBIX DOP IR (`obix-dop-ir/3`) |
-> | OBIX native runtime | implemented (Phase 6), not the default |
+> | OBIX native runtime | experimental — implemented, not the default |
 > | OBIX hybrid runtime | not implemented |
 
-AnyTune is currently authored as Vue-flavoured OBIX. The Phase-5 demonstration executes the UI with the official Vue runtime through a development-time compatibility alias, while the same .obix components are independently lowered through the OBIX compiler to canonical obix-dop-ir/2. OBIX native and hybrid runtime backends are not implemented yet.
+AnyTune is authored as Vue-flavoured OBIX. The OBIX canonical IR is **`obix-dop-ir/3`**: the same nine `.obix` components are lowered to it by the OBIX compiler.
 
-> **Update, Phase 6 (2026-09-28; awaiting the owner's review — the paragraph above is the owner's, and is kept as written until the owner rewords it):** the IR is now `obix-dop-ir/3`, and OBIX has a **native runtime** (`@obinexusltd/obix-runtime-*`): `npm run dev:native` runs the same nine `.obix` components, lowered to that IR, with no Vue at all. The Vue runtime stays the default (`npm run dev`). The hybrid runtime is still not implemented.
+OBIX now has an **experimental native browser runtime**, made of four packages:
+
+- `@obinexusltd/obix-runtime-reactivity`
+- `@obinexusltd/obix-runtime-dom`
+- `@obinexusltd/obix-runtime-component`
+- `@obinexusltd/obix-runtime-browser`
+
+It runs the canonical IR directly (`npm run dev:native`). The native execution path does **not** depend on Vue runtime packages: no `vue`, `@vue/runtime-core` or `@vue/runtime-dom` is in the native bundle or resolvable from the native install.
+
+**Vue remains AnyTune's default runtime** (`npm run dev`) while the native runtime is under final validation.
+
+Two different dependencies on Vue are not to be confused: the OBIX **Vue syntax frontend** still uses Vue **compiler** packages (`@vue/compiler-sfc`, `-core`, `-dom`) at build and compile time, to read Vue-flavoured `.obix`; the native path has **no Vue runtime** dependency. The hybrid runtime is not implemented.
 
 ## How to run AnyTune
 
@@ -86,7 +97,7 @@ Until those packages are published under their scope, a clone of AnyTune alone c
 | Inverse-variance fusion | **tested against Obicall**: equal to the native `obicall_static_fuse_1d`, bit for bit, on 2 050 cases |
 | Native Obicall pitch transport | **not implemented**: Obicall has no frequency unit (`docs/OBICALL.md`) |
 | Microphone pitch detection | **implemented**: `MicrophonePitchProvider` with a YIN detector (`docs/MICROPHONE.md`), tested on generated signals through a fake browser. **Physical guitar: performed in Edge** (AMD microphone array, 48 kHz; D string read 145.1 Hz, 20 cents flat). **Firefox on that machine: not validated**, since the microphone delivered digital silence, now detected and said |
-| OBIX native runtime | **implemented (Phase 6), awaiting review; not the default**: the same 9 `.obix` files, lowered to `obix-dop-ir/3` (`Component.obix?ir`), run by `@obinexusltd/obix-runtime-browser` with no Vue in the bundle (audited from the bundler's module graph). The hands-free, microphone (fake browser) and accessibility suites run on both runtimes, and the two pages are compared after every step (`tests/native/`). **Physical microphone on the native runtime: not performed** |
+| OBIX native runtime | **experimental — implemented (Phase 6, accepted by the owner); not the default, under final validation**: the same 9 `.obix` files, lowered to `obix-dop-ir/3` (`Component.obix?ir`), run by `@obinexusltd/obix-runtime-browser` with no Vue in the bundle (audited from the bundler's module graph). The hands-free, microphone (fake browser) and accessibility suites run on both runtimes, and the two pages are compared after every step (`tests/native/`). **Physical microphone on the native runtime: not performed** |
 | OBIX hybrid runtime | **not implemented** |
 
 ## How it is built
