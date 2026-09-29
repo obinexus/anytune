@@ -167,14 +167,55 @@ The same microphone path runs on OBIX's native runtime (`npm run dev:native`): t
 
 ### The manual native acceptance test (Phase 6.1) — NOT YET PERFORMED
 
-Only the owner can perform it, and nothing claims it until they have. It is the procedure above, on the native runtime:
+```
+PHYSICAL_NATIVE_MICROPHONE_VALIDATION = NOT_PERFORMED
+```
 
-1. `cd D:\Projects\anytune`, then **`npm run dev:native`** (not `npm run dev`). The page is the same page; it runs on OBIX's native runtime, with no Vue in it.
-2. Open the address it prints in **Microsoft Edge**.
-3. Instrument: **Standard Guitar**. Input: **Microphone**. Press **Start tuning** and allow the microphone.
-4. Pluck at least **one real open string** and check that the note, the frequency and the cents are plausible for it; if possible, all six (E2 ≈ 82.41 Hz, A2 = 110.00 Hz, D3 ≈ 146.83 Hz,
-   G3 = 196.00 Hz, B3 ≈ 246.94 Hz, E4 ≈ 329.63 Hz), turning the peg to see *Flat* / *In tune* / *Sharp* and *Holding steady* follow it with no other press.
-5. Record per string: the note named, the frequency shown, the cents, the status, and anything wrong. Then **Stop**; the microphone indicator should go out.
-6. To tell the two runtimes apart on the page: on the native page, Edge's developer tools list no `vue` module among the page's scripts.
+This is the one Phase 6.1 acceptance item still open. Only the owner can perform it, and nothing claims it until they have: the automated checks (generated signals through the fake
+browser, the recorded demo on `dev:native` reaching A2 in tune) are **not** a physical microphone result and are never counted as one.
 
-Until the owner reports the result, the native runtime's physical microphone validation stays **not performed**.
+**The command** (from the AnyTune folder):
+
+```
+cd D:\Projects\anytune
+npm run dev:native
+```
+
+`npm run dev:native` — not `npm run dev`, which is the Vue runtime, the default. Vite prints the local address (`http://localhost:<port>/`; the port is whichever is free).
+
+**The procedure:**
+
+1. Open the printed `localhost` address in **Microsoft Edge** (localhost counts as a secure page, so the microphone is allowed).
+2. Instrument: **Standard Guitar**. Input: **Microphone**. Press **Start tuning** and allow the microphone when Edge asks.
+3. Pluck at least **one real open string** of the guitar; if possible, all six (targets: E2 ≈ 82.41 Hz, A2 = 110.00 Hz, D3 ≈ 146.83 Hz, G3 = 196.00 Hz, B3 ≈ 246.94 Hz,
+   E4 ≈ 329.63 Hz), turning the peg to see *Flat* / *In tune* / *Sharp* and *Holding steady* follow it with no other press.
+4. Press **Stop**; Edge's microphone indicator should go out.
+
+**What to record, per string:**
+
+| Field | Where it is read |
+|---|---|
+| browser | Edge's version (`edge://version`) |
+| instrument | the Instrument select — must be *Standard Guitar* |
+| input | the Input select — must be *Microphone* |
+| detected frequency | the frequency under the note (e.g. `145.1 Hz`) |
+| target frequency | the string's target above, for the note AnyTune named |
+| cents | the cents line (e.g. `20.2 cents` flat) |
+| tuning state | *Flat* / *In tune* / *Sharp*, and whether *Holding steady* appeared |
+| microphone status | the listening line (*Listening*), and the Details line `Input: Microphone — <device name>` |
+| runtime = native | the command was `npm run dev:native`, and Edge's developer tools (Sources, or Network filtered to JS) list the `obix-runtime-*` modules and **no `vue` module** |
+
+**The acceptance criteria.** The result is a pass only if all of these hold:
+
+- the input is the **microphone**: the Details line reads `Input: Microphone — <device name>` and the listening line reads *Listening* — never `Input: Recorded — …` or
+  `Input: Simulated — …`, and never *Recording ended*;
+- the reading **follows the string**: plucking a different string, or turning the peg, changes the note, frequency and cents; the frequency is plausible for the string plucked
+  (the note named is the string's note, within the tuner's range of cents);
+- it is **distinguishable from the recorded demo**: the demo input replays a fixed script — A2 at 108, 109, 110, 110 Hz, ending on exactly `110.0 Hz`, `0.0 cents`, *Recording
+  ended* — and cannot change when a string is plucked; a physical reading does;
+- the runtime is **native**: `npm run dev:native`, no `vue` module on the page;
+- **Stop** releases the microphone.
+
+A failure (no reading, a wrong note, an error message) is recorded as it is seen, with the words the page shows, and is not a pass.
+
+Until the owner reports the result, this stays `PHYSICAL_NATIVE_MICROPHONE_VALIDATION = NOT_PERFORMED`. The one physical reading so far (above) was on the **Vue** runtime.
