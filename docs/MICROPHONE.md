@@ -164,3 +164,17 @@ A comparison against another tuner (a clip-on, or a phone app) on the same strin
 ## On OBIX's native runtime (Phase 6)
 
 The same microphone path runs on OBIX's native runtime (`npm run dev:native`): the provider, the session and the page are the same, only the runtime that draws the page differs. It is tested on generated signals through the fake browser, on both runtimes, and the two pages are compared (`tests/integration/microphone.test.ts`, `tests/native/vue-vs-native.test.ts`); in the in-app browser, which blocks the microphone, the native page shows the permission alert. **A physical instrument through the microphone on the native runtime has not been tried**: the physical reading above was on the Vue runtime.
+
+### The manual native acceptance test (Phase 6.1) — NOT YET PERFORMED
+
+Only the owner can perform it, and nothing claims it until they have. It is the procedure above, on the native runtime:
+
+1. `cd D:\Projects\anytune`, then **`npm run dev:native`** (not `npm run dev`). The page is the same page; it runs on OBIX's native runtime, with no Vue in it.
+2. Open the address it prints in **Microsoft Edge**.
+3. Instrument: **Standard Guitar**. Input: **Microphone**. Press **Start tuning** and allow the microphone.
+4. Pluck at least **one real open string** and check that the note, the frequency and the cents are plausible for it; if possible, all six (E2 ≈ 82.41 Hz, A2 = 110.00 Hz, D3 ≈ 146.83 Hz,
+   G3 = 196.00 Hz, B3 ≈ 246.94 Hz, E4 ≈ 329.63 Hz), turning the peg to see *Flat* / *In tune* / *Sharp* and *Holding steady* follow it with no other press.
+5. Record per string: the note named, the frequency shown, the cents, the status, and anything wrong. Then **Stop**; the microphone indicator should go out.
+6. To tell the two runtimes apart on the page: on the native page, Edge's developer tools list no `vue` module among the page's scripts.
+
+Until the owner reports the result, the native runtime's physical microphone validation stays **not performed**.
