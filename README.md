@@ -18,10 +18,10 @@ AnyTune is authored as Vue-flavoured OBIX. The OBIX canonical IR is **`obix-dop-
 
 OBIX now has an **experimental native browser runtime**, made of four packages:
 
-- `@obinexusltd/obix-runtime-reactivity`
-- `@obinexusltd/obix-runtime-dom`
-- `@obinexusltd/obix-runtime-component`
-- `@obinexusltd/obix-runtime-browser`
+- `obix-runtime-reactivity`
+- `obix-runtime-dom`
+- `obix-runtime-component`
+- `obix-runtime-browser`
 
 It runs the canonical IR directly (`npm run dev:native`). The native execution path does **not** depend on Vue runtime packages: no `vue`, `@vue/runtime-core` or `@vue/runtime-dom` is in the native bundle or resolvable from the native install.
 
@@ -73,7 +73,7 @@ npm run trace      # the OBIX DOP IR of every component, into dist/obix-ir
 
 ### Prerequisite: the OBIX compiler
 
-AnyTune's `package.json` links `@obinexusltd/obix-compiler-*` as `file:../obix-recovery/compiler/…`. Check out the OBIX monorepo as `obix-recovery` next to `anytune`, on the branch `recovery/obix-api-preserving-rebuild` or later, and build it once:
+AnyTune's `package.json` links `obix-compiler-*` and `obix-runtime-*` as `file:../obix-recovery/compiler/…` and `file:../obix-recovery/runtime/…` (OBIX packages carry no npm scope since D-102; previous names `@obinexusltd/obix-*`). Check out the OBIX monorepo as `obix-recovery` next to `anytune`, on the branch `recovery/obix-api-preserving-rebuild` or later, and build it once:
 
 ```bash
 cd ../obix-recovery
@@ -97,7 +97,7 @@ Until those packages are published under their scope, a clone of AnyTune alone c
 | Inverse-variance fusion | **tested against Obicall**: equal to the native `obicall_static_fuse_1d`, bit for bit, on 2 050 cases |
 | Native Obicall pitch transport | **not implemented**: Obicall has no frequency unit (`docs/OBICALL.md`) |
 | Microphone pitch detection | **implemented**: `MicrophonePitchProvider` with a YIN detector (`docs/MICROPHONE.md`), tested on generated signals through a fake browser. **Physical guitar: performed in Edge** (AMD microphone array, 48 kHz; D string read 145.1 Hz, 20 cents flat). **Firefox on that machine: not validated**, since the microphone delivered digital silence, now detected and said |
-| OBIX native runtime | **experimental — implemented (Phase 6, accepted by the owner); not the default, under final validation**: the same 9 `.obix` files, lowered to `obix-dop-ir/3` (`Component.obix?ir`), run by `@obinexusltd/obix-runtime-browser` with no Vue in the bundle (audited from the bundler's module graph). The hands-free, microphone (fake browser) and accessibility suites run on both runtimes, and the two pages are compared after every step (`tests/native/`). **Physical microphone on the native runtime: not performed** |
+| OBIX native runtime | **experimental — implemented (Phase 6, accepted by the owner); not the default, under final validation**: the same 9 `.obix` files, lowered to `obix-dop-ir/3` (`Component.obix?ir`), run by `obix-runtime-browser` with no Vue in the bundle (audited from the bundler's module graph). The hands-free, microphone (fake browser) and accessibility suites run on both runtimes, and the two pages are compared after every step (`tests/native/`). **Physical microphone on the native runtime: not performed** |
 | OBIX hybrid runtime | **not implemented** |
 
 ## How it is built

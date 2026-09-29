@@ -5,12 +5,12 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import { lowerVueToDop } from '@obinexusltd/obix-compiler-dop';
-import { serializeIr, serializeIrProvenance } from '@obinexusltd/obix-compiler-ir';
+import { lowerVueToDop } from 'obix-compiler-dop';
+import { serializeIr, serializeIrProvenance } from 'obix-compiler-ir';
 import { componentFiles, normalize, sha256, stagesOf } from './compile.ts';
 
 export const TRACE_SCHEMA = 'anytune-obix-trace/1';
-const PIPELINE = ['@obinexusltd/obix-compiler-parser', '@obinexusltd/obix-compiler-script-setup', '@obinexusltd/obix-compiler-template', '@obinexusltd/obix-compiler-dop', '@obinexusltd/obix-compiler-ir'] as const;
+const PIPELINE = ['obix-compiler-parser', 'obix-compiler-script-setup', 'obix-compiler-template', 'obix-compiler-dop', 'obix-compiler-ir'] as const;
 
 export interface TraceEntry {
   readonly schema: typeof TRACE_SCHEMA;

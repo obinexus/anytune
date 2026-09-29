@@ -130,11 +130,11 @@ test('Phase 6: an .obix component may be imported as its IR (`?ir`), a query the
 
 test('Phase 6: the native harness may import OBIX\'s native runtime and never Vue — the one harness file that runs the UI without it', () => {
   const files = [
-    file('src/harness/mount-native.ts', "import { createObixApp } from '@obinexusltd/obix-runtime-browser';\nimport { h } from 'vue';\nexport const x = [createObixApp, h];"),
-    file('src/harness/mount.ts', "import { createObixApp } from '@obinexusltd/obix-runtime-browser';\nexport const y = createObixApp;"),
+    file('src/harness/mount-native.ts', "import { createObixApp } from 'obix-runtime-browser';\nimport { h } from 'vue';\nexport const x = [createObixApp, h];"),
+    file('src/harness/mount.ts', "import { createObixApp } from 'obix-runtime-browser';\nexport const y = createObixApp;"),
   ];
   assert.deepEqual(check(files, rules).map((v) => `${v.kind} ${v.file} ${v.detail}`), [
     'module src/harness/mount-native.ts native-harness may not import the module "vue"',
-    'module src/harness/mount.ts harness may not import the module "@obinexusltd/obix-runtime-browser"',
+    'module src/harness/mount.ts harness may not import the module "obix-runtime-browser"',
   ]);
 });

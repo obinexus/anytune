@@ -136,7 +136,7 @@
         "harness"
       ],
       "modules": [
-        "@obinexusltd/obix-runtime-browser"
+        "obix-runtime-browser"
       ],
       "forbiddenGlobals": [],
       "why": "Phase 6: mounts the same .obix UI — lowered to canonical DOP IR — on OBIX's native runtime; it may import that runtime and never Vue (it reaches the harness only for its shared types, mount-types.ts)"

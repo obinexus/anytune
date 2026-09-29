@@ -6,8 +6,8 @@ declare module '*.obix' {
 
 // An .obix component lowered to canonical DOP IR, for OBIX's native runtime (tools/obix/ir-module.ts): plain data, and what it invokes by specifier.
 declare module '*.obix?ir' {
-  const ir: import('@obinexusltd/obix-runtime-browser').ObixIrComponent;
+  const ir: import('obix-runtime-browser').ObixIrComponent;
   export default ir;
-  export const registry: Readonly<Record<string, import('@obinexusltd/obix-runtime-browser').ObixIrComponent>>;
+  export const registry: Readonly<Record<string, import('obix-runtime-browser').ObixIrComponent>>;
   export const sourceSha256: string;
 }

@@ -9,12 +9,12 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
-import { parseObix } from '@obinexusltd/obix-compiler-parser';
-import { toObixSfc } from '@obinexusltd/obix-compiler-sfc';
-import { compileObixScript } from '@obinexusltd/obix-compiler-script';
-import { compileObixScriptSetup } from '@obinexusltd/obix-compiler-script-setup';
-import { compileObixTemplate } from '@obinexusltd/obix-compiler-template';
-import { transpileObixTypeScript } from '@obinexusltd/obix-compiler-typescript';
+import { parseObix } from 'obix-compiler-parser';
+import { toObixSfc } from 'obix-compiler-sfc';
+import { compileObixScript } from 'obix-compiler-script';
+import { compileObixScriptSetup } from 'obix-compiler-script-setup';
+import { compileObixTemplate } from 'obix-compiler-template';
+import { transpileObixTypeScript } from 'obix-compiler-typescript';
 
 export const normalize = (source: string): string => source.replace(/\r\n/g, '\n');
 export const sha256 = (text: string): string => crypto.createHash('sha256').update(text).digest('hex');

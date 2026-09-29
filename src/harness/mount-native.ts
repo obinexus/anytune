@@ -1,13 +1,13 @@
 /**
  * The demo execution harness on OBIX's NATIVE runtime (Phase 6, N11): the same .obix UI — AnyTuneApp and everything it invokes, lowered to canonical DOP IR from the
- * same files (`?ir`, tools/obix/ir-module.ts) — run by @obinexusltd/obix-runtime-browser, with no Vue anywhere; and the same bridge as the Vue harness (mount.ts):
+ * same files (`?ir`, tools/obix/ir-module.ts) — run by obix-runtime-browser, with no Vue anywhere; and the same bridge as the Vue harness (mount.ts):
  *
  *   session.subscribe(state) → view = toView(state) → the root's inputs → the native runtime updates the DOM in place, once per task
  *
  * The UI's intents come back as the root's outputs — the page's interactions, by channel — and go to the session, and the announcement policy (announcer.ts) decides
  * what the live region says. Nothing here writes markup or attaches listeners by hand; the session knows nothing of any runtime.
  */
-import { createObixApp } from '@obinexusltd/obix-runtime-browser';
+import { createObixApp } from 'obix-runtime-browser';
 import AnyTuneApp, { registry } from '../components/AnyTuneApp.obix?ir';
 import { toView } from '../app/view.ts';
 import type { TunerView } from '../app/view.ts';

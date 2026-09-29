@@ -1,7 +1,7 @@
 /**
  * The native runtime's module of an .obix component (Phase 6, N11): `Component.obix?ir`. The component is LOWERED — the same file, through the same OBIX Vue frontend and
  * `lowerVueToDop` that write the IR trace (trace.ts) — and so is every component it invokes, directly or not; the module's default export is the component's canonical IR
- * (`obix-dop-ir/3`), `registry` holds the IR of every component it reaches by the module specifier its source wrote (what @obinexusltd/obix-runtime-browser links an
+ * (`obix-dop-ir/3`), `registry` holds the IR of every component it reaches by the module specifier its source wrote (what obix-runtime-browser links an
  * application with), and `sourceSha256` is the SHA-256 of its source. No source is rewritten and no framework code is in it: plain data.
  *
  * Refused, with the reason, never a partial module: a component the IR cannot express (its lowering's own diagnostics); two components that name DIFFERENT files by one

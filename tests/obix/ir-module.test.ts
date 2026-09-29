@@ -10,7 +10,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { irEqual } from '@obinexusltd/obix-compiler-ir';
+import { irEqual } from 'obix-compiler-ir';
 import { componentFiles } from '../../tools/obix/compile.ts';
 import { traceComponent } from '../../tools/obix/trace.ts';
 import { irModuleOf } from '../../tools/obix/ir-module.ts';

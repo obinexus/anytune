@@ -10,7 +10,7 @@ import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
-import { checkIr, parseIr } from '@obinexusltd/obix-compiler-ir';
+import { checkIr, parseIr } from 'obix-compiler-ir';
 import { componentFiles, runtimeManifest } from '../../tools/obix/compile.ts';
 import { TRACE_SCHEMA, traceComponent, writeTrace } from '../../tools/obix/trace.ts';
 
@@ -45,7 +45,7 @@ test('a trace entry: the schema, the source path and its SHA-256, the OBIX packa
     assert.equal(t.schema, TRACE_SCHEMA);
     assert.equal(t.source, path.relative(ROOT, file).split(path.sep).join('/'));
     assert.equal(t.sourceSha256, sha(fs.readFileSync(file, 'utf8').replace(/\r\n/g, '\n')));
-    assert.deepEqual(Object.keys(t.pipeline).sort(), ['@obinexusltd/obix-compiler-dop', '@obinexusltd/obix-compiler-ir', '@obinexusltd/obix-compiler-parser', '@obinexusltd/obix-compiler-script-setup', '@obinexusltd/obix-compiler-template']);
+    assert.deepEqual(Object.keys(t.pipeline).sort(), ['obix-compiler-dop', 'obix-compiler-ir', 'obix-compiler-parser', 'obix-compiler-script-setup', 'obix-compiler-template']);
     if (t.status === 'compiled') {
       assert.ok(t.ir !== null && t.provenance !== null);
       assert.deepEqual(checkIr(parseIr(JSON.stringify(t.ir))), []);

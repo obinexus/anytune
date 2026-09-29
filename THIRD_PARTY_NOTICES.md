@@ -16,7 +16,7 @@ The build ships no fonts (the stylesheet uses the system font) and no images. Th
 | Work | Version | Licence | Role |
 |---|---|---|---|
 | Vite | 8.3.1 | MIT | development server and production build |
-| OBIX compiler packages (`@obinexusltd/obix-compiler-*`) | 0.5.0 | MIT, © OBINexus Computing | compile the `.obix` components for the Vue runtime, and lower them to the OBIX DOP IR trace |
+| OBIX compiler packages (`obix-compiler-*`; previous names `@obinexusltd/obix-compiler-*`) | 0.5.0 | MIT, © OBINexus Computing | compile the `.obix` components for the Vue runtime, and lower them to the OBIX DOP IR trace |
 | TypeScript | 6.0.3 | Apache-2.0 | typecheck |
 
 ## Used by the tests only, never shipped

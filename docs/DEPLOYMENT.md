@@ -31,7 +31,7 @@ It needs no server code, no Obicall and no database. Any static host serves it.
 
 For a public repository and a hosted build, one of these is needed, and each needs the owner's authorisation:
 
-- **publish** `@obinexusltd/obix-compiler-*` (scoped; never an unscoped package named `obix`) and depend on the published versions; or
+- **publish** `obix-compiler-*` (and, for the native runtime, `obix-runtime-*`) and depend on the published versions — OBIX packages are named without an npm scope since the owner's decision D-102 of 2026-09-29 (previous names: `@obinexusltd/obix-compiler-*`, `@obinexusltd/obix-runtime-*`); or
 - **check out** the OBIX monorepo in the build (a pinned commit), and build its compiler first.
 
 ## github.com/obinexus/anytune (prepared)
