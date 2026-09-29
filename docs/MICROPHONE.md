@@ -122,7 +122,7 @@ AnyTune now:
 - says which processing mode is active (*…, browser processing on*);
 - shows an explicit failure, *The microphone is sending no sound at all…*, if the audio is still silent.
 
-Whether the processed-audio retry gives sound in Firefox on this machine **has not been observed yet**. Until it has, tune in Edge (or Chrome) on this laptop.
+The processed-audio retry in Firefox on this machine was then observed (2026-09-29, on the native runtime — below, "Attempts"): it is **still digitally silent**, and AnyTune said so. Tune in Edge (or Chrome) on this laptop.
 
 ### Two silences, kept apart
 
@@ -217,5 +217,15 @@ npm run dev:native
 - **Stop** releases the microphone.
 
 A failure (no reading, a wrong note, an error message) is recorded as it is seen, with the words the page shows, and is not a pass.
+
+**Attempts** (each recorded as seen; none is a pass):
+
+| Date | Browser | Runtime | Instrument · input · device | What the page showed | Result |
+|---|---|---|---|---|---|
+| 2026-09-29 | **Firefox** | native (`vite --mode native`, `localhost:5173`) | Standard Guitar · Microphone · *Default - Microphone Array (AMD Audio Device), 48 kHz* | *Listening*, *Input connected*, `— Hz`, *NO SIGNAL*; then the alert *The microphone is sending no sound at all — it may be muted…* | **complete digital silence; no frequency detected; not a pass** |
+
+The Firefox attempt is an observation about Firefox with this microphone array, not a result for the native runtime either way: the same array gave Firefox digital silence on
+the Vue runtime too (above), and the alert is shown only after the retry with the browser's processing was silent as well. The test the checkpoint asks for is in **Microsoft
+Edge**, on the native runtime; it has not been performed.
 
 Until the owner reports the result, this stays `PHYSICAL_NATIVE_MICROPHONE_VALIDATION = NOT_PERFORMED`. The one physical reading so far (above) was on the **Vue** runtime.
