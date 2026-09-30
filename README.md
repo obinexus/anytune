@@ -31,10 +31,10 @@ Two different dependencies on Vue are not to be confused: the OBIX **Vue syntax 
 
 ## How to run AnyTune
 
-You need **Node ≥ 26**. Today you also need the **OBIX monorepo checked out beside AnyTune**, with its compiler built, because AnyTune links the OBIX compiler packages from `../obix-recovery` (see *Prerequisite* below).
+You need **Node ≥ 26**. The OBIX compiler and runtime packages come from npm (see *The OBIX packages* below), so a clone installs on its own.
 
 ```bash
-git clone <eventual repo> anytune
+git clone https://github.com/obinexus/anytune.git
 cd anytune
 npm ci
 npm run dev
@@ -42,7 +42,7 @@ npm run dev
 
 Open the address Vite prints (`http://localhost:5173/`) in Edge, Chrome or Firefox.
 
-**The same UI on OBIX's native runtime** (no Vue in the page): `npm run dev:native` (build: `npm run build:native`, into `dist/app-native`; serve the build: `npm run preview:native`). `npm run dev:vue` is the default made explicit. The native path needs the OBIX runtime packages built in `../obix-recovery` as well.
+**The same UI on OBIX's native runtime** (no Vue in the page): `npm run dev:native` (build: `npm run build:native`, into `dist/app-native`; serve the build: `npm run preview:native`). `npm run dev:vue` is the default made explicit. The native runtime packages (`obix-runtime-*`) come from npm too.
 
 **To tune your guitar**, choose Instrument: **Standard Guitar** and Input: **Microphone**, then press **Start tuning** and allow the microphone. Pluck one open string at a time: the note, its frequency, the cents flat or sharp, and *Flat* / *In tune* / *Sharp* follow the peg as you turn it. **Details** shows the confidence. The full procedure is in `docs/MICROPHONE.md`.
 
@@ -71,17 +71,11 @@ npm run typecheck
 npm run trace      # the OBIX DOP IR of every component, into dist/obix-ir
 ```
 
-### Prerequisite: the OBIX compiler
+### The OBIX packages
 
-AnyTune's `package.json` links `obix-compiler-*` and `obix-runtime-*` as `file:../obix-recovery/compiler/…` and `file:../obix-recovery/runtime/…` (OBIX packages carry no npm scope since D-102; previous names `@obinexusltd/obix-*`). Check out the OBIX monorepo as `obix-recovery` next to `anytune`, on the branch `recovery/obix-api-preserving-rebuild` or later, and build it once:
+AnyTune depends on the published OBIX packages, pinned to exactly `0.5.0`: nine `obix-compiler-*` packages (used at build and compile time) and four `obix-runtime-*` packages (the native runtime). `npm ci` installs them from registry.npmjs.org; no OBIX checkout is needed. OBIX packages carry no npm scope since D-102 (previous names `@obinexusltd/obix-*`). The published 0.5.0 packages build AnyTune byte-for-byte the same as the OBIX monorepo they were packed from.
 
-```bash
-cd ../obix-recovery
-npm ci
-npm run build
-```
-
-Until those packages are published under their scope, a clone of AnyTune alone can't install. The demo itself never needs Obicall, a DLL or a microphone.
+To try unreleased OBIX changes, point those dependencies at a local checkout of the OBIX monorepo (`file:../obix-recovery/compiler/…`, `file:../obix-recovery/runtime/…`), which is how AnyTune was developed before the packages were published. The demo itself never needs Obicall, a DLL or a microphone.
 
 ## What is real, and what isn't yet
 

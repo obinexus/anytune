@@ -1,6 +1,6 @@
 # Deployment: prepared, not done
 
-AnyTune isn't deployed, and its repository isn't published. This document prepares both for the owner's separate authorisation. **None of the steps below has been taken.**
+AnyTune isn't deployed. Its source is public at **github.com/obinexus/anytune** (since 2026-09-30). This document prepares the deployment for the owner's separate authorisation. **None of the hosting, DNS or header steps below has been taken.**
 
 ## What would be deployed
 
@@ -15,7 +15,7 @@ It needs no server code, no Obicall and no database. Any static host serves it.
 
 ## anytune.obinexus.org (proposed)
 
-1. **Hosting.** A static host serving `dist/app` from the repository's default branch, built with Node ≥ 26 and `npm ci && npm run build`. Examples: GitHub Pages with an Actions workflow, Cloudflare Pages, or Netlify. The build needs the OBIX compiler packages (see *Prerequisite* below).
+1. **Hosting.** A static host serving `dist/app` from the repository's default branch, built with Node ≥ 26 and `npm ci && npm run build`. Examples: GitHub Pages with an Actions workflow, Cloudflare Pages, or Netlify. The OBIX packages come from npm (see *The OBIX packages* below).
 2. **DNS.** A `CNAME` record `anytune.obinexus.org` → the host's target, added by whoever administers `obinexus.org`.
 3. **HTTPS.** Required: the future microphone input needs a secure context (`getUserMedia`). All the hosts above issue certificates.
 4. **Headers** (suggested):
@@ -25,15 +25,10 @@ It needs no server code, no Obicall and no database. Any static host serves it.
    - `Cache-Control: public, max-age=31536000, immutable` for `/assets/*`, and `no-cache` for `index.html`
 5. **Privacy.** The demo sends nothing anywhere: no analytics, no requests beyond its own files. A microphone provider, when it exists, must keep audio on the device.
 
-## Prerequisite: the OBIX compiler packages
+## The OBIX packages
 
-`package.json` links the OBIX compiler as `file:../obix-recovery/compiler/…`. A build therefore needs the OBIX monorepo checked out beside AnyTune, with its compiler built (`npm ci && npm run build` there).
+AnyTune depends on the published OBIX packages at exactly `0.5.0` — `obix-compiler-*` at build time, `obix-runtime-*` for the native runtime — installed from registry.npmjs.org by `npm ci` (OBIX packages carry no npm scope since the owner's decision D-102 of 2026-09-29; previous names `@obinexusltd/obix-compiler-*`, `@obinexusltd/obix-runtime-*`). A hosted build needs no OBIX checkout. Switching from the earlier `file:../obix-recovery/…` links changed no build output: `dist/app`, `dist/app-native` and `dist/obix-ir` are byte-identical either way.
 
-For a public repository and a hosted build, one of these is needed, and each needs the owner's authorisation:
+## github.com/obinexus/anytune
 
-- **publish** `obix-compiler-*` (and, for the native runtime, `obix-runtime-*`) and depend on the published versions — OBIX packages are named without an npm scope since the owner's decision D-102 of 2026-09-29 (previous names: `@obinexusltd/obix-compiler-*`, `@obinexusltd/obix-runtime-*`); or
-- **check out** the OBIX monorepo in the build (a pinned commit), and build its compiler first.
-
-## github.com/obinexus/anytune (prepared)
-
-The repository is ready to be pushed as it is: MIT `LICENSE`, `THIRD_PARTY_NOTICES.md`, `README.md`, `CONTRIBUTING.md`, the docs, and a history of one commit per step. It has **no remote**. Creating the GitHub repository and pushing are left to the owner.
+Public since 2026-09-30: MIT `LICENSE`, `THIRD_PARTY_NOTICES.md`, `README.md`, `CONTRIBUTING.md`, the docs, and a history of one commit per step, pushed as it is (branch `main`).
