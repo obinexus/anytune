@@ -25,7 +25,7 @@ for (const runtime of RUNTIMES) {
     assert.equal(ui.text('button.primary'), 'Practise Für Elise (opening)');
     assert.equal(ui.$$('nav').length, 1);
     const current = (): string[] => ui.$$('.nav-item').filter((b) => b.getAttribute('aria-current') === 'page').map((b) => (b.textContent ?? '').trim());
-    assert.deepEqual(ui.texts('.nav-item'), ['Home', 'Library', 'Tune', 'Practise', 'Progress']);
+    assert.deepEqual(ui.texts('.nav-item'), ['Home', 'Library', 'Tune', 'Practise', 'Play', 'Progress']);
     assert.deepEqual(current(), ['Home']);
     await ui.click(ui.button('Library'));
     assert.equal(ui.text('main h1'), 'Library');

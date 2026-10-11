@@ -9,10 +9,10 @@
  */
 import type { LiveEvent } from '../analysis/live.ts';
 import { noteOf } from '../domain/pitch.ts';
-import { DEFAULT_POLICY, assessNotes, unassessedWhereUnheard, type ExpectedNote, type HeardNote, type NoteResult } from '../lesson/assessment.ts';
+import { DEFAULT_POLICY, assessNotes, unassessedWhereUnheard, type HeardNote, type NoteResult } from '../lesson/assessment.ts';
 import { feedbackOf, type Feedback } from '../lesson/feedback.ts';
-import { LessonClock, StepPractice, barOfTick, melodyTargets, targetsIn } from '../lesson/practice.ts';
-import { fingerMelody, type SuggestedPosition } from '../music/guitar.ts';
+import { LessonClock, StepPractice, barOfTick, targetsIn } from '../lesson/practice.ts';
+import { melodyArrangement, type Target } from './arrangement.ts';
 import { tempoMapOf, type Reference } from '../music/reference.ts';
 
 /** The recorder, as practice needs it — src/recording/recorder.ts's PolycallRecorder is one. Failures are results. */
@@ -45,10 +45,7 @@ export interface PracticeSettings {
 
 export const DEFAULT_SETTINGS: PracticeSettings = Object.freeze({ tempoFactor: 1, loop: null, mode: 'flow', countInBeats: 3, playReference: true, metronome: true, inputLatencySeconds: 0 });
 
-export interface Target extends ExpectedNote {
-  /** where the arrangement suggests playing it — a suggestion, never observed */
-  readonly position: SuggestedPosition | null;
-}
+export type { Target };
 
 export type AttemptStatus = { readonly kind: 'unavailable'; readonly why: string } | { readonly kind: 'idle' } | { readonly kind: 'recording'; readonly recordingId: string } | { readonly kind: 'saved'; readonly recordingId: string; readonly events: number } | { readonly kind: 'failed'; readonly message: string };
 
@@ -138,16 +135,14 @@ export class PracticeSession {
     this.#pickupTicks = options.pickupTicks ?? 0;
     this.#playback = options.playback ?? null;
     this.#store = options.store ?? null;
-    const keys = reference.notes.filter((n) => n.track === track).map((n) => n.key);
-    const fingering = fingerMelody(keys);
-    const { targets: raw } = melodyTargets(reference, track, fingering.octaveShift, this.#pickupTicks);
-    const targets: Target[] = raw.map((t, i) => ({ ...t, position: fingering.positions[i] ?? null }));
+    const arrangement = melodyArrangement(reference, track, this.#pickupTicks);
+    const targets = [...arrangement.targets];
     const bars = targets.reduce((m, t) => Math.max(m, t.bar), 0);
     this.#state = {
       phase: 'ready',
       title: reference.song.title,
-      arrangementText: `Melody on guitar${fingering.octaveShift === 0 ? '' : fingering.octaveShift < 0 ? ', an octave lower than written' : ', an octave higher than written'}${reference.review.state === 'unreviewed' ? ' — from an unreviewed transcription' : ''}`,
-      octaveShift: fingering.octaveShift,
+      arrangementText: arrangement.text,
+      octaveShift: arrangement.octaveShift,
       settings: DEFAULT_SETTINGS,
       bars,
       targets,

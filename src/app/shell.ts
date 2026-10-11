@@ -8,12 +8,13 @@ import { noteOf } from '../domain/pitch.ts';
 import { referenceFromMidi, type Reference } from '../music/reference.ts';
 import type { PracticeSession, PracticeState } from './practice.ts';
 
-export type Screen = 'home' | 'library' | 'tune' | 'practice' | 'progress';
+export type Screen = 'home' | 'library' | 'tune' | 'practice' | 'play' | 'progress';
 export const SCREENS: readonly { readonly id: Screen; readonly label: string }[] = Object.freeze([
   { id: 'home', label: 'Home' },
   { id: 'library', label: 'Library' },
   { id: 'tune', label: 'Tune' },
   { id: 'practice', label: 'Practise' },
+  { id: 'play', label: 'Play' },
   { id: 'progress', label: 'Progress' },
 ]);
 
@@ -129,6 +130,11 @@ export class Shell {
         ? `Could not be assessed: the microphone was not delivering sound — ${saved}`
         : `${fb.pitch.right} of ${fb.pitch.assessed}${fb.pitch.unassessed > 0 ? ' assessed' : ''} right${fb.timing.judged > 0 ? `, ${fb.timing.onTime} on time` : ''}${fb.pitch.unassessed > 0 ? ` (${fb.pitch.unassessed} not assessed)` : ''}${fb.repeatBar === null ? '' : `; bar ${fb.repeatBar} to repeat`} — ${saved}`;
     this.#set({ attempts: [{ songTitle: song.reference.song.title, when: this.#now(), text }, ...this.#state.attempts] });
+  }
+
+  /** A finished run of Play, listed in Progress. */
+  addAttempt(songTitle: string, text: string): void {
+    this.#set({ attempts: [{ songTitle, when: this.#now(), text }, ...this.#state.attempts] });
   }
 
   /** A MIDI file the learner opened: a reference at once (its notes are stated, not estimated), its melody taken from its highest part — said. */

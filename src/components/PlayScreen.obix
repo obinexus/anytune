@@ -1,0 +1,208 @@
+<script setup lang="ts">
+import FretboardDiagram from "./FretboardDiagram.obix";
+import GuitarArtwork from "./GuitarArtwork.obix";
+import PlayTimeline from "./PlayTimeline.obix";
+
+// the Play screen's view (src/app/play-view.ts): instrument karaoke — what to play now, what comes next arriving at "Now", the guitar, the beat, the controls
+defineProps<{
+  play: {
+    available: boolean;
+    title: string;
+    songOptions: { value: string; label: string; selected: boolean }[];
+    arrangementOptions: { value: string; label: string; selected: boolean }[];
+    arrangementText: string;
+    phase: string;
+    phaseText: string;
+    playing: boolean;
+    currentText: string;
+    positionText: string;
+    nextText: string;
+    liveText: string;
+    alertText: string;
+    beat: { text: string; dots: { on: boolean; key: string }[] };
+    progress: { value: number; text: string };
+    timeline: {
+      width: number;
+      height: number;
+      viewBox: string;
+      playheadX: number;
+      playheadTop: number;
+      playheadBottom: number;
+      labelColumn: number;
+      description: string;
+      lanes: { y: number; x1: number; x2: number; label: string; labelX: number; labelY: number; key: string; labelKey: string }[];
+      bars: { x: number; label: string; labelY: number; key: string; labelKey: string }[];
+      beats: { x: number; key: string }[];
+      prompts: { x: number; y: number; width: number; height: number; textX: number; textY: number; label: string; kind: string; key: string; textKey: string }[];
+    };
+    guitar: {
+      fretboard: {
+        width: number;
+        height: number;
+        viewBox: string;
+        hand: string;
+        caption: string;
+        description: string;
+        strings: { x1: number; y1: number; x2: number; y2: number; label: string; labelX: number; labelY: number; kind: string; key: string; labelKey: string }[];
+        frets: { x1: number; y1: number; x2: number; y2: number; label: string; labelX: number; labelY: number; kind: string; key: string; labelKey: string }[];
+        markers: { x: number; y: number; textY: number; kind: string; label: string; key: string; labelKey: string }[];
+        marks: { x: number; y: number; textY: number; kind: string; state: string; label: string; key: string }[];
+      };
+      artwork: {
+        url: string;
+        viewBox: string;
+        width: number;
+        height: number;
+        imageWidth: number;
+        imageHeight: number;
+        transform: string;
+        hand: string;
+        credit: string;
+        window: { x: number; y: number; width: number; height: number };
+        markers: { x: number; y: number; kind: string; key: string }[];
+      };
+    };
+    controls: { play: boolean; playLabel: string; feedback: boolean; feedbackLabel: string; begin: boolean; cancel: boolean; pause: boolean; resume: boolean; restart: boolean; stop: boolean };
+    input: { state: string; text: string; problem: boolean; meter: { visible: boolean; value: number; text: string } };
+    settings: { tempoOptions: { value: string; label: string; selected: boolean }[]; referenceVolume: string; clickVolume: string; metronome: boolean; handOptions: { value: string; label: string; selected: boolean }[] };
+    timing: string[];
+    review: { visible: boolean; sentences: string[]; capture: string[] };
+    announcement: string;
+    errorText: string;
+  };
+}>();
+
+// one event per control — the play session does the rest
+const emit = defineEmits<{
+  (e: "song", id: string): void;
+  (e: "start"): void;
+  (e: "feedback"): void;
+  (e: "begin"): void;
+  (e: "cancel"): void;
+  (e: "pause"): void;
+  (e: "resume"): void;
+  (e: "restart"): void;
+  (e: "stop"): void;
+  (e: "tempo", value: string): void;
+  (e: "reference-volume", value: string): void;
+  (e: "click-volume", value: string): void;
+  (e: "metronome", on: boolean): void;
+  (e: "hand", value: string): void;
+}>();
+
+function onSong(event: Event): void {
+  emit("song", (event.target as HTMLSelectElement).value);
+}
+function onTempo(event: Event): void {
+  emit("tempo", (event.target as HTMLSelectElement).value);
+}
+function onReferenceVolume(event: Event): void {
+  emit("reference-volume", (event.target as HTMLInputElement).value);
+}
+function onClickVolume(event: Event): void {
+  emit("click-volume", (event.target as HTMLInputElement).value);
+}
+function onMetronome(event: Event): void {
+  emit("metronome", (event.target as HTMLInputElement).checked);
+}
+function onHand(event: Event): void {
+  emit("hand", (event.target as HTMLSelectElement).value);
+}
+</script>
+
+<template>
+  <main class="screen play">
+    <h1>Play</h1>
+    <div class="play-choice">
+      <label>Song
+        <select :disabled="play.playing" @change="onSong">
+          <option v-for="o in play.songOptions" :key="o.value" :value="o.value" :selected="o.selected">{{ o.label }}</option>
+        </select>
+      </label>
+      <label>Instrument and part
+        <select :disabled="play.playing">
+          <option v-for="o in play.arrangementOptions" :key="o.value" :value="o.value" :selected="o.selected">{{ o.label }}</option>
+        </select>
+      </label>
+    </div>
+    <p class="arrangement">{{ play.arrangementText }}</p>
+    <div v-if="play.available" class="play-body">
+      <p class="visually-hidden" role="status" aria-live="polite" aria-atomic="true">{{ play.announcement }}</p>
+      <section class="play-now" :data-phase="play.phase">
+        <p class="phase">{{ play.phaseText }}</p>
+        <p class="current">{{ play.currentText }}</p>
+        <p class="position">{{ play.positionText }}</p>
+        <p class="next">{{ play.nextText }}</p>
+        <p v-if="play.liveText" class="live">{{ play.liveText }}</p>
+        <p v-if="play.beat.text" class="beat">
+          <span class="beat-text">{{ play.beat.text }}</span>
+          <span v-for="dot in play.beat.dots" :key="dot.key" class="beat-dot" :data-on="dot.on" aria-hidden="true"></span>
+        </p>
+      </section>
+      <p v-if="play.alertText" class="capture-alert" role="alert">{{ play.alertText }}</p>
+      <PlayTimeline :timeline="play.timeline" />
+      <div class="transport">
+        <button v-if="play.controls.begin" type="button" class="primary begin" @click="emit('begin')">Begin</button>
+        <button v-if="play.controls.play" type="button" class="primary play-button" @click="emit('start')">{{ play.controls.playLabel }}</button>
+        <button v-if="play.controls.feedback" type="button" class="feedback" @click="emit('feedback')">{{ play.controls.feedbackLabel }}</button>
+        <button v-if="play.controls.pause" type="button" class="primary pause" @click="emit('pause')">Pause</button>
+        <button v-if="play.controls.resume" type="button" class="primary resume" @click="emit('resume')">Resume</button>
+        <button v-if="play.controls.restart" type="button" class="restart" @click="emit('restart')">Restart</button>
+        <button v-if="play.controls.stop" type="button" class="stop" @click="emit('stop')">Stop</button>
+        <button v-if="play.controls.cancel" type="button" class="cancel" @click="emit('cancel')">Cancel</button>
+      </div>
+      <p class="song-progress">
+        <progress max="1000" :value="play.progress.value" aria-label="Song progress">{{ play.progress.text }}</progress>
+        <span class="progress-text">{{ play.progress.text }}</span>
+      </p>
+      <section v-if="play.input.text" class="input-check" :data-state="play.input.state" :data-problem="play.input.problem">
+        <p class="input-text" role="status">{{ play.input.text }}</p>
+        <label v-if="play.input.meter.visible" class="meter-label">
+          <span>Input level</span>
+          <meter min="-60" max="0" low="-45" high="-6" optimum="-20" :value="play.input.meter.value" :aria-valuetext="play.input.meter.text">{{ play.input.meter.text }}</meter>
+          <span class="meter-text">{{ play.input.meter.text }}</span>
+        </label>
+      </section>
+      <div class="guitar">
+        <GuitarArtwork :artwork="play.guitar.artwork" />
+        <FretboardDiagram :fretboard="play.guitar.fretboard" />
+      </div>
+      <section v-if="play.review.visible" class="review" aria-labelledby="play-review-heading">
+        <h2 id="play-review-heading">How it went</h2>
+        <ul class="sentences">
+          <li v-for="sentence in play.review.sentences" :key="sentence">{{ sentence }}</li>
+        </ul>
+        <ul v-if="play.review.capture.length" class="capture-lines" aria-label="What the microphone delivered">
+          <li v-for="line in play.review.capture" :key="line">{{ line }}</li>
+        </ul>
+      </section>
+      <details class="play-settings">
+        <summary>Settings</summary>
+        <div class="settings">
+          <label>Tempo
+            <select @change="onTempo">
+              <option v-for="o in play.settings.tempoOptions" :key="o.value" :value="o.value" :selected="o.selected">{{ o.label }}</option>
+            </select>
+          </label>
+          <label>Reference volume
+            <input type="range" min="0" max="100" step="5" :value="play.settings.referenceVolume" @input="onReferenceVolume" />
+          </label>
+          <label>Click volume
+            <input type="range" min="0" max="100" step="5" :value="play.settings.clickVolume" @input="onClickVolume" />
+          </label>
+          <label class="check"><input type="checkbox" :checked="play.settings.metronome" @change="onMetronome" /> Metronome click</label>
+          <label>Guitar
+            <select @change="onHand">
+              <option v-for="o in play.settings.handOptions" :key="o.value" :value="o.value" :selected="o.selected">{{ o.label }}</option>
+            </select>
+          </label>
+        </div>
+      </details>
+      <details class="diagnostics">
+        <summary>Timing and microphone details</summary>
+        <p v-for="line in play.timing" :key="line" class="timing-line">{{ line }}</p>
+      </details>
+    </div>
+    <p v-if="play.errorText" class="error" role="alert">{{ play.errorText }}</p>
+  </main>
+</template>

@@ -1,11 +1,14 @@
 /**
  * The app, composed: the journey's shell (src/app/shell.ts), the tuner (the existing TuningSession and its announcement policy), the practice session of the
- * song chosen, the practice audio (one clock for capture and playback), the live analysis between them, and the recorder that keeps attempts — when there
- * is one. It gives the UI one view (ShellView) and takes its intents (the handlers). It is driven the same in the browser, in the Android WebView and in the
+ * song chosen, Play's session (src/app/play.ts), the practice audio (one clock for capture and playback), the microphone and the live analysis between
+ * them (src/harness/listener.ts — one, shared: Practise or Play has it, never both), and the recorder that keeps attempts — when there is one. It gives the UI one view (ShellView) and takes its intents (the handlers). It is driven the same in the browser, in the Android WebView and in the
  * tests: what it touches outside — audio, files, hashing, the display's frame timing — is given to it.
  */
 import { Announcer } from '../app/announcer.ts';
+import { melodyArrangement } from '../app/arrangement.ts';
 import { inputView, reportedTotal, timingLines } from '../app/input-view.ts';
+import { PlaySession } from '../app/play.ts';
+import { playAttemptText, toPlayView } from '../app/play-view.ts';
 import { PracticeSession, type AttemptStore } from '../app/practice.ts';
 import { toPracticeView } from '../app/practice-view.ts';
 import { IMPORT_NOTE, Shell, toHomeView, toLibraryView, toProgressView, type Screen, type Song } from '../app/shell.ts';
@@ -57,6 +60,23 @@ export interface ShellHandlers {
   /** Play along without assessment: no microphone, no verdict */
   practiceFree(): Promise<void>;
   practiceStop(): Promise<void>;
+  /** Play: choose the song */
+  playSong(id: string): void;
+  /** Play the song without feedback */
+  playStart(): Promise<void>;
+  /** Play with feedback: open and check the microphone first */
+  playFeedback(): Promise<void>;
+  /** the microphone is ready: count in and play, with feedback */
+  playBegin(): Promise<void>;
+  playCancel(): void;
+  playPause(): void;
+  playResume(): void;
+  playRestart(): void;
+  playStop(): void;
+  playTempo(value: string): void;
+  playReferenceVolume(value: string): void;
+  playClickVolume(value: string): void;
+  playMetronome(on: boolean): void;
   practiceListen(): void;
   practiceRepeat(bar: string): void;
   practiceTempo(value: string): void;
@@ -97,6 +117,13 @@ export class ShellApp {
   /** while an assessed run listens: what is wrong with the capture now, or '' */
   #alert = '';
   #cancelFrame: (() => void) | null = null;
+  /** who has the microphone while it listens: Practise or Play */
+  #listeningFor: 'practice' | 'play' | null = null;
+  /** Play: the song chosen there, its session, and the runs already listed in Progress */
+  #play: { readonly songId: string; readonly session: PlaySession; readonly off: () => void; readonly listed: Set<number> } | null = null;
+  #playFrame: (() => void) | null = null;
+  /** the reference's and the click's levels, 0…1 */
+  #levels = { reference: 0.8, click: 0.6 };
   /** the content's width, CSS pixels — measured by the page (main.ts); a phone's until it is */
   #width = 328;
 
@@ -118,7 +145,7 @@ export class ShellApp {
     this.#offs.push(this.shell.subscribe(() => {
       // a practice that ends by itself (step mode done, the piece over) releases the microphone
       const phase = this.shell.practice?.getState().phase;
-      if (phase === 'reviewing' && this.#listener?.state.kind === 'listening') this.#endRun();
+      if (phase === 'reviewing' && this.#listeningFor === 'practice' && this.#listener?.state.kind === 'listening') this.#endRun();
       this.#changed();
     }));
     this.handlers = this.#makeHandlers();
@@ -127,6 +154,11 @@ export class ShellApp {
   subscribe(listener: () => void): () => void {
     this.#listeners.add(listener);
     return () => this.#listeners.delete(listener);
+  }
+
+  /** Play's session for the song chosen there — null until the Play screen was opened */
+  get playSession(): PlaySession | null {
+    return this.#play?.session ?? null;
   }
 
   #changed(): void {
@@ -155,7 +187,76 @@ export class ShellApp {
         alertText: this.#alert,
         errorText: this.#error,
       }),
+      play: toPlayView(this.#play?.session.getState() ?? null, {
+        songs: s.songs.map((song) => ({ id: song.id, title: song.reference.song.title })),
+        songId: this.#play?.songId ?? null,
+        map: FRETBOARD_MAP,
+        artworkUrl: GUITAR_ARTWORK_DATA_URL,
+        leftHanded: this.#leftHanded,
+        width: this.#width,
+        input: inputView(this.#listener?.state ?? { kind: 'idle' }, this.#listener?.levelDb() ?? Number.NEGATIVE_INFINITY, this.#listener?.loudestDb() ?? Number.NEGATIVE_INFINITY),
+        timing: timingLines(this.#deps.audio?.latency() ?? null, this.#deps.audio?.captureInfo() ?? this.#listener?.lastRecord()?.info ?? null),
+        capture: this.#listener?.lastRecord() ?? null,
+        alertText: this.#alert,
+        levels: this.#levels,
+        errorText: this.#error,
+      }),
     };
+  }
+
+  /** Play's session for a song — the one chosen there, else the one chosen to practise, else the first; made when first needed. */
+  #playFor(songId: string | null): PlaySession | null {
+    const state = this.shell.getState();
+    const song = state.songs.find((x) => x.id === songId) ?? state.songs.find((x) => x.id === this.#play?.songId) ?? state.songs.find((x) => x.id === state.selected) ?? state.songs[0];
+    if (song === undefined) return null;
+    if (this.#play?.songId === song.id) return this.#play.session;
+    this.#stopPlay();
+    this.#play?.off();
+    const session = new PlaySession(song.reference, melodyArrangement(song.reference, song.melodyTrack, song.pickupTicks), { playback: this.#deps.audio?.playback ?? null, pickupTicks: song.pickupTicks });
+    const listed = new Set<number>();
+    const off = session.subscribe((st) => {
+      if (st.phase === 'finished') {
+        this.#playFrame?.();
+        this.#playFrame = null;
+        if (this.#listeningFor === 'play') this.#endRun();
+        if (st.run > 0 && !listed.has(st.run)) {
+          listed.add(st.run);
+          this.shell.addAttempt(song.reference.song.title, playAttemptText(st));
+        }
+      }
+      this.#changed();
+    });
+    this.#play = { songId: song.id, session, off, listed };
+    return session;
+  }
+
+  /** Play's display loop: the session's tick — the prompts placed where the sound is heard (the output's reported delay) — and the capture's alert. */
+  #playLoop(): void {
+    const audio = this.#deps.audio;
+    const session = this.#play?.session;
+    if (audio === null || session === undefined) return;
+    this.#playFrame?.();
+    const now = audio.now();
+    const l = audio.latency();
+    session.tick(now, (l.baseSeconds ?? 0) + (l.outputSeconds ?? 0));
+    if (this.#listeningFor === 'play') {
+      const alert = this.#listener?.alert(now) ?? '';
+      if (alert !== this.#alert) {
+        this.#alert = alert;
+        this.#changed();
+      }
+    }
+    const phase = session.getState().phase;
+    this.#playFrame = phase === 'count-in' || phase === 'playing' ? this.#deps.frame(() => this.#playLoop()) : null;
+  }
+
+  /** Play's run, ended: stopped and reviewed (a pause is still a run). */
+  #stopPlay(): void {
+    const session = this.#play?.session;
+    const phase = session?.getState().phase;
+    if (session !== undefined && (phase === 'count-in' || phase === 'playing' || phase === 'paused')) session.stop(this.#deps.audio?.now() ?? 0);
+    this.#playFrame?.();
+    this.#playFrame = null;
   }
 
   /** The content's width changed (a rotation, a window resized, a larger text size): the fretboard is drawn again for it. */
@@ -170,7 +271,9 @@ export class ShellApp {
   pause(): void {
     const phase = this.shell.practice?.getState().phase;
     if (phase === 'count-in' || phase === 'playing') void this.handlers.practiceStop();
-    else this.#listener?.close();
+    this.#stopPlay();
+    this.#listener?.close();
+    this.#listeningFor = null;
     void this.#deps.tuning.session.stop();
   }
 
@@ -185,6 +288,7 @@ export class ShellApp {
     this.#cancelFrame?.();
     this.#cancelFrame = null;
     this.#listener?.close();
+    this.#listeningFor = null;
   }
 
   #tickLoop(): void {
@@ -208,6 +312,18 @@ export class ShellApp {
     return {
       navigate: (screen) => {
         if (screen !== 'tune') void this.#deps.tuning.session.stop();
+        const leaving = this.shell.getState().screen;
+        // a run belongs to its screen: leaving it ends the run, and a microphone check in progress
+        if (leaving === 'practice' && screen !== 'practice') {
+          const p = practice();
+          if (p !== null && running(p)) void this.handlers.practiceStop();
+          else if (this.#listeningFor === null) this.#listener?.close();
+        }
+        if (leaving === 'play' && screen !== 'play') {
+          this.#stopPlay();
+          if (this.#listeningFor === null) this.#listener?.close();
+        }
+        if (screen === 'play') this.#playFor(null);
         this.shell.navigate(screen as Screen);
       },
       begin: () => {
@@ -253,6 +369,7 @@ export class ShellApp {
         p.configure({ inputLatencySeconds: reportedTotal(audio.latency()) });
         const coverage = listener.listen();
         if (coverage === null) return;
+        this.#listeningFor = 'practice';
         listener.onEvents = (events) => p.hear(events);
         this.#alert = '';
         await p.start(audio.now(), { assess: true, capture: coverage });
@@ -286,6 +403,100 @@ export class ShellApp {
         this.#endRun();
         this.#changed();
       },
+      playSong: (id) => {
+        const phase = this.#play?.session.getState().phase;
+        if (phase === 'count-in' || phase === 'playing' || phase === 'paused') return;
+        this.#playFor(id);
+        this.#changed();
+      },
+      playStart: async () => {
+        const session = this.#playFor(null);
+        const audio = this.#deps.audio;
+        if (session === null) return;
+        if (audio === null) {
+          this.#error = 'This browser has no Web Audio: nothing can be played here.';
+          this.#changed();
+          return;
+        }
+        this.#listener?.close();
+        await this.#deps.tuning.session.stop();
+        this.#error = '';
+        this.#alert = '';
+        audio.setLevels(this.#levels.reference, this.#levels.click);
+        session.configure(audio.now(), { inputLatencySeconds: 0 });
+        session.start(audio.now(), { assess: false });
+        this.#playLoop();
+        this.#changed();
+      },
+      playFeedback: async () => {
+        if (this.#playFor(null) === null) return;
+        if (this.#listener === null) {
+          this.#error = 'This browser has no Web Audio: Play cannot hear you here.';
+          this.#changed();
+          return;
+        }
+        await this.#deps.tuning.session.stop();
+        this.#error = '';
+        await this.#listener.open();
+      },
+      playBegin: async () => {
+        const session = this.#play?.session;
+        const audio = this.#deps.audio;
+        const listener = this.#listener;
+        if (session === undefined || audio === null || listener === null) return;
+        session.configure(audio.now(), { inputLatencySeconds: reportedTotal(audio.latency()) });
+        const coverage = listener.listen();
+        if (coverage === null) return;
+        this.#listeningFor = 'play';
+        listener.onEvents = (events) => session.hear(events);
+        this.#alert = '';
+        audio.setLevels(this.#levels.reference, this.#levels.click);
+        session.start(audio.now(), { assess: true, capture: coverage });
+        this.#playLoop();
+        this.#changed();
+      },
+      playCancel: () => this.#listener?.close(),
+      playPause: () => {
+        const audio = this.#deps.audio;
+        if (audio === null) return;
+        this.#play?.session.pause(audio.now());
+        this.#playFrame?.();
+        this.#playFrame = null;
+        this.#changed();
+      },
+      playResume: () => {
+        const audio = this.#deps.audio;
+        if (audio === null) return;
+        this.#play?.session.resume(audio.now());
+        this.#playLoop();
+        this.#changed();
+      },
+      playRestart: () => {
+        const audio = this.#deps.audio;
+        if (audio === null) return;
+        this.#play?.session.restart(audio.now());
+        this.#playLoop();
+        this.#changed();
+      },
+      playStop: () => {
+        this.#stopPlay();
+        this.#changed();
+      },
+      playTempo: (value) => {
+        const audio = this.#deps.audio;
+        this.#play?.session.configure(audio?.now() ?? 0, { tempoFactor: Number(value) });
+      },
+      playReferenceVolume: (value) => {
+        this.#levels = { ...this.#levels, reference: Math.max(0, Math.min(1, Number(value) / 100)) };
+        this.#deps.audio?.setLevels(this.#levels.reference, this.#levels.click);
+        this.#changed();
+      },
+      playClickVolume: (value) => {
+        this.#levels = { ...this.#levels, click: Math.max(0, Math.min(1, Number(value) / 100)) };
+        this.#deps.audio?.setLevels(this.#levels.reference, this.#levels.click);
+        this.#changed();
+      },
+      playMetronome: (on) => this.#play?.session.configure(this.#deps.audio?.now() ?? 0, { metronome: on }),
       practiceListen: () => {
         const p = practice();
         const audio = this.#deps.audio;

@@ -678,3 +678,219 @@ details > summary {
 .timing-line {
   color: var(--muted);
 }
+
+/* ------------------------------------------------------------------------------------------------------------------------------------------------ play */
+
+.play-body {
+  display: grid;
+  gap: 1rem;
+}
+
+.play-choice {
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+}
+
+.play-choice label,
+.play-settings label {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.play-now {
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.75rem;
+  border: 2px solid currentColor;
+  border-radius: 0.75rem;
+}
+
+.play-now p {
+  margin: 0;
+}
+
+.play-now .current {
+  font-size: 2.5rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.play-now .phase,
+.play-now .next {
+  color: var(--muted);
+}
+
+.play-now .live {
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+/* the beat: words first ("Bar 3 · beat 2 of 3"), the dots repeat them; the current dot filled and a little larger — no other motion */
+.beat {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.beat-dot {
+  display: inline-block;
+  width: 0.9rem;
+  height: 0.9rem;
+  border: 2px solid var(--ink);
+  border-radius: 50%;
+  transition: transform 80ms ease-out;
+}
+
+.beat-dot[data-on='true'] {
+  background: var(--focus);
+  transform: scale(1.2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .beat-dot {
+    transition: none;
+  }
+
+  .beat-dot[data-on='true'] {
+    transform: none;
+  }
+}
+
+/* the timeline: drawn at one unit per CSS pixel; lanes are strings (high e on top), each prompt its fret */
+.timeline {
+  margin: 0;
+  overflow-x: auto;
+}
+
+.timeline-svg {
+  display: block;
+  max-width: none;
+}
+
+.timeline-svg .lane {
+  stroke: var(--muted);
+  stroke-width: 1.5;
+}
+
+.timeline-svg .beat-line {
+  stroke: var(--muted);
+  stroke-width: 1;
+  stroke-dasharray: 2 4;
+}
+
+.timeline-svg .bar-line {
+  stroke: var(--ink);
+  stroke-width: 2;
+}
+
+.timeline-svg .bar-number,
+.timeline-svg .lane-name,
+.timeline-svg .playhead-label {
+  fill: var(--ink);
+  font-size: 16px;
+  text-anchor: middle;
+}
+
+.timeline-svg .lane-name,
+.timeline-svg .playhead-label {
+  font-weight: 700;
+}
+
+.timeline-svg .lane-column {
+  fill: var(--paper);
+}
+
+/* past: faded; now: filled; next: dashed outline; later: outlined — shape and fill, not colour alone */
+.timeline-svg .prompt {
+  fill: var(--paper);
+  stroke: var(--ink);
+  stroke-width: 2;
+}
+
+.timeline-svg .prompt[data-kind='now'] {
+  fill: var(--focus);
+  stroke-width: 3;
+}
+
+.timeline-svg .prompt[data-kind='next'] {
+  stroke: var(--focus);
+  stroke-width: 3;
+  stroke-dasharray: 5 3;
+}
+
+.timeline-svg .prompt[data-kind='past'] {
+  opacity: 0.4;
+}
+
+.timeline-svg .prompt-text {
+  fill: var(--ink);
+  font-size: 16px;
+  font-weight: 700;
+  text-anchor: middle;
+}
+
+.timeline-svg .prompt-text[data-kind='now'] {
+  fill: var(--paper);
+}
+
+.timeline-svg .prompt-text[data-kind='past'] {
+  opacity: 0.4;
+}
+
+.timeline-svg .playhead {
+  stroke: var(--ink);
+  stroke-width: 3;
+}
+
+.transport {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+  gap: 0.5rem;
+}
+
+.song-progress {
+  margin: 0;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.song-progress progress {
+  width: 100%;
+  height: 0.75rem;
+}
+
+.progress-text {
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+.play-settings .settings {
+  margin-top: 0.5rem;
+}
+
+.play-settings input[type='range'] {
+  width: 100%;
+}
+
+@media (forced-colors: active) {
+  .timeline-svg .prompt[data-kind='now'] {
+    fill: Highlight;
+  }
+
+  .timeline-svg .lane,
+  .timeline-svg .bar-line,
+  .timeline-svg .playhead {
+    stroke: CanvasText;
+  }
+
+  .timeline-svg .bar-number,
+  .timeline-svg .lane-name,
+  .timeline-svg .playhead-label,
+  .timeline-svg .prompt-text {
+    fill: CanvasText;
+  }
+}

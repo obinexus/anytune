@@ -30,6 +30,8 @@ test('the components, and no other: small components with one responsibility eac
     'LibraryScreen.obix',
     'NoteDisplay.obix',
     'PitchMeter.obix',
+    'PlayScreen.obix',
+    'PlayTimeline.obix',
     'PracticeScreen.obix',
     'ProgressScreen.obix',
     'TunerDisplay.obix',

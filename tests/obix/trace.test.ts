@@ -43,6 +43,9 @@ test('what the current OBIX pipeline makes of each component: what it can expres
     GuitarArtwork: ['compiled', []],
     HomeScreen: ['compiled', []],
     LibraryScreen: ['compiled', []],
+    PlayScreen: ['compiled', []],
+    // Play's timeline: placed by bound SVG coordinates — the IR has no bound style (docs/OBIX-GAPS.md)
+    PlayTimeline: ['compiled', []],
     PracticeScreen: ['compiled', []],
     ProgressScreen: ['compiled', []],
   });

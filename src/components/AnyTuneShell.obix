@@ -2,6 +2,7 @@
 import AnyTuneApp from "./AnyTuneApp.obix";
 import HomeScreen from "./HomeScreen.obix";
 import LibraryScreen from "./LibraryScreen.obix";
+import PlayScreen from "./PlayScreen.obix";
 import PracticeScreen from "./PracticeScreen.obix";
 import ProgressScreen from "./ProgressScreen.obix";
 
@@ -99,6 +100,71 @@ defineProps<{
     review: { visible: boolean; sentences: string[]; bars: { bar: number; text: string }[]; repeatBar: string; repeatLabel: string; attemptText: string; capture: string[] };
     errorText: string;
   };
+  play: {
+    available: boolean;
+    title: string;
+    songOptions: { value: string; label: string; selected: boolean }[];
+    arrangementOptions: { value: string; label: string; selected: boolean }[];
+    arrangementText: string;
+    phase: string;
+    phaseText: string;
+    playing: boolean;
+    currentText: string;
+    positionText: string;
+    nextText: string;
+    liveText: string;
+    alertText: string;
+    beat: { text: string; dots: { on: boolean; key: string }[] };
+    progress: { value: number; text: string };
+    timeline: {
+      width: number;
+      height: number;
+      viewBox: string;
+      playheadX: number;
+      playheadTop: number;
+      playheadBottom: number;
+      labelColumn: number;
+      description: string;
+      lanes: { y: number; x1: number; x2: number; label: string; labelX: number; labelY: number; key: string; labelKey: string }[];
+      bars: { x: number; label: string; labelY: number; key: string; labelKey: string }[];
+      beats: { x: number; key: string }[];
+      prompts: { x: number; y: number; width: number; height: number; textX: number; textY: number; label: string; kind: string; key: string; textKey: string }[];
+    };
+    guitar: {
+      fretboard: {
+        width: number;
+        height: number;
+        viewBox: string;
+        hand: string;
+        caption: string;
+        description: string;
+        strings: { x1: number; y1: number; x2: number; y2: number; label: string; labelX: number; labelY: number; kind: string; key: string; labelKey: string }[];
+        frets: { x1: number; y1: number; x2: number; y2: number; label: string; labelX: number; labelY: number; kind: string; key: string; labelKey: string }[];
+        markers: { x: number; y: number; textY: number; kind: string; label: string; key: string; labelKey: string }[];
+        marks: { x: number; y: number; textY: number; kind: string; state: string; label: string; key: string }[];
+      };
+      artwork: {
+        url: string;
+        viewBox: string;
+        width: number;
+        height: number;
+        imageWidth: number;
+        imageHeight: number;
+        transform: string;
+        hand: string;
+        credit: string;
+        window: { x: number; y: number; width: number; height: number };
+        markers: { x: number; y: number; kind: string; key: string }[];
+      };
+    };
+    controls: { play: boolean; playLabel: string; feedback: boolean; feedbackLabel: string; begin: boolean; cancel: boolean; pause: boolean; resume: boolean; restart: boolean; stop: boolean };
+    input: { state: string; text: string; problem: boolean; meter: { visible: boolean; value: number; text: string } };
+    settings: { tempoOptions: { value: string; label: string; selected: boolean }[]; referenceVolume: string; clickVolume: string; metronome: boolean; handOptions: { value: string; label: string; selected: boolean }[] };
+    timing: string[];
+    review: { visible: boolean; sentences: string[]; capture: string[] };
+    announcement: string;
+    errorText: string;
+  };
 }>();
 
 // every intent goes up as an event of its own; the harness hands it to the shell, the tuning session or the practice session
@@ -127,6 +193,19 @@ const emit = defineEmits<{
   (e: "practice-hand", value: string): void;
   (e: "practice-metronome", on: boolean): void;
   (e: "practice-reference", on: boolean): void;
+  (e: "play-song", id: string): void;
+  (e: "play-start"): void;
+  (e: "play-feedback"): void;
+  (e: "play-begin"): void;
+  (e: "play-cancel"): void;
+  (e: "play-pause"): void;
+  (e: "play-resume"): void;
+  (e: "play-restart"): void;
+  (e: "play-stop"): void;
+  (e: "play-tempo", value: string): void;
+  (e: "play-reference-volume", value: string): void;
+  (e: "play-click-volume", value: string): void;
+  (e: "play-metronome", on: boolean): void;
 }>();
 </script>
 
@@ -202,6 +281,24 @@ const emit = defineEmits<{
       @hand="(value: string) => emit('practice-hand', value)"
       @metronome="(on: boolean) => emit('practice-metronome', on)"
       @reference="(on: boolean) => emit('practice-reference', on)"
+    />
+    <PlayScreen
+      v-if="screen === 'play'"
+      :play="play"
+      @song="(id: string) => emit('play-song', id)"
+      @start="emit('play-start')"
+      @feedback="emit('play-feedback')"
+      @begin="emit('play-begin')"
+      @cancel="emit('play-cancel')"
+      @pause="emit('play-pause')"
+      @resume="emit('play-resume')"
+      @restart="emit('play-restart')"
+      @stop="emit('play-stop')"
+      @tempo="(value: string) => emit('play-tempo', value)"
+      @reference-volume="(value: string) => emit('play-reference-volume', value)"
+      @click-volume="(value: string) => emit('play-click-volume', value)"
+      @metronome="(on: boolean) => emit('play-metronome', on)"
+      @hand="(value: string) => emit('practice-hand', value)"
     />
     <ProgressScreen v-if="screen === 'progress'" :progress="progress" />
   </div>
