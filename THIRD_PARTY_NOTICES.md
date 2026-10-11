@@ -9,13 +9,28 @@ AnyTune is MIT-licensed (`LICENSE`, `SPDX-License-Identifier: MIT`). It uses the
 | Vue: `vue`, `@vue/runtime-dom`, `@vue/runtime-core`, `@vue/reactivity`, `@vue/shared` | 3.5.43 | MIT | © 2018-present, Yuxi (Evan) You and Vue contributors |
 | Vite's module-preload helper, inlined by the build | 8.3.1 | MIT | © 2019-present, VoidZero Inc. and Vite contributors |
 
+The native-runtime build (`dist/app-native`) ships OBIX's runtime instead of Vue: `obix-runtime-reactivity`, `-dom`, `-component` and `-browser`, version 0.5.0, MIT, © OBINexus Computing.
+
 The build ships no fonts (the stylesheet uses the system font). The page's icon is an inline SVG written for AnyTune.
 
-## Artwork
+## Shipped in the Android app (the APK)
+
+The APK carries the web build above (in `assets/web/`), and also:
+
+| Work | Version | Licence | Copyright |
+|---|---|---|---|
+| Polycall: `libpolycall.so`, built from the pinned source for each ABI (`native/manifest.json`) | 1.1.0 (`main` at `2dcab63`) | **Unsettled.** The repository carries two different licence texts, `LICENSE` and `LICENSE.md`. Both are copied beside the staged binaries. | © OBINexus Computing |
+| AndroidX: `core-ktx`, `activity-ktx`, `lifecycle-runtime-ktx`, `webkit`, and what they depend on | 1.19.1, 1.13.0, 2.11.0, 1.17.1 | Apache-2.0 | © The Android Open Source Project |
+| Kotlin standard library | 2.2.10 | Apache-2.0 | © JetBrains s.r.o. and Kotlin contributors |
+
+**Before an APK is distributed**, the owner must settle which Polycall licence applies (`native/README.md`). AnyTune's own native code (`libanytune_bridge.so`: the JNI bridge and the recorder module) is MIT, as is the rest of AnyTune.
+
+## Artwork and music
 
 | Work | Licence | Where |
 |---|---|---|
-| "Guitar, Music, Musical Instrument" by yorbederycke (https://pixabay.com/vectors/guitar-6755435/) | Pixabay Content License | `assets/instruments/guitar/yorbederycke-guitar-6755435.svg`, unchanged; its fretboard map is derived from it (`assets/instruments/guitar/README.md`) |
+| "Guitar, Music, Musical Instrument" by yorbederycke (https://pixabay.com/vectors/guitar-6755435/) | Pixabay Content License | `assets/instruments/guitar/yorbederycke-guitar-6755435.svg`, unchanged; its fretboard map is derived from it (`assets/instruments/guitar/README.md`). The app bundles the same bytes (`src/harness/assets.generated.ts`). |
+| *Für Elise* (WoO 59), Ludwig van Beethoven: the opening | public domain (the composition) | encoded for AnyTune from the score as a Standard MIDI File (`tests/fixtures/midi/fur-elise-opening.mid`, written by `tools/fixtures/fur-elise.ts`); bundled as the song the app comes with. No recording or third-party edition was used. |
 
 ## Used to build, never shipped
 

@@ -1,39 +1,36 @@
 # AnyTune
 
-**Groove to any tune.** An OBINexus music-learning application: learn a song by listening, practising, getting useful feedback, and repeating the hard passages. It is built with [OBIX](https://github.com/obinexus), and uses [Polycall](https://github.com/obinexus/polycall) as its only polyglot runtime. AnyTune has no Obicall dependency.
+**Groove to any tune.** An OBINexus music-learning app. Choose a song, tune your guitar, listen to it, play along slowly, and see which
+bars to repeat. AnyTune helps you learn from your mistakes until the song flows.
 
-> The MVP — import, transcription to MIDI, guitar practice with live feedback, the Android app — is being built on the `anytune-mvp` branch, one verified step at a time. What exists today is listed under *What is real, and what isn't yet*; nothing below claims more.
+It is built with [OBIX](https://github.com/obinexus) (the UI, in `.obix` components) and uses
+[Polycall](https://github.com/obinexus/polycall) as its only polyglot runtime. **AnyTune has no Obicall dependency.**
 
-Press **Start** once, then play. The note, its frequency, how many cents flat or sharp it is, and whether it is in tune update by themselves: no button to press between notes. Every state is in words, and screen-reader users hear what changed, but only what matters.
+> **This is the MVP, on the `anytune-mvp` branch.** Each step there was verified before it was committed. The status table below says
+> what is verified, what is partial, and what is not built. Nothing here claims more than it.
 
-> **Status**
->
-> | | |
-> |---|---|
-> | UI runtime | the official Vue runtime (the default); OBIX's experimental native runtime from the same files (`npm run dev:native`), under final validation |
-> | Authoring | Vue-flavoured `.obix` |
-> | Semantic proof | the OBIX DOP IR (`obix-dop-ir/3`) |
-> | OBIX native runtime | experimental — implemented, not the default |
-> | OBIX hybrid runtime | not implemented |
+## What it does today
 
-AnyTune is authored as Vue-flavoured OBIX. The OBIX canonical IR is **`obix-dop-ir/3`**: the same nine `.obix` components are lowered to it by the OBIX compiler.
+- **Home → Library → Tune → Practise → Progress.** One journey, on a phone or in a browser.
+- **Tune.** The tuner, with the microphone or a demo input: the note, how many cents flat or sharp, and *Flat*, *In tune* or *Sharp* in
+  words. It has heard a physical guitar (`docs/MICROPHONE.md`).
+- **Library.** The app comes with Beethoven's *Für Elise* (the opening; the score is public domain, encoded for AnyTune).
+  - **Open a MIDI file** and its melody becomes a song.
+  - **Open an `.obr` file** and it is read and refused, because it holds sensor data, not music.
+  - **A recording or a link** is turned into MIDI by the desktop import worker (see below).
+- **Practise.** The melody, arranged for guitar in first position.
+  - **Where to play.** Each note's suggested string and fret is shown on an enlarged fretboard and on the supplied guitar artwork.
+  - **Listen first.** Hear the passage before playing it.
+  - **Play along.** A count-in on the click, then the metronome and the reference, at 50 %, 75 % or 100 % of the tempo, looping any bars.
+  - **Step by step.** The music waits for each note.
+  - **Live feedback.** What you play is heard on the device and compared on one audio clock, with pitch and timing judged apart.
+  - **Review.** How each bar went, and which bar to practise slowly next.
+- **Progress.** Every attempt, listed. In the Android app each attempt is also **saved separately** from the song, through Polycall.
+- **Privacy.** Microphone audio never leaves the device.
 
-OBIX now has an **experimental native browser runtime**, made of four packages:
+## Running it
 
-- `obix-runtime-reactivity`
-- `obix-runtime-dom`
-- `obix-runtime-component`
-- `obix-runtime-browser`
-
-It runs the canonical IR directly (`npm run dev:native`). The native execution path does **not** depend on Vue runtime packages: no `vue`, `@vue/runtime-core` or `@vue/runtime-dom` is in the native bundle or resolvable from the native install.
-
-**Vue remains AnyTune's default runtime** (`npm run dev`) while the native runtime is under final validation.
-
-Two different dependencies on Vue are not to be confused: the OBIX **Vue syntax frontend** still uses Vue **compiler** packages (`@vue/compiler-sfc`, `-core`, `-dom`) at build and compile time, to read Vue-flavoured `.obix`; the native path has **no Vue runtime** dependency. The hybrid runtime is not implemented.
-
-## How to run AnyTune
-
-You need **Node ≥ 26**. The OBIX compiler and runtime packages come from npm (see *The OBIX packages* below), so a clone installs on its own.
+You need **Node ≥ 26**.
 
 ```bash
 git clone https://github.com/obinexus/anytune.git
@@ -42,97 +39,92 @@ npm ci
 npm run dev
 ```
 
-Open the address Vite prints (`http://localhost:5173/`) in Edge, Chrome or Firefox.
-
-**The same UI on OBIX's native runtime** (no Vue in the page): `npm run dev:native` (build: `npm run build:native`, into `dist/app-native`; serve the build: `npm run preview:native`). `npm run dev:vue` is the default made explicit. The native runtime packages (`obix-runtime-*`) come from npm too.
-
-**To tune your guitar**, choose Instrument: **Standard Guitar** and Input: **Microphone**, then press **Start tuning** and allow the microphone. Pluck one open string at a time: the note, its frequency, the cents flat or sharp, and *Flat* / *In tune* / *Sharp* follow the peg as you turn it. **Details** shows the confidence. The full procedure is in `docs/MICROPHONE.md`.
-
-> The microphone input is tested on generated signals through a fake browser, and it has heard a **physical guitar**: in Microsoft Edge, on a laptop's AMD microphone array at 48 kHz, the D string was read at 145.1 Hz, 20 cents flat. In **Firefox** on that laptop the microphone delivered digital silence. AnyTune now detects that and says so; tune in Edge or Chrome there (`docs/MICROPHONE.md`).
-
-**Without a microphone**, the default input is the demo. Press **Start tuning**:
-
-- **Standard Guitar** plays the A string rising to pitch, 108 → 109 → 110 → 110 Hz: *Flat*, *Flat*, *In tune*, then *In tune*, *Holding steady*.
-- **Chromatic** plays 440 Hz: **A4**, in tune.
-- **Bass, violin, ukulele** play a simulation of their first string rising to pitch.
-
-The page always says what it is hearing, for example *Input: Microphone — …* or *Input: Recorded — … (simulated data)*. With the microphone it also says: *Microphone audio is processed locally for pitch detection. AnyTune does not upload or persist raw microphone audio.*
-
-The production build, and a local server for it:
-
-```bash
-npm run build      # the static site, in dist/app
-npm run preview    # serves dist/app at http://localhost:4173/
-```
-
-The checks:
-
-```bash
-npm test           # all the tests: domain, music, app, fusion, the .obr format, the UI on Vue, accessibility, the build
-npm run typecheck
-npm run trace      # the OBIX DOP IR of every component, into dist/obix-ir
-```
-
-### The OBIX packages
-
-AnyTune depends on the published OBIX packages, pinned to exactly `0.5.0`: nine `obix-compiler-*` packages (used at build and compile time) and four `obix-runtime-*` packages (the native runtime). `npm ci` installs them from registry.npmjs.org; no OBIX checkout is needed. OBIX packages carry no npm scope since D-102 (previous names `@obinexusltd/obix-*`). The published 0.5.0 packages build AnyTune byte-for-byte the same as the OBIX monorepo they were packed from.
-
-To try unreleased OBIX changes, point those dependencies at a local checkout of the OBIX monorepo (`file:../obix-recovery/compiler/…`, `file:../obix-recovery/runtime/…`), which is how AnyTune was developed before the packages were published. The demo itself never needs a native library or a microphone.
-
-## What is real, and what isn't yet
+Open the address Vite prints (`http://localhost:5173/`) in Edge or Chrome, and press **Practise Für Elise (opening)**. In a browser,
+attempts are listed but not saved: the recorder runs in the Android app and the desktop worker.
 
 | | |
 |---|---|
-| Vue-flavoured OBIX UI (9 `.obix` components) | **implemented** |
-| OBIX DOP IR trace (`npm run trace`) | **implemented**: all 9 components lower. `PitchMeter`'s `Math.round` is the IR's call of its intrinsic `round` (OBIX C3, `obix-dop-ir/3`); until C3 it was deferred |
-| Vue compatibility runtime | **the demo's execution path**: an allowlisted `"obix"` → Vue alias at build time, with no source rewritten |
-| Browser demo (`npm run dev`, `build`, `preview`) | **implemented** — on the Vue runtime (the default, also `dev:vue`) and on OBIX's native runtime (`dev:native`, `build:native`, `preview:native`) |
-| Musical domain: equal temperament, cents, nearest note, strings, the tuning policy | **implemented and tested** (`docs/TUNING_MODEL.md`) |
-| Simulated and recorded pitch input | **implemented**: AnyTune's own JSON recordings, origin *simulated* |
-| Music core: Standard MIDI Files, the tempo-map timeline, the teaching reference (`src/music/`) | **implemented and tested**, including against an independent MIDI implementation (`midi-file`) |
-| `.obr` journal compatibility | **AnyTune's own reader and writer**, no Obicall code: conformance-tested on the format's demonstration journal; an `.obr` is refused as a practice reference, since it holds no music (`docs/OBR.md`) |
-| Inverse-variance fusion | **implemented and tested** against its definition |
-| Polycall integration, the recorder module, Android, import and transcription, guitar practice | **in progress** on `anytune-mvp` |
-| Microphone pitch detection | **implemented**: `MicrophonePitchProvider` with a YIN detector (`docs/MICROPHONE.md`), tested on generated signals through a fake browser. **Physical guitar: performed in Edge** (AMD microphone array, 48 kHz; D string read 145.1 Hz, 20 cents flat). **Firefox on that machine: not validated**, since the microphone delivered digital silence, now detected and said |
-| OBIX native runtime | **experimental — implemented (Phase 6, accepted by the owner); not the default, under final validation**: the same 9 `.obix` files, lowered to `obix-dop-ir/3` (`Component.obix?ir`), run by `obix-runtime-browser` with no Vue in the bundle (audited from the bundler's module graph). The hands-free, microphone (fake browser) and accessibility suites run on both runtimes, and the two pages are compared after every step (`tests/native/`). **Physical microphone on the native runtime: not performed** |
-| OBIX hybrid runtime | **not implemented** |
+| **The Android app** | `npm run native:stage`, then `npm run build:android`, then `./gradlew assembleDebug` in `apps/android` (`docs/ANDROID.md`) |
+| **The import worker** (desktop) | `node services/import-worker/src/cli.ts doctor`, then `node services/import-worker/src/cli.ts import --file your-recording.mp4`; open the `transcription.mid` it writes in the Library (`docs/IMPORT.md`). Import only what you may use. |
+| **The checks** | `npm test` (including the UI on both runtimes, the build, and the recorder end to end through the real `polycall.exe`), `npm run typecheck`, `npm run native:verify` |
+| **The UI on OBIX's native runtime** | `npm run dev:native`: the same `.obix` files, lowered to OBIX's IR, with no Vue in the page |
+
+## Status
+
+**Verified**
+
+| | |
+|---|---|
+| The journey's UI | 16 `.obix` components, rendered and tested on the Vue runtime and on OBIX's native runtime; axe-core finds no violation on any screen (automated only) |
+| Music core | Standard MIDI Files, the tempo-map timeline, and the teaching reference (`anytune-reference/1`), tested against an independent MIDI implementation |
+| Guitar model | open voicings with suggested fingerings for C D E G A Am Em Dm, melody positions, and a fretboard map derived from the supplied artwork |
+| Practice | count-in, metronome, tempo, bar loops, step mode, review per bar, and attempts saved in order. A practice is tested end to end as captured audio, through the real analysis and session, on both runtimes. |
+| Recording | `anytune-recording/1`, written and replayed by AnyTune's recorder module (C) through Polycall: on Windows through `polycall.exe`, and on Android in-process (`docs/RECORDING.md`) |
+| Polycall | built from its pinned commit and staged with SHA-256s; reproducible builds; its own ctest suite passes 16/16 (`docs/integration-audit.md`) |
+| Android | the APK builds with Polycall's NDK library, 16 KB-aligned; on the emulator (API 37, x86_64), 6/6 instrumented tests pass: the recorder through Polycall, the page, the microphone grant, the camera refused |
+| Import | local media → FFmpeg → Basic Pitch → MIDI + reference → review → a recording through Polycall: 4/4 end to end on a generated MP4 |
+| `.obr` | AnyTune's own reader and writer, for compatibility only (`docs/OBR.md`) |
+| `download-music.ps1` | corrected (`tools/windows/download-music.ps1`; the original is unchanged) |
+
+**Partial: it works, but has not been measured on real instruments or devices**
+
+| | |
+|---|---|
+| Accuracy | Note, strum and chord analysis is measured **only on synthetic plucked strings** (`docs/evaluation/`), not on a real guitar, room or phone microphone. The same holds for transcription (Basic Pitch on a synthesised MP4 of the score). No accuracy is claimed beyond those measurements. |
+| Android on a device | Tested on the emulator only. The microphone permission path is verified, but **no audio has been captured on Android**: the emulator had no input device, and no phone was attached. |
+| Latency | The speaker-to-microphone delay is the browser's own estimate, said to be one. Nothing has been measured or calibrated. |
+| Transcriptions | The worker marks them unreviewed. But the app opens the worker's `transcription.mid` as a plain MIDI file, so that mark is **not carried into the app** (it does not read the worker's `reference.json` yet). There is no correction UI. |
+| URL import | The URL policy and yt-dlp's arguments are tested, and yt-dlp is checksum-verified. No video was downloaded. |
+
+**Not built yet**
+
+- **Chord practice in the UI.** The chord analysis exists; practice offers melodies only.
+- **Piano and electric guitar.** There are no practice profiles or MIDI-keyboard input; only the reference format names these instruments.
+- **Phone to worker.** Nothing transfers files between the phone and the worker: a MIDI file is moved by hand.
+- **Latency calibration.**
+
+**Blocked on the owner**
+
+- **Polycall's licence.** It must be settled before an APK is distributed: the repository carries two different texts.
+- **Release signing.** A release needs the owner's key, which is kept out of the repository.
+- **A physical Android device**, to test on.
+- **Pushing `anytune-mvp`** and opening a pull request.
 
 ## How it is built
 
-```
-PitchProvider(s) → PitchFusionPort → tuning domain → application state → view → .obix UI
-```
+The `architecture.json` layers are enforced by a test. The details are in `docs/ARCHITECTURE.md`.
 
-- **`src/domain/`**: pitch and tuning, pure TypeScript with no DOM, Vue or native code.
-- **`src/music/`**: MIDI files, the tempo-map timeline and the teaching reference, pure.
-- **`src/instruments/`**: the tuning catalog.
-- **`src/audio/`**: pitch providers.
-- **`src/fusion/`**: inverse-variance fusion.
-- **`src/adapters/`**: file formats kept compatible: the `.obr` journal reader and writer.
-- **`src/app/`**: the session, the view and the announcement policy.
-- **`src/components/`**: the `.obix` UI.
-- **`src/harness/`**: the composition and the demo input.
-
-`architecture.json` states the layers, and the tests enforce them. The details are in `docs/ARCHITECTURE.md`.
+- **`src/domain`, `src/music`, `src/lesson`, `src/analysis`.** What is musically true, as pure TypeScript.
+- **`src/app`.** The app without a screen: the sessions and every view.
+- **`src/components`.** The `.obix` UI. It only binds views and emits intents.
+- **`src/harness`.** The composition: practice audio on one AudioContext clock, and the recorder bridge.
+- **`native/recorder`.** The recorder module, in C, reached through Polycall.
+- **`apps/android`.** The Gradle app: a WebView, Kotlin, and a JNI bridge.
+- **`services/import-worker`.** The desktop import.
 
 | Document | About |
 |---|---|
-| `docs/ARCHITECTURE.md` | the layers, the two proof paths, and the inputs: the microphone and the demo |
-| `docs/MICROPHONE.md` | the microphone input: the pitch detector and its measured accuracy, the lifecycle, the failures, privacy, browsers, and the manual guitar test |
-| `docs/TUNING_MODEL.md` | the mathematics and the policy |
-| `docs/OBR.md` | the `.obr` journal format, read and written by AnyTune's own code for compatibility, and why it is never a practice reference |
-| `docs/ACCESSIBILITY.md` | semantics, the live region and its policy, and how it is tested |
-| `docs/DEPLOYMENT.md` | the prepared (not done) deployment to anytune.obinexus.org |
-| `CONTRIBUTING.md` | the rules, and how to regenerate the conformance fixtures |
+| `docs/ARCHITECTURE.md` | the processes, the layers, Polycall's place, practice on one clock, the formats, and the two OBIX proof paths |
+| `docs/integration-audit.md` | every pin: Polycall, OBIX, the tools, the Android build, the supplied files, and the Obicall exclusion |
+| `docs/ANDROID.md` | the app: build, security, the microphone, tests and results |
+| `docs/IMPORT.md` | the import worker, its policy, and the corrected download script |
+| `docs/RECORDING.md` | `anytune-recording/1` and the recorder module |
+| `docs/OBR.md` | `.obr` compatibility, and why it is never a practice reference |
+| `docs/OBIX-GAPS.md` | what the OBIX IR does not express yet, and how the screens are written around it |
+| `docs/MICROPHONE.md`, `docs/TUNING_MODEL.md`, `docs/ACCESSIBILITY.md` | the tuner's microphone, its mathematics, and accessibility |
+| `docs/evaluation/` | the synthetic measurements, generated by `tools/analysis/` |
+| `docs/DEPLOYMENT.md` | the prepared (not done) web deployment |
 
-## Remaining work
+### OBIX
 
-- **The full physical-guitar check**: every open string to *In tune* against another tuner. Also whether Firefox's processed-audio retry gives sound on the AMD array (`docs/MICROPHONE.md`).
-- **PitchMeter's IR**, once OBIX lowers call expressions: a compiler slice, not an AnyTune change.
-- **Publishing** the OBIX compiler packages under their scope, so that AnyTune installs on its own.
-- **Testing with a screen reader and real people**, beyond the automated checks.
-- **Deployment** to anytune.obinexus.org (`docs/DEPLOYMENT.md`), with the owner's authorisation.
+AnyTune depends on the published OBIX packages, pinned to exactly 0.5.0: nine `obix-compiler-*` packages, used at build time, and four
+`obix-runtime-*` packages, for the native runtime.
+
+- **Vue is the default runtime.** OBIX's native runtime is experimental: implemented and tested on every UI suite, but not the default. The
+  hybrid runtime is not implemented.
+- **Vue at build time.** The Vue syntax frontend uses Vue's compiler packages at build time. The native page has no Vue runtime.
 
 ## Licence
 
-MIT, © 2026 Nnamdi Michael Okpala / OBINexus Computing (`LICENSE`). Third-party works: `THIRD_PARTY_NOTICES.md`.
+MIT, © 2026 Nnamdi Michael Okpala / OBINexus Computing (`LICENSE`). For third-party works (Polycall, Basic Pitch, AndroidX, the guitar
+artwork and others), see `THIRD_PARTY_NOTICES.md`.

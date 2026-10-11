@@ -1,6 +1,6 @@
 /**
  * polycall_rpc v1 over TCP, for Node: AnyTune's tools and import worker reach a Polycall runtime (`polycall start`, loopback) through this. One connection
- * per call, exactly one round trip, never retried — Polycall's own call semantics (docs/RPC.md): a non-idempotent operation is never run twice by this side.
+ * per call, exactly one round trip, never retried — Polycall's own call semantics (Polycall's docs/RPC.md at 2dcab63): a non-idempotent operation is never run twice by this side.
  * Failures are replies: an unreachable runtime is `transport.unreachable`, no reply in time `deadline.exceeded`, a broken frame `protocol.malformed`.
  */
 import net from 'node:net';
