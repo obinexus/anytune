@@ -137,6 +137,19 @@
       "why": "anytune-recording/1: an independent codec (to check the recorder module) and the recorder client, which reaches the C recorder module through Polycall"
     },
     {
+      "name": "lesson",
+      "paths": [
+        "src/lesson/"
+      ],
+      "mayImport": [
+        "music",
+        "domain"
+      ],
+      "modules": [],
+      "forbiddenGlobals": "domGlobals",
+      "why": "practice: aligning what was heard with the arrangement (pitch and timing apart), feedback in words, the lesson clock (count-in, tempo, A-B loops, latency) and step mode — pure, with no microphone, DSP or Polycall"
+    },
+    {
       "name": "app",
       "paths": [
         "src/app/"
