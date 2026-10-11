@@ -1,2 +1,6 @@
 # Obicall replay recordings are binary: never convert their line endings (a CRLF conversion would tear every record)
 *.obr binary
+
+# Standard MIDI Files are binary
+*.mid binary
+*.midi binary

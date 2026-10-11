@@ -24,6 +24,7 @@ The build ships no fonts (the stylesheet uses the system font) and no images. Th
 | Work | Version | Licence | Role |
 |---|---|---|---|
 | jsdom | 30.1.1 | MIT | a DOM for the UI tests |
+| midi-file | 1.2.4 | MIT, © Carter Thaxton | an independent Standard MIDI File parser and writer: the oracle of `tests/music/midi-conformance.test.ts`, and the writer of the fixture `tests/fixtures/midi/fur-elise-opening.mid` (`tools/fixtures/fur-elise.ts`) |
 | axe-core | 4.13.0 | MPL-2.0 | automated accessibility checks. Used unmodified, as a development dependency; nothing of it is distributed. |
 | Obicall `demo.obr` (`tests/fixtures/obicall/demo.obr`) | obicall `ae5581a`, 0.1.1, ABI 1.0 | MIT, © 2026 Nnamdi Michael Okpala / OBINexus Computing | Obicall's own demonstration journal, copied unchanged (SHA-256 `3838115346787cfacb55674dd738b5437ec01858a6fd28651ccad417786c79b4`), for the conformance of the replay reader. It is 2-D position data, not pitch. |
 | Obicall's staged `obicall.exe` and `obicall.dll` | same build | MIT | run by the conformance tools from the maintainer's local Obicall build, never copied into this repository. Their answers are committed as `tests/fixtures/obicall/replay-oracle.json` and `fuse-oracle.json`. |

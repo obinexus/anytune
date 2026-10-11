@@ -30,6 +30,18 @@
       "why": "the musical tuning domain: pure, framework-neutral, testable without a browser, Vue, Obicall or a microphone"
     },
     {
+      "name": "music",
+      "paths": [
+        "src/music/"
+      ],
+      "mayImport": [
+        "domain"
+      ],
+      "modules": [],
+      "forbiddenGlobals": "domGlobals",
+      "why": "the music model: MIDI files, tempo maps and timelines, references, chords, tunings and the guitar fretboard — pure, framework-neutral, with no microphone, subprocess, Obicall or DOM"
+    },
+    {
       "name": "instruments",
       "paths": [
         "src/instruments/"
