@@ -9,7 +9,13 @@ AnyTune is MIT-licensed (`LICENSE`, `SPDX-License-Identifier: MIT`). It uses the
 | Vue: `vue`, `@vue/runtime-dom`, `@vue/runtime-core`, `@vue/reactivity`, `@vue/shared` | 3.5.43 | MIT | © 2018-present, Yuxi (Evan) You and Vue contributors |
 | Vite's module-preload helper, inlined by the build | 8.3.1 | MIT | © 2019-present, VoidZero Inc. and Vite contributors |
 
-The build ships no fonts (the stylesheet uses the system font) and no images. The page's icon is an inline SVG written for AnyTune.
+The build ships no fonts (the stylesheet uses the system font). The page's icon is an inline SVG written for AnyTune.
+
+## Artwork
+
+| Work | Licence | Where |
+|---|---|---|
+| "Guitar, Music, Musical Instrument" by yorbederycke (https://pixabay.com/vectors/guitar-6755435/) | Pixabay Content License | `assets/instruments/guitar/yorbederycke-guitar-6755435.svg`, unchanged; its fretboard map is derived from it (`assets/instruments/guitar/README.md`) |
 
 ## Used to build, never shipped
 
