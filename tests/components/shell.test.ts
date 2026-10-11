@@ -218,13 +218,27 @@ for (const runtime of RUNTIMES) {
     assert.equal(ui.text('.current'), 'First: E4');
     assert.match(ui.text('.position'), /^high E string, open — a suggestion$/);
     assert.equal(ui.text('.next'), 'Then: D#4');
-    const markers = ui.$$('svg.diagram circle.marker');
-    assert.deepEqual(markers.map((m) => m.dataset['kind']), ['current', 'next']);
-    assert.ok((ui.$('svg.diagram').getAttribute('aria-label') ?? '').length > 0, 'the diagram is described in words');
-    assert.equal(ui.$('.artwork-image').getAttribute('alt'), '', 'the artwork is decoration: the diagram and the words carry the meaning');
-    assert.equal(ui.$('svg.diagram').dataset['hand'], 'right');
+    // the enlarged fretboard: the first note is the open high e (○ before the nut), the next D#4 a dashed preview at fret 4 with its finger, at one unit per px
+    const diagram = ui.$('svg.diagram');
+    assert.deepEqual(ui.$$('svg.diagram circle.marker').map((m) => m.dataset['kind']), ['next']);
+    assert.deepEqual(ui.$$('svg.diagram .string-mark').map((m) => [m.dataset['kind'], m.dataset['state'], m.textContent]), [['now', 'open', '○']]);
+    assert.deepEqual(ui.$$('svg.diagram .finger').map((m) => m.textContent), ['4']);
+    assert.deepEqual(ui.$$('svg.diagram .string-name').map((m) => m.textContent), ['e', 'B', 'G', 'D', 'A', 'E']);
+    assert.deepEqual(ui.$$('svg.diagram .fret-number').map((m) => m.textContent), ['', '1', '2', '3', '4']);
+    assert.equal(diagram.getAttribute('viewBox'), `0 0 ${diagram.getAttribute('width')} ${diagram.getAttribute('height')}`, 'one unit per CSS pixel');
+    assert.match(diagram.getAttribute('aria-label') ?? '', /Now: E4, high E string, open — a suggestion\. Next: D#4, B string, fret 4, little finger \(4\) — a suggestion\./);
+    // the artwork, horizontal: the image and the markers under one transformation, the whole drawing decorative (the words and the fretboard carry it)
+    const artwork = ui.$('.artwork-svg');
+    assert.equal(artwork.getAttribute('aria-hidden'), 'true');
+    assert.equal(artwork.getAttribute('viewBox'), '0 0 1997.1 774.83');
+    const turned = ui.$('.artwork-svg > g');
+    assert.equal(turned.getAttribute('transform'), 'matrix(0 -1 1 0 0 774.83)');
+    assert.equal(turned.querySelectorAll('image').length, 1);
+    assert.equal(turned.querySelectorAll('circle.marker').length, 2, 'the markers are inside the same transformation as the image');
+    assert.equal(ui.$('.fretboard').dataset['hand'], 'right');
     await ui.choose(ui.$$('.settings select')[4] as HTMLElement, 'left');
-    assert.equal(ui.$('svg.diagram').dataset['hand'], 'left');
+    assert.equal(ui.$('.fretboard').dataset['hand'], 'left');
+    assert.equal(ui.$('.artwork-svg > g').getAttribute('transform'), 'matrix(0 -1 -1 0 1997.1 774.83)');
     assert.equal(ui.text('.microphone'), 'Microphone off.');
     assert.equal(ui.$$('.review').length, 0, 'no review before a practice');
     ui.mounted.unmount();

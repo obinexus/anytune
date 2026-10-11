@@ -28,15 +28,34 @@ defineProps<{
     microphoneText: string;
     headphonesText: string;
     latencyText: string;
-    diagram: {
-      viewBox: string;
-      hand: string;
-      description: string;
-      strings: { x1: number; y1: number; x2: number; y2: number; label: string; labelX: number; labelY: number }[];
-      frets: { x1: number; y1: number; x2: number; y2: number; label: string; labelX: number; labelY: number }[];
-      markers: { x: number; y: number; textY: number; kind: string; label: string; description: string }[];
+    guitar: {
+      fretboard: {
+        width: number;
+        height: number;
+        viewBox: string;
+        hand: string;
+        caption: string;
+        description: string;
+        strings: { x1: number; y1: number; x2: number; y2: number; label: string; labelX: number; labelY: number; kind: string; key: string; labelKey: string }[];
+        frets: { x1: number; y1: number; x2: number; y2: number; label: string; labelX: number; labelY: number; kind: string; key: string; labelKey: string }[];
+        markers: { x: number; y: number; textY: number; kind: string; label: string; key: string; labelKey: string }[];
+        marks: { x: number; y: number; textY: number; kind: string; state: string; label: string; key: string }[];
+      };
+      artwork: {
+        url: string;
+        viewBox: string;
+        width: number;
+        height: number;
+        imageWidth: number;
+        imageHeight: number;
+        transform: string;
+        hand: string;
+        credit: string;
+        window: { x: number; y: number; width: number; height: number };
+        markers: { x: number; y: number; kind: string; key: string }[];
+      };
     };
-    artwork: { url: string; viewBox: string; hand: string; credit: string; markers: { x: number; y: number; textY: number; kind: string; label: string; description: string }[] };
+    announcement: string;
     review: { visible: boolean; sentences: string[]; bars: { bar: number; text: string }[]; repeatBar: string; repeatLabel: string; attemptText: string };
     errorText: string;
   };
@@ -86,7 +105,8 @@ function onReference(event: Event): void {
     <p v-if="practice.available" class="title">{{ practice.title }}</p>
     <p class="arrangement">{{ practice.arrangementText }}</p>
     <div v-if="practice.available" class="practice-body">
-      <section class="prompt" aria-live="polite" :data-phase="practice.phase">
+      <p class="visually-hidden" role="status" aria-live="polite" aria-atomic="true">{{ practice.announcement }}</p>
+      <section class="prompt" :data-phase="practice.phase">
         <p class="phase">{{ practice.phaseText }}</p>
         <p class="current">{{ practice.currentText }}</p>
         <p class="position">{{ practice.positionText }}</p>
@@ -94,7 +114,10 @@ function onReference(event: Event): void {
         <p v-if="practice.stepMessage" class="step-message">{{ practice.stepMessage }}</p>
         <p class="heard">{{ practice.heardText }}</p>
       </section>
-      <FretboardDiagram :diagram="practice.diagram" />
+      <div class="guitar">
+        <GuitarArtwork :artwork="practice.guitar.artwork" />
+        <FretboardDiagram :fretboard="practice.guitar.fretboard" />
+      </div>
       <div class="actions">
         <button v-if="!practice.running" type="button" class="primary" @click="emit('start')">Start</button>
         <button v-else type="button" class="primary stop" @click="emit('stop')">Stop</button>
@@ -142,9 +165,11 @@ function onReference(event: Event): void {
         </label>
         <label class="check"><input type="checkbox" :checked="practice.metronome" @change="onMetronome" /> Metronome click</label>
         <label class="check"><input type="checkbox" :checked="practice.playReference" @change="onReference" /> Play the reference with me</label>
-        <p class="latency">{{ practice.latencyText }}</p>
       </fieldset>
-      <GuitarArtwork :artwork="practice.artwork" />
+      <details class="diagnostics">
+        <summary>Timing and microphone details</summary>
+        <p class="latency">{{ practice.latencyText }}</p>
+      </details>
     </div>
     <p v-if="practice.errorText" class="error" role="alert">{{ practice.errorText }}</p>
   </main>

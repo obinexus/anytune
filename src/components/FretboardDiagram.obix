@@ -1,26 +1,34 @@
 <script setup lang="ts">
-// the enlarged fretboard: the first five frets, strings and markers from the view (src/app/practice-view.ts) — the drawing computes nothing
+// the enlarged fretboard, horizontal: drawn at one unit per CSS pixel from the guitar view (src/app/guitar-view.ts) — the drawing computes nothing
 defineProps<{
-  diagram: {
+  fretboard: {
+    width: number;
+    height: number;
     viewBox: string;
     hand: string;
+    caption: string;
     description: string;
-    strings: { x1: number; y1: number; x2: number; y2: number; label: string; labelX: number; labelY: number }[];
-    frets: { x1: number; y1: number; x2: number; y2: number; label: string; labelX: number; labelY: number }[];
-    markers: { x: number; y: number; textY: number; kind: string; label: string; description: string }[];
+    strings: { x1: number; y1: number; x2: number; y2: number; label: string; labelX: number; labelY: number; kind: string; key: string; labelKey: string }[];
+    frets: { x1: number; y1: number; x2: number; y2: number; label: string; labelX: number; labelY: number; kind: string; key: string; labelKey: string }[];
+    markers: { x: number; y: number; textY: number; kind: string; label: string; key: string; labelKey: string }[];
+    marks: { x: number; y: number; textY: number; kind: string; state: string; label: string; key: string }[];
   };
 }>();
 </script>
 
 <template>
-  <figure class="fretboard">
-    <svg class="diagram" :data-hand="diagram.hand" :viewBox="diagram.viewBox" role="img" :aria-label="diagram.description">
-      <line v-for="fret in diagram.frets" :key="fret.x1" class="fret" :x1="fret.x1" :y1="fret.y1" :x2="fret.x2" :y2="fret.y2" />
-      <text v-for="fret in diagram.frets" :key="fret.labelX" class="fret-number" :x="fret.labelX" :y="fret.labelY" aria-hidden="true">{{ fret.label }}</text>
-      <line v-for="string in diagram.strings" :key="string.y1" class="string" :x1="string.x1" :y1="string.y1" :x2="string.x2" :y2="string.y2" />
-      <text v-for="string in diagram.strings" :key="string.label" class="string-name" :x="string.labelX" :y="string.labelY" aria-hidden="true">{{ string.label }}</text>
-      <circle v-for="marker in diagram.markers" :key="marker.kind" class="marker" :data-kind="marker.kind" :cx="marker.x" :cy="marker.y" r="14" />
-      <text v-for="marker in diagram.markers" :key="marker.description" class="finger" :data-kind="marker.kind" :x="marker.x" :y="marker.textY" aria-hidden="true">{{ marker.label }}</text>
-    </svg>
+  <figure class="fretboard" :data-hand="fretboard.hand">
+    <div class="fretboard-scroll">
+      <svg class="diagram" :width="fretboard.width" :height="fretboard.height" :viewBox="fretboard.viewBox" role="img" :aria-label="fretboard.description">
+        <line v-for="fret in fretboard.frets" :key="fret.key" class="fret" :data-kind="fret.kind" :x1="fret.x1" :y1="fret.y1" :x2="fret.x2" :y2="fret.y2" />
+        <text v-for="fret in fretboard.frets" :key="fret.labelKey" class="fret-number" :x="fret.labelX" :y="fret.labelY" aria-hidden="true">{{ fret.label }}</text>
+        <line v-for="string in fretboard.strings" :key="string.key" class="string" :x1="string.x1" :y1="string.y1" :x2="string.x2" :y2="string.y2" />
+        <text v-for="string in fretboard.strings" :key="string.labelKey" class="string-name" :x="string.labelX" :y="string.labelY" aria-hidden="true">{{ string.label }}</text>
+        <text v-for="mark in fretboard.marks" :key="mark.key" class="string-mark" :data-kind="mark.kind" :data-state="mark.state" :x="mark.x" :y="mark.textY" aria-hidden="true">{{ mark.label }}</text>
+        <circle v-for="marker in fretboard.markers" :key="marker.key" class="marker" :data-kind="marker.kind" :cx="marker.x" :cy="marker.y" r="15" />
+        <text v-for="marker in fretboard.markers" :key="marker.labelKey" class="finger" :data-kind="marker.kind" :x="marker.x" :y="marker.textY" aria-hidden="true">{{ marker.label }}</text>
+      </svg>
+    </div>
+    <figcaption class="fretboard-caption">{{ fretboard.caption }}</figcaption>
   </figure>
 </template>

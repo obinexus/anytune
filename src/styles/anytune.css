@@ -215,24 +215,47 @@ button.stop {
   min-width: 0;
 }
 
+/*
+ * Native selects, readable in every state. The control has its own background and text colour (never transparent over the page), and so do its options:
+ * the list of options is drawn by the browser — or by Android — on its own surface, and an option that inherited the page's light text in dark mode was
+ * nearly white on a white list. Disabled is said by a dashed border and the muted colour, which keeps its contrast.
+ */
 select {
   width: 100%;
   max-width: 100%;
+  background-color: var(--paper);
+  color: var(--ink);
+}
+
+select option,
+select optgroup {
+  background-color: var(--paper);
+  color: var(--ink);
+}
+
+select:disabled {
+  color: var(--muted);
+  border-style: dashed;
+  cursor: not-allowed;
+}
+
+select option:disabled {
+  color: var(--muted);
 }
 
 .shell {
-  max-width: 40rem;
+  max-width: 56rem;
   margin: 0 auto;
 }
 
+/*
+ * The header is in the page's flow — neither fixed nor sticky — so it takes its own height and can never cover the content below it or a control that
+ * receives the focus. It keeps clear of a notch or a status bar drawn over the page (the safe area).
+ */
 .app-header {
-  position: sticky;
-  top: 0;
-  z-index: 1;
   display: grid;
   gap: 0.25rem;
-  padding: 0.5rem 1rem;
-  background: var(--paper);
+  padding: max(0.5rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right)) 0.5rem max(1rem, env(safe-area-inset-left));
   border-bottom: 1px solid var(--muted);
 }
 
@@ -241,14 +264,26 @@ select {
   font-weight: 700;
 }
 
-/* the five screens on one row, at a phone's width too: equal columns, the label sized to fit "Practise" at 360 px */
+/* the six screens: one row when there is room, then three columns, then two — never wider than the screen, whatever the text size */
 .nav {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 0.25rem;
   margin: 0;
   padding: 0;
   list-style: none;
+}
+
+@media (max-width: 34rem) {
+  .nav {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 22rem) {
+  .nav {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 .nav-item {
@@ -256,7 +291,7 @@ select {
   min-height: 2.75rem;
   padding: 0.25rem 0.15rem;
   border-width: 1px;
-  font-size: 0.875rem;
+  overflow-wrap: anywhere;
 }
 
 .nav-item[aria-current='page'] {
@@ -267,7 +302,7 @@ select {
 .screen {
   display: grid;
   gap: 1rem;
-  padding: 1rem 1rem 3rem;
+  padding: 1rem max(1rem, env(safe-area-inset-right)) max(3rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
 }
 
 .screen h1 {
@@ -284,7 +319,8 @@ select {
 .microphone,
 .attempt,
 .when,
-.empty {
+.empty,
+.fretboard-caption {
   margin: 0;
   color: var(--muted);
 }
@@ -358,6 +394,18 @@ select {
   border-left: 4px solid var(--focus);
 }
 
+details > summary {
+  min-height: 2.75rem;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.diagnostics p {
+  margin: 0.25rem 0;
+}
+
 /* ------------------------------------------------------------------------------------------------------------------------------------------ practise */
 
 .practice-body {
@@ -397,14 +445,47 @@ select {
   font-weight: 700;
 }
 
+/* ---------------------------------------------------------------------------------------------------------------------------- the guitar, horizontal */
+
+.guitar {
+  display: grid;
+  gap: 0.75rem;
+}
+
+/* the supplied artwork, turned by its coordinates (src/app/guitar-view.ts): as wide as the column, never taller than 40 % of the screen's height */
+.artwork {
+  margin: 0;
+  display: grid;
+  gap: 0.25rem;
+}
+
+.artwork-svg {
+  display: block;
+  width: min(100%, 103vh);
+  height: auto;
+  margin-inline: auto;
+}
+
+.artwork-window {
+  fill: none;
+  stroke: var(--focus);
+  stroke-width: 10;
+}
+
+/* the enlarged fretboard: drawn at one unit per CSS pixel for the width it was given — the labels are never scaled down */
 .fretboard {
   margin: 0;
+  display: grid;
+  gap: 0.25rem;
+}
+
+.fretboard-scroll {
+  overflow-x: auto;
 }
 
 .diagram {
-  width: 100%;
-  height: auto;
   display: block;
+  max-width: none;
 }
 
 .diagram .string {
@@ -417,15 +498,37 @@ select {
   stroke-width: 3;
 }
 
-.diagram .fret-number,
+.diagram .fret[data-kind='nut'] {
+  stroke: var(--ink);
+  stroke-width: 8;
+}
+
 .diagram .string-name {
-  fill: var(--muted);
+  fill: var(--ink);
+  font-size: 18px;
+  font-weight: 700;
+  text-anchor: middle;
+}
+
+.diagram .fret-number {
+  fill: var(--ink);
   font-size: 16px;
   text-anchor: middle;
 }
 
-/* the target now is a filled circle with the finger number; the next one an outlined ring — told apart by shape and fill, not by colour alone */
-.marker[data-kind='current'] {
+.diagram .string-mark {
+  fill: var(--ink);
+  font-size: 20px;
+  font-weight: 700;
+  text-anchor: middle;
+}
+
+.diagram .string-mark[data-kind='next'] {
+  fill: var(--muted);
+}
+
+/* the target now is a filled circle with the finger number; the next one a dashed ring — told apart by shape and fill, not by colour alone */
+.marker[data-kind='now'] {
   fill: var(--focus);
   stroke: var(--ink);
   stroke-width: 2;
@@ -438,8 +541,17 @@ select {
   stroke-dasharray: 6 4;
 }
 
+.artwork-svg .marker[data-kind='now'] {
+  stroke-width: 6;
+}
+
+.artwork-svg .marker[data-kind='next'] {
+  stroke-width: 8;
+  stroke-dasharray: 14 8;
+}
+
 .finger {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 700;
   text-anchor: middle;
   fill: var(--paper);
@@ -448,6 +560,8 @@ select {
 .finger[data-kind='next'] {
   fill: var(--ink);
 }
+
+/* ------------------------------------------------------------------------------------------------------------------------------------------ settings */
 
 .settings {
   display: grid;
@@ -483,50 +597,24 @@ select {
   border-radius: 0.75rem;
 }
 
-/* the guitar artwork: the neck is narrow, so the enlarged fretboard above is the one to read; the artwork places the hand */
-.artwork {
-  margin: 0;
-  display: grid;
-  gap: 0.25rem;
-  justify-items: center;
-}
-
-.artwork-frame {
-  position: relative;
-  width: min(14rem, 40vw); /* a reference picture: on a phone it stays within the screen; the diagram above is the enlarged fretboard */
-  aspect-ratio: 774.83 / 1997.1;
-}
-
-.artwork-image,
-.artwork-overlay {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-}
-
-.artwork[data-hand='left'] .artwork-frame {
-  transform: scaleX(-1);
-}
-
-@media (min-width: 48rem) {
-  .practice-body {
-    grid-template-columns: 1fr 15rem;
-  }
-
-  .practice-body > .artwork {
-    grid-column: 2;
-    grid-row: 1 / span 6;
-    align-self: start;
-  }
-}
-
 @media (forced-colors: active) {
-  .marker[data-kind='current'] {
+  .marker[data-kind='now'] {
     fill: Highlight;
   }
 
-  .marker[data-kind='next'] {
+  .marker[data-kind='next'],
+  .artwork-window {
     stroke: Highlight;
+  }
+
+  .diagram .string,
+  .diagram .fret[data-kind='nut'] {
+    stroke: CanvasText;
+  }
+
+  .diagram .string-name,
+  .diagram .fret-number,
+  .diagram .string-mark {
+    fill: CanvasText;
   }
 }

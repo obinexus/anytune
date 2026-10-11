@@ -55,3 +55,13 @@ document.addEventListener('anytune-pause', () => app.pause());
 const host = document.getElementById('app');
 if (host === null) throw new Error('index.html has no #app');
 mountShell(host, { app });
+
+// the content's width, for the fretboard (drawn at one unit per CSS pixel): measured from the screen shown, again whenever the page's size changes
+const measure = (): void => {
+  const screen = host.querySelector('.shell > main');
+  if (!(screen instanceof HTMLElement)) return;
+  const style = getComputedStyle(screen);
+  app.layout(screen.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight));
+};
+new ResizeObserver(measure).observe(host);
+measure();

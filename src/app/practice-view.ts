@@ -5,36 +5,13 @@
 import type { NoteResult } from '../lesson/assessment.ts';
 import { noteOf } from '../domain/pitch.ts';
 import type { FretboardMap } from '../music/fretboard.ts';
-import { mirrored, targetOf } from '../music/fretboard.ts';
-import type { StringNumber } from '../music/guitar.ts';
+import { guitarView, shapeText, type GuitarView, type Shape } from './guitar-view.ts';
 import type { PracticeState, Target } from './practice.ts';
 
 export interface Option {
   readonly value: string;
   readonly label: string;
   readonly selected: boolean;
-}
-
-export interface Marker {
-  readonly x: number;
-  readonly y: number;
-  /** where the label's baseline goes */
-  readonly textY: number;
-  readonly kind: 'current' | 'next';
-
-  /** the finger number, or "0" for an open string — shown inside the marker */
-  readonly label: string;
-  readonly description: string;
-}
-
-export interface DiagramLine {
-  readonly x1: number;
-  readonly y1: number;
-  readonly x2: number;
-  readonly y2: number;
-  readonly label: string;
-  readonly labelX: number;
-  readonly labelY: number;
 }
 
 export interface PracticeView {
@@ -61,21 +38,19 @@ export interface PracticeView {
   readonly microphoneText: string;
   readonly headphonesText: string;
   readonly latencyText: string;
-  /** the enlarged fretboard: a diagram of the first frets, horizontal */
-  readonly diagram: { readonly viewBox: string; readonly hand: 'right' | 'left'; readonly strings: readonly DiagramLine[]; readonly frets: readonly DiagramLine[]; readonly markers: readonly Marker[]; readonly description: string };
-  /** the guitar artwork, with the target on its strings */
-  readonly artwork: { readonly url: string; readonly viewBox: string; readonly hand: 'right' | 'left'; readonly markers: readonly Marker[]; readonly credit: string };
+  /** the guitar, horizontal — the artwork for context, the enlarged fretboard beneath it to read (src/app/guitar-view.ts) */
+  readonly guitar: GuitarView;
+  /** said to a screen reader when it changes: the phase, never every note of a flowing passage */
+  readonly announcement: string;
   readonly review: { readonly visible: boolean; readonly sentences: readonly string[]; readonly bars: readonly { readonly bar: number; readonly text: string }[]; readonly repeatBar: string; readonly repeatLabel: string; readonly attemptText: string };
   readonly errorText: string;
 }
 
-const STRING_NAMES: Readonly<Record<StringNumber, string>> = { 1: 'high E', 2: 'B', 3: 'G', 4: 'D', 5: 'A', 6: 'low E' };
-const FINGERS = ['', 'index', 'middle', 'ring', 'little'];
+/** Where a target goes on the guitar, as the guitar view draws it. */
+export const shapeOf = (t: Target | null): Shape | null => (t === null || t.position === null ? null : { kind: 'note', key: t.key, string: t.position.string, fret: t.position.fret, finger: t.position.finger });
 
 export function positionText(t: Target | null): string {
-  if (t === null || t.position === null) return '';
-  const p = t.position;
-  return p.fret === 0 ? `${STRING_NAMES[p.string]} string, open — a suggestion` : `${STRING_NAMES[p.string]} string, fret ${p.fret}, ${FINGERS[p.finger ?? 0] ?? ''} finger (${p.finger ?? ''}) — a suggestion`;
+  return shapeText(shapeOf(t));
 }
 
 const noteText = (t: Target | null): string => (t === null ? '' : noteOf(t.key).label);
@@ -84,45 +59,11 @@ export interface PracticeViewContext {
   readonly map: FretboardMap;
   readonly artworkUrl: string;
   readonly leftHanded: boolean;
+  /** the content's width, CSS pixels: the fretboard is drawn for it */
+  readonly width: number;
   readonly microphone: 'off' | 'starting' | 'on' | 'denied' | 'unavailable';
   readonly latencyText: string;
   readonly errorText: string;
-}
-
-function diagram(state: PracticeState, leftHanded: boolean): PracticeView['diagram'] {
-  const width = 640;
-  const height = 230;
-  const left = 70;
-  const right = width - 20;
-  const top = 25;
-  const gap = 34;
-  const frets = 5;
-  const fretX = (f: number): number => left + ((right - left) * f) / frets;
-  const flip = (x: number): number => (leftHanded ? width - x : x);
-  const strings = ([1, 2, 3, 4, 5, 6] as StringNumber[]).map((s, i) => ({ x1: flip(left), y1: top + i * gap, x2: flip(right), y2: top + i * gap, label: s === 1 ? 'e' : s === 6 ? 'E' : STRING_NAMES[s], labelX: leftHanded ? width - 24 : 24, labelY: top + i * gap + 5 }));
-  const fretLines = Array.from({ length: frets + 1 }, (_, f) => ({ x1: flip(fretX(f)), y1: top - 8, x2: flip(fretX(f)), y2: top + 5 * gap + 8, label: f === 0 ? '' : String(f), labelX: f === 0 ? 0 : flip((fretX(f - 1) + fretX(f)) / 2), labelY: height - 4 }));
-  const markers: Marker[] = [];
-  for (const [t, kind] of [[state.current, 'current'], [state.next, 'next']] as const) {
-    if (t === null || t.position === null || t.position.fret > frets) continue;
-    const p = t.position;
-    const x = p.fret === 0 ? fretX(0) - 22 : (fretX(p.fret - 1) + fretX(p.fret)) / 2;
-    const y = top + (p.string - 1) * gap;
-    markers.push({ x: flip(x), y, textY: y + 6, kind, label: p.fret === 0 ? '0' : String(p.finger ?? ''), description: `${kind === 'current' ? 'Now' : 'Next'}: ${noteOf(t.key).label}, ${positionText(t)}` });
-  }
-  const description = markers.length === 0 ? 'A fretboard diagram of the first five frets.' : `A fretboard diagram of the first five frets, ${leftHanded ? 'left' : 'right'}-handed. ${markers.map((m) => m.description).join('. ')}.`;
-  return { viewBox: `0 0 ${width} ${height}`, hand: leftHanded ? 'left' : 'right', strings, frets: fretLines, markers, description };
-}
-
-function artwork(state: PracticeState, ctx: PracticeViewContext): PracticeView['artwork'] {
-  const map = ctx.leftHanded ? mirrored(ctx.map) : ctx.map;
-  const markers: Marker[] = [];
-  for (const [t, kind] of [[state.current, 'current'], [state.next, 'next']] as const) {
-    if (t === null || t.position === null) continue;
-    const at = targetOf(map, t.position.string, t.position.fret);
-    if (at !== null) markers.push({ x: at.x, y: at.y, textY: at.y, kind, label: '', description: `${kind === 'current' ? 'Now' : 'Next'}: ${positionText(t)}` });
-  }
-  const [x, y, w, h] = ctx.map.source.viewBox;
-  return { url: ctx.artworkUrl, viewBox: `${x} ${y} ${w} ${h}`, hand: ctx.leftHanded ? 'left' : 'right', markers, credit: `Guitar artwork: “Guitar, Music, Musical Instrument” by ${map.source.author}, ${map.source.license}` };
 }
 
 const resultText = (results: readonly NoteResult[], bar: number): string => {
@@ -135,12 +76,11 @@ const resultText = (results: readonly NoteResult[], bar: number): string => {
 
 export function toPracticeView(state: PracticeState | null, ctx: PracticeViewContext): PracticeView {
   if (state === null) {
-    const empty: PracticeView['diagram'] = { viewBox: '0 0 640 230', hand: 'right', strings: [], frets: [], markers: [], description: '' };
     return {
       available: false, title: '', arrangementText: 'Choose a song in the Library to practise it.', phase: 'none', phaseText: '', running: false, canConfigure: false,
       tempoOptions: [], fromBarOptions: [], toBarOptions: [], modeOptions: [], handOptions: [], metronome: false, playReference: false, countInText: '', currentText: '',
-      positionText: '', nextText: '', heardText: '', stepMessage: '', microphoneText: '', headphonesText: '', latencyText: '', diagram: empty,
-      artwork: { url: ctx.artworkUrl, viewBox: '0 0 1 1', hand: 'right', markers: [], credit: '' },
+      positionText: '', nextText: '', heardText: '', stepMessage: '', microphoneText: '', headphonesText: '', latencyText: '',
+      guitar: guitarView(ctx.map, ctx.artworkUrl, null, null, ctx.width, ctx.leftHanded ? 'left' : 'right'), announcement: '',
       review: { visible: false, sentences: [], bars: [], repeatBar: '', repeatLabel: '', attemptText: '' }, errorText: ctx.errorText,
     };
   }
@@ -197,8 +137,12 @@ export function toPracticeView(state: PracticeState | null, ctx: PracticeViewCon
       : 'Microphone off.',
     headphonesText: s.playReference ? 'Use headphones: if the microphone hears the speaker, it can mistake the reference for you.' : '',
     latencyText: ctx.latencyText,
-    diagram: diagram(state, ctx.leftHanded),
-    artwork: artwork(state, ctx),
+    guitar: guitarView(ctx.map, ctx.artworkUrl, shapeOf(state.current), shapeOf(state.next), ctx.width, ctx.leftHanded ? 'left' : 'right'),
+    announcement:
+      state.phase === 'ready' ? ''
+      : state.phase === 'count-in' ? 'Count-in'
+      : state.phase === 'playing' ? (s.mode === 'step' ? `Play ${noteText(state.current)}` : `Playing, pass ${state.pass + 1}`)
+      : `Review: ${state.feedback?.sentences[0] ?? 'done'}`,
     review: {
       visible: state.phase === 'reviewing' || state.passes.length > 0,
       sentences: state.feedback?.sentences ?? [],

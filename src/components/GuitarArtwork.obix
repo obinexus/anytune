@@ -1,24 +1,32 @@
 <script setup lang="ts">
-// the supplied guitar artwork, unchanged, with the target placed on its strings from the fretboard map (assets/instruments/guitar/fretboard-map.json)
+// the supplied guitar artwork, unchanged, turned horizontal by its coordinates — the markers under the same transformation, so they stay on their string and
+// fret (src/app/guitar-view.ts); the outline shows the frets the enlarged fretboard draws
 defineProps<{
   artwork: {
     url: string;
     viewBox: string;
+    width: number;
+    height: number;
+    imageWidth: number;
+    imageHeight: number;
+    transform: string;
     hand: string;
     credit: string;
-    markers: { x: number; y: number; textY: number; kind: string; label: string; description: string }[];
+    window: { x: number; y: number; width: number; height: number };
+    markers: { x: number; y: number; kind: string; key: string }[];
   };
 }>();
 </script>
 
 <template>
   <figure class="artwork" :data-hand="artwork.hand">
-    <div class="artwork-frame">
-      <img class="artwork-image" :src="artwork.url" alt="" />
-      <svg class="artwork-overlay" :viewBox="artwork.viewBox" aria-hidden="true" focusable="false">
-        <circle v-for="marker in artwork.markers" :key="marker.kind" class="marker" :data-kind="marker.kind" :cx="marker.x" :cy="marker.y" r="16" />
-      </svg>
-    </div>
+    <svg class="artwork-svg" :viewBox="artwork.viewBox" aria-hidden="true" focusable="false">
+      <g :transform="artwork.transform">
+        <image :href="artwork.url" x="0" y="0" :width="artwork.imageWidth" :height="artwork.imageHeight" />
+        <rect class="artwork-window" :x="artwork.window.x" :y="artwork.window.y" :width="artwork.window.width" :height="artwork.window.height" rx="14" />
+        <circle v-for="marker in artwork.markers" :key="marker.key" class="marker" :data-kind="marker.kind" :cx="marker.x" :cy="marker.y" r="24" />
+      </g>
+    </svg>
     <figcaption class="credit">{{ artwork.credit }}</figcaption>
   </figure>
 </template>

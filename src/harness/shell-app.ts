@@ -85,6 +85,8 @@ export class ShellApp {
   #leftHanded = false;
   #analyser: LiveAnalyser | null = null;
   #cancelFrame: (() => void) | null = null;
+  /** the content's width, CSS pixels — measured by the page (main.ts); a phone's until it is */
+  #width = 328;
 
   constructor(deps: ShellDeps, songs: readonly Song[] = bundledSongs()) {
     this.#deps = deps;
@@ -133,6 +135,7 @@ export class ShellApp {
         map: FRETBOARD_MAP,
         artworkUrl: GUITAR_ARTWORK_DATA_URL,
         leftHanded: this.#leftHanded,
+        width: this.#width,
         microphone: this.#microphone,
         latencyText: this.#deps.audio?.latencyText() ?? '',
         errorText: this.#error,
@@ -141,6 +144,14 @@ export class ShellApp {
   }
 
   /** The page is hidden, or the app leaves the foreground: nothing keeps listening. */
+  /** The content's width changed (a rotation, a window resized, a larger text size): the fretboard is drawn again for it. */
+  layout(width: number): void {
+    const w = Math.round(width);
+    if (!(w > 0) || w === this.#width) return;
+    this.#width = w;
+    this.#changed();
+  }
+
   pause(): void {
     if (this.shell.practice !== null && this.#microphone === 'on') void this.handlers.practiceStop();
     void this.#deps.tuning.session.stop();
