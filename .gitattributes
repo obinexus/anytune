@@ -9,3 +9,6 @@
 gradlew text eol=lf
 *.sh text eol=lf
 *.bat text eol=crlf
+
+# supplied artwork is kept byte for byte: never a line-ending conversion
+assets/instruments/**/*.svg -text
