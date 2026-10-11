@@ -4,8 +4,8 @@
  * is one. It gives the UI one view (ShellView) and takes its intents (the handlers). It is driven the same in the browser, in the Android WebView and in the
  * tests: what it touches outside — audio, files, hashing, the display's frame timing — is given to it.
  */
-import { LiveAnalyser } from '../analysis/live.ts';
 import { Announcer } from '../app/announcer.ts';
+import { inputView, reportedTotal, timingLines } from '../app/input-view.ts';
 import { PracticeSession, type AttemptStore } from '../app/practice.ts';
 import { toPracticeView } from '../app/practice-view.ts';
 import { IMPORT_NOTE, Shell, toHomeView, toLibraryView, toProgressView, type Screen, type Song } from '../app/shell.ts';
@@ -15,7 +15,10 @@ import type { Scheduler } from '../domain/ports.ts';
 import { referenceFromMidi } from '../music/reference.ts';
 import { FRETBOARD_MAP, FUR_ELISE_MIDI_BASE64, GUITAR_ARTWORK_DATA_URL } from './assets.generated.ts';
 import type { ComposedAnyTune } from './compose.ts';
+import { Listener } from './listener.ts';
 import type { PracticeAudio } from './practice-audio.ts';
+
+const running = (p: PracticeSession): boolean => p.getState().phase === 'count-in' || p.getState().phase === 'playing';
 
 export interface ShellDeps {
   readonly tuning: Pick<ComposedAnyTune, 'session' | 'catalog' | 'input'>;
@@ -45,7 +48,14 @@ export interface ShellHandlers {
   tuneInput(id: string): void;
   tuneStart(): void;
   tuneStop(): void;
+  /** Start: open and check the microphone (an assessed attempt) */
   practiceStart(): Promise<void>;
+  /** Begin: the input is ready — count in and play, assessed */
+  practiceBegin(): Promise<void>;
+  /** Cancel the microphone check */
+  practiceCancel(): void;
+  /** Play along without assessment: no microphone, no verdict */
+  practiceFree(): Promise<void>;
   practiceStop(): Promise<void>;
   practiceListen(): void;
   practiceRepeat(bar: string): void;
@@ -80,10 +90,12 @@ export class ShellApp {
   readonly #listeners = new Set<() => void>();
   readonly #offs: (() => void)[] = [];
   #announcement = '';
-  #microphone: 'off' | 'starting' | 'on' | 'denied' | 'unavailable' = 'off';
   #error = '';
   #leftHanded = false;
-  #analyser: LiveAnalyser | null = null;
+  /** the microphone, for assessed attempts — null where there is no Web Audio */
+  readonly #listener: Listener | null;
+  /** while an assessed run listens: what is wrong with the capture now, or '' */
+  #alert = '';
   #cancelFrame: (() => void) | null = null;
   /** the content's width, CSS pixels — measured by the page (main.ts); a phone's until it is */
   #width = 328;
@@ -93,6 +105,7 @@ export class ShellApp {
     const store = deps.recorder.store;
     const why = deps.recorder.store === null ? deps.recorder.why : '';
     this.shell = new Shell(songs, (song) => new PracticeSession(song.reference, song.melodyTrack, { pickupTicks: song.pickupTicks, playback: deps.audio?.playback ?? null, store, storeUnavailableWhy: why }), deps.now);
+    this.#listener = deps.audio === null ? null : new Listener(deps.audio, deps.frame, () => this.#changed());
     this.#announcer = new Announcer(deps.clock);
     this.#offs.push(this.#announcer.subscribe((text) => {
       this.#announcement = text;
@@ -105,7 +118,7 @@ export class ShellApp {
     this.#offs.push(this.shell.subscribe(() => {
       // a practice that ends by itself (step mode done, the piece over) releases the microphone
       const phase = this.shell.practice?.getState().phase;
-      if (phase === 'reviewing' && this.#microphone === 'on') this.#releaseCapture();
+      if (phase === 'reviewing' && this.#listener?.state.kind === 'listening') this.#endRun();
       this.#changed();
     }));
     this.handlers = this.#makeHandlers();
@@ -136,14 +149,15 @@ export class ShellApp {
         artworkUrl: GUITAR_ARTWORK_DATA_URL,
         leftHanded: this.#leftHanded,
         width: this.#width,
-        microphone: this.#microphone,
-        latencyText: this.#deps.audio?.latencyText() ?? '',
+        input: inputView(this.#listener?.state ?? { kind: 'idle' }, this.#listener?.levelDb() ?? Number.NEGATIVE_INFINITY, this.#listener?.loudestDb() ?? Number.NEGATIVE_INFINITY),
+        timing: timingLines(this.#deps.audio?.latency() ?? null, this.#deps.audio?.captureInfo() ?? this.#listener?.lastRecord()?.info ?? null),
+        capture: this.#listener?.lastRecord() ?? null,
+        alertText: this.#alert,
         errorText: this.#error,
       }),
     };
   }
 
-  /** The page is hidden, or the app leaves the foreground: nothing keeps listening. */
   /** The content's width changed (a rotation, a window resized, a larger text size): the fretboard is drawn again for it. */
   layout(width: number): void {
     const w = Math.round(width);
@@ -152,8 +166,11 @@ export class ShellApp {
     this.#changed();
   }
 
+  /** The page is hidden, or the app leaves the foreground: nothing keeps listening, and nothing keeps playing. */
   pause(): void {
-    if (this.shell.practice !== null && this.#microphone === 'on') void this.handlers.practiceStop();
+    const phase = this.shell.practice?.getState().phase;
+    if (phase === 'count-in' || phase === 'playing') void this.handlers.practiceStop();
+    else this.#listener?.close();
     void this.#deps.tuning.session.stop();
   }
 
@@ -163,20 +180,24 @@ export class ShellApp {
     this.#announcer.dispose();
   }
 
-  /** Once: a practice that ends by itself releases the microphone, and the Stop that follows finds it released. */
-  #releaseCapture(): void {
+  /** A run ended (stopped, or by itself): the display's loop stops and the microphone is released — its capture kept for the review. Once. */
+  #endRun(): void {
     this.#cancelFrame?.();
     this.#cancelFrame = null;
-    if (this.#microphone === 'on' || this.#microphone === 'starting') this.#deps.audio?.stopCapture();
-    this.#analyser = null;
-    this.#microphone = 'off';
+    this.#listener?.close();
   }
 
   #tickLoop(): void {
     const audio = this.#deps.audio;
     const practice = this.shell.practice;
     if (audio === null || practice === null) return;
-    practice.tick(audio.now());
+    const now = audio.now();
+    practice.tick(now);
+    const alert = this.#listener?.alert(now) ?? '';
+    if (alert !== this.#alert) {
+      this.#alert = alert;
+      this.#changed();
+    }
     const phase = practice.getState().phase;
     if (phase === 'count-in' || phase === 'playing') this.#cancelFrame = this.#deps.frame(() => this.#tickLoop());
   }
@@ -212,35 +233,48 @@ export class ShellApp {
       tuneStart: () => void this.#deps.tuning.session.start(),
       tuneStop: () => void this.#deps.tuning.session.stop(),
       practiceStart: async () => {
+        // an assessed attempt starts with the microphone: asked for, then checked — the learner plucks a string — before anything is judged
         const p = practice();
-        const audio = this.#deps.audio;
-        if (p === null) return;
-        if (audio === null) {
+        if (p === null || running(p)) return;
+        if (this.#listener === null) {
           this.#error = 'This browser has no Web Audio: practice cannot hear you here.';
           this.#changed();
           return;
         }
         await this.#deps.tuning.session.stop(); // one thing listens at a time
         this.#error = '';
-        this.#microphone = 'starting';
+        await this.#listener.open();
+      },
+      practiceBegin: async () => {
+        const p = practice();
+        const audio = this.#deps.audio;
+        const listener = this.#listener;
+        if (p === null || audio === null || listener === null || running(p)) return;
+        p.configure({ inputLatencySeconds: reportedTotal(audio.latency()) });
+        const coverage = listener.listen();
+        if (coverage === null) return;
+        listener.onEvents = (events) => p.hear(events);
+        this.#alert = '';
+        await p.start(audio.now(), { assess: true, capture: coverage });
+        this.#tickLoop();
         this.#changed();
-        const analyser = new LiveAnalyser({ sampleRate: audio.sampleRate, listenFor: 'notes' });
-        this.#analyser = analyser;
-        const outcome = await audio.startCapture((samples, at) => {
-          if (this.#analyser !== analyser) return;
-          const events = analyser.push(samples, at);
-          if (events.length > 0) p.hear(events);
-        });
-        if (outcome !== 'on') {
-          this.#analyser = null;
-          this.#microphone = outcome === 'denied' ? 'denied' : 'unavailable';
-          this.#error = outcome === 'failed' ? 'The microphone could not be started.' : '';
+      },
+      practiceCancel: () => this.#listener?.close(),
+      practiceFree: async () => {
+        // played along without assessment: no microphone, no verdict
+        const p = practice();
+        const audio = this.#deps.audio;
+        if (p === null || running(p)) return;
+        if (audio === null) {
+          this.#error = 'This browser has no Web Audio: nothing can be played here.';
           this.#changed();
           return;
         }
-        this.#microphone = 'on';
-        p.configure({ inputLatencySeconds: audio.inputLatencySeconds() });
-        await p.start(audio.now());
+        this.#listener?.close();
+        await this.#deps.tuning.session.stop();
+        this.#error = '';
+        this.#alert = '';
+        await p.start(audio.now(), { assess: false });
         this.#tickLoop();
         this.#changed();
       },
@@ -249,7 +283,7 @@ export class ShellApp {
         const audio = this.#deps.audio;
         if (p === null) return;
         await p.stop(audio?.now() ?? Number.NaN);
-        this.#releaseCapture();
+        this.#endRun();
         this.#changed();
       },
       practiceListen: () => {

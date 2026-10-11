@@ -13,6 +13,9 @@ import { OnsetDetector, type Onset } from './onsets.ts';
 
 export type LiveEvent =
   | { readonly kind: 'note'; readonly time: number; readonly key: number; readonly cents: number; readonly confidence: number }
+  /** something was struck — an onset — but no pitch settled after it with confidence: a note too faint, too short or too noisy to name. Said apart, so that
+   * it is never mistaken for a note not played. */
+  | { readonly kind: 'unclear'; readonly time: number; readonly strength: number }
   | { readonly kind: 'chord'; readonly time: number; readonly reading: ChordReading }
   | { readonly kind: 'onset'; readonly time: number; readonly strength: number }
   | { readonly kind: 'pitch'; readonly time: number; readonly frequencyHz: number; readonly confidence: number };
@@ -124,7 +127,7 @@ export class LiveAnalyser {
       if (this.#written - start > this.#ring.length - CHORD_FRAME_SIZE) continue; // too old: its samples are gone
       if (this.#o.listenFor !== 'chords') {
         const note = this.#noteAfter(start);
-        if (note !== null) out.push({ kind: 'note', time: onset.time, ...note });
+        out.push(note !== null ? { kind: 'note', time: onset.time, ...note } : { kind: 'unclear', time: onset.time, strength: onset.strength });
       }
       if (this.#o.listenFor !== 'notes') {
         const reading = this.#chords.read(this.#window(start + Math.round(0.02 * sr), CHORD_FRAME_SIZE), sr);

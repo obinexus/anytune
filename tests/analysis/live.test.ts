@@ -46,3 +46,17 @@ test('a gap in the capture’s timestamps restarts the analysis there — counte
   const note = later.find((e) => e.kind === 'note');
   assert.ok(note !== undefined && note.kind === 'note' && note.key === 67 && Math.abs(note.time - 20.2) < 0.025);
 });
+
+test('a note too faint to name is said to be unclear — an onset with no pitch — never dropped as if nothing had been played', () => {
+  // the same plucked melody at −38 dBFS peak: the onsets are found, but no frame after them is loud enough for a confident pitch (YIN's silence: −48 dBFS RMS)
+  const melody = [64, 63, 64, 59].map((key, i) => ({ key, onsetSeconds: 0.3 + i * 0.35, durationSeconds: 0.3, velocity: 85 }));
+  const loud = renderNotes(melody, SR);
+  let peak = 0;
+  for (const v of loud) peak = Math.max(peak, Math.abs(v));
+  const faint = loud.map((v) => (v * 10 ** (-38 / 20)) / peak);
+  const events = feed(new LiveAnalyser({ sampleRate: SR, listenFor: 'notes' }), faint, 7);
+  assert.equal(events.filter((e) => e.kind === 'note').length, 0, 'no pitch is claimed');
+  const unclear = events.filter((e) => e.kind === 'unclear');
+  assert.equal(unclear.length, melody.length);
+  unclear.forEach((u, i) => assert.ok(Math.abs(u.time - (7 + (melody[i] as { onsetSeconds: number }).onsetSeconds)) < 0.025, `onset ${i}`));
+});

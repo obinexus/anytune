@@ -66,8 +66,9 @@ export class Shell {
   #state: ShellState;
   #practice: PracticeSession | null = null;
   #offPractice: (() => void) | null = null;
-  /** the reviews already listed as attempts */
-  readonly #listed = new WeakSet<object>();
+  /** the runs already listed as attempts: a session's serial and its run */
+  readonly #listed = new Set<string>();
+  #serial = 0;
 
   constructor(songs: readonly Song[], factory: PracticeFactory, now: () => string = () => new Date().toISOString()) {
     this.#factory = factory;
@@ -103,21 +104,30 @@ export class Shell {
     if (song === undefined) return;
     this.#offPractice?.();
     const session = this.#factory(song);
+    const serial = ++this.#serial;
     this.#practice = session;
-    this.#offPractice = session.subscribe((p) => this.#watch(song, p));
+    this.#offPractice = session.subscribe((p) => this.#watch(song, p, serial));
     this.#set({ selected: songId, screen: 'practice' });
   }
 
-  /** When a practice reaches its review — and its save has settled — the attempt is listed, once; every other change of the practice re-renders. */
-  #watch(song: Song, p: PracticeState): void {
-    if (p.phase !== 'reviewing' || p.feedback === null || p.attempt.kind === 'recording' || this.#listed.has(p.feedback)) {
+  /**
+   * When a run reaches its review — and its save has settled — it is listed, once; every other change of the practice re-renders. Its line says what was
+   * assessed: a score only for what the microphone covered; none at all when nothing was, or when it was played along without assessment.
+   */
+  #watch(song: Song, p: PracticeState, serial: number): void {
+    const key = `${serial}:${p.run}`;
+    if (p.phase !== 'reviewing' || p.run === 0 || p.attempt.kind === 'recording' || this.#listed.has(key) || (p.assessing && p.feedback === null)) {
       this.#set({});
       return;
     }
-    this.#listed.add(p.feedback);
-    const fb = p.feedback;
+    this.#listed.add(key);
     const saved = p.attempt.kind === 'saved' ? 'saved' : p.attempt.kind === 'failed' ? 'not saved (the recorder failed)' : 'not saved';
-    const text = `${fb.pitch.right} of ${fb.pitch.of} right${fb.timing.judged > 0 ? `, ${fb.timing.onTime} on time` : ''}${fb.repeatBar === null ? '' : `; bar ${fb.repeatBar} to repeat`} — ${saved}`;
+    const fb = p.feedback;
+    const text = !p.assessing || fb === null
+      ? 'Played along without assessment — no score'
+      : fb.pitch.assessed === 0
+        ? `Could not be assessed: the microphone was not delivering sound — ${saved}`
+        : `${fb.pitch.right} of ${fb.pitch.assessed}${fb.pitch.unassessed > 0 ? ' assessed' : ''} right${fb.timing.judged > 0 ? `, ${fb.timing.onTime} on time` : ''}${fb.pitch.unassessed > 0 ? ` (${fb.pitch.unassessed} not assessed)` : ''}${fb.repeatBar === null ? '' : `; bar ${fb.repeatBar} to repeat`} — ${saved}`;
     this.#set({ attempts: [{ songTitle: song.reference.song.title, when: this.#now(), text }, ...this.#state.attempts] });
   }
 

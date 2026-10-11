@@ -62,19 +62,41 @@ defineProps<{
     nextText: string;
     heardText: string;
     stepMessage: string;
-    microphoneText: string;
+    liveText: string;
+    input: { state: string; text: string; problem: boolean; meter: { visible: boolean; value: number; text: string } };
+    controls: { start: boolean; startLabel: string; begin: boolean; cancel: boolean; free: boolean; stop: boolean; listen: boolean };
+    alertText: string;
     headphonesText: string;
-    latencyText: string;
-    diagram: {
-      viewBox: string;
-      hand: string;
-      description: string;
-      strings: { x1: number; y1: number; x2: number; y2: number; label: string; labelX: number; labelY: number }[];
-      frets: { x1: number; y1: number; x2: number; y2: number; label: string; labelX: number; labelY: number }[];
-      markers: { x: number; y: number; textY: number; kind: string; label: string; description: string }[];
+    timing: string[];
+    guitar: {
+      fretboard: {
+        width: number;
+        height: number;
+        viewBox: string;
+        hand: string;
+        caption: string;
+        description: string;
+        strings: { x1: number; y1: number; x2: number; y2: number; label: string; labelX: number; labelY: number; kind: string; key: string; labelKey: string }[];
+        frets: { x1: number; y1: number; x2: number; y2: number; label: string; labelX: number; labelY: number; kind: string; key: string; labelKey: string }[];
+        markers: { x: number; y: number; textY: number; kind: string; label: string; key: string; labelKey: string }[];
+        marks: { x: number; y: number; textY: number; kind: string; state: string; label: string; key: string }[];
+      };
+      artwork: {
+        url: string;
+        viewBox: string;
+        width: number;
+        height: number;
+        imageWidth: number;
+        imageHeight: number;
+        transform: string;
+        hand: string;
+        credit: string;
+        window: { x: number; y: number; width: number; height: number };
+        markers: { x: number; y: number; kind: string; key: string }[];
+      };
     };
-    artwork: { url: string; viewBox: string; hand: string; credit: string; markers: { x: number; y: number; textY: number; kind: string; label: string; description: string }[] };
-    review: { visible: boolean; sentences: string[]; bars: { bar: number; text: string }[]; repeatBar: string; repeatLabel: string; attemptText: string };
+    announcement: string;
+    review: { visible: boolean; sentences: string[]; bars: { bar: number; text: string }[]; repeatBar: string; repeatLabel: string; attemptText: string; capture: string[] };
     errorText: string;
   };
 }>();
@@ -92,6 +114,9 @@ const emit = defineEmits<{
   (e: "tune-start"): void;
   (e: "tune-stop"): void;
   (e: "practice-start"): void;
+  (e: "practice-begin"): void;
+  (e: "practice-cancel"): void;
+  (e: "practice-free"): void;
   (e: "practice-stop"): void;
   (e: "practice-listen"): void;
   (e: "practice-repeat", bar: string): void;
@@ -164,6 +189,9 @@ const emit = defineEmits<{
       v-if="screen === 'practice'"
       :practice="practice"
       @start="emit('practice-start')"
+      @begin="emit('practice-begin')"
+      @cancel="emit('practice-cancel')"
+      @free="emit('practice-free')"
       @stop="emit('practice-stop')"
       @listen="emit('practice-listen')"
       @repeat="(bar: string) => emit('practice-repeat', bar)"

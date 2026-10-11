@@ -618,3 +618,63 @@ details > summary {
     fill: CanvasText;
   }
 }
+
+/* ------------------------------------------------------------------------------------------------------------- the microphone check, the live word */
+
+.input-check {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border: 2px dashed var(--focus);
+  border-radius: 0.75rem;
+}
+
+.input-check[data-problem='true'] {
+  border-style: solid;
+  border-color: var(--sharp);
+}
+
+.input-text {
+  margin: 0;
+}
+
+.meter-label {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.meter-label meter {
+  width: 100%;
+  height: 1.25rem;
+}
+
+.meter-text {
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+/* the brief word on the last note: text, never only a colour */
+.prompt .live {
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.capture-alert {
+  margin: 0;
+  padding: 0.75rem;
+  border: 2px solid var(--sharp);
+  border-radius: 0.5rem;
+  font-weight: 700;
+}
+
+.capture-lines {
+  margin: 0;
+  padding-left: 1.25rem;
+  color: var(--muted);
+}
+
+.timing-line {
+  color: var(--muted);
+}

@@ -31,7 +31,12 @@ export interface HeardNote {
   readonly confidence: number;
 }
 
-export type PitchVerdict = 'correct' | 'octave' | 'wrong' | 'uncertain' | 'missed';
+/**
+ * correct, octave (the right note in another octave), wrong (a different note), uncertain (something was played but not clearly enough to name), missed
+ * (nothing matching was heard WHILE the microphone was delivering sound), unassessed (the microphone was not delivering sound: neither right nor wrong).
+ */
+export type PitchVerdict = 'correct' | 'octave' | 'wrong' | 'uncertain' | 'missed' | 'unassessed';
+type HeardVerdict = Exclude<PitchVerdict, 'missed' | 'unassessed'>;
 export type TimingVerdict = 'on-time' | 'early' | 'late';
 
 export interface NoteResult {
@@ -68,14 +73,14 @@ export const DEFAULT_POLICY: AssessmentPolicy = Object.freeze({ onTimeSeconds: 0
 const MISS = 1;
 const EXTRA = 0.6;
 
-function pitchOf(expected: ExpectedNote, heard: HeardNote, policy: AssessmentPolicy): Exclude<PitchVerdict, 'missed'> {
+function pitchOf(expected: ExpectedNote, heard: HeardNote, policy: AssessmentPolicy): HeardVerdict {
   if (!(heard.confidence >= policy.minConfidence)) return 'uncertain';
   if (heard.key === expected.key) return 'correct';
   if ((heard.key - expected.key) % 12 === 0) return 'octave';
   return 'wrong';
 }
 
-const pitchCost: Readonly<Record<Exclude<PitchVerdict, 'missed'>, number>> = { correct: 0, uncertain: 0.25, octave: 0.35, wrong: 0.75 };
+const pitchCost: Readonly<Record<HeardVerdict, number>> = { correct: 0, uncertain: 0.25, octave: 0.35, wrong: 0.75 };
 
 /** The learner's local lag around each expected note: the median offset of the nearest same-pitch-class hits within reach of its neighbours, clamped. */
 function localOffsets(expected: readonly ExpectedNote[], heard: readonly HeardNote[], policy: AssessmentPolicy): number[] {
@@ -155,6 +160,14 @@ export function assessNotes(expectedIn: readonly ExpectedNote[], heardIn: readon
     }
   }
   return { results: results.reverse(), extra: extra.reverse() };
+}
+
+/**
+ * The targets the capture could not cover are UNASSESSED — not missed: whatever was or was not heard there, the microphone was not delivering sound, so no
+ * verdict is given. `assessable` says, for a target, whether its window was covered (src/app/capture.ts).
+ */
+export function unassessedWhereUnheard(results: readonly NoteResult[], assessable: (expected: ExpectedNote) => boolean): NoteResult[] {
+  return results.map((r) => (assessable(r.expected) ? r : { expected: r.expected, heard: null, pitch: 'unassessed', timing: null, offsetSeconds: null }));
 }
 
 // --------------------------------------------------------------------------------------------------------------------------------------------- chords

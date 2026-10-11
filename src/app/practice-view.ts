@@ -1,17 +1,35 @@
 /**
  * The practice screen's view: everything the .obix components show, formatted here — words for every state, positions as suggestions, the fretboard's
  * geometry as numbers. The components bind it and format nothing (CONTRIBUTING, "Keep the layers").
+ *
+ * An assessed attempt is begun only once the microphone was checked (src/app/input-view.ts); playing along without assessment gives no verdict of any
+ * kind. The review says how much was assessed, what the capture delivered, and — only when there is enough to go on — which bar to repeat.
  */
 import type { NoteResult } from '../lesson/assessment.ts';
 import { noteOf } from '../domain/pitch.ts';
 import type { FretboardMap } from '../music/fretboard.ts';
+import { captureText, type CaptureSummary } from './capture.ts';
 import { guitarView, shapeText, type GuitarView, type Shape } from './guitar-view.ts';
+import type { InputView } from './input-view.ts';
 import type { PracticeState, Target } from './practice.ts';
 
 export interface Option {
   readonly value: string;
   readonly label: string;
   readonly selected: boolean;
+}
+
+export interface PracticeControls {
+  /** open and check the microphone: Start, Start again, Try again */
+  readonly start: boolean;
+  readonly startLabel: string;
+  /** the input is ready: count in and play, assessed */
+  readonly begin: boolean;
+  readonly cancel: boolean;
+  /** play along without assessment */
+  readonly free: boolean;
+  readonly stop: boolean;
+  readonly listen: boolean;
 }
 
 export interface PracticeView {
@@ -35,14 +53,29 @@ export interface PracticeView {
   readonly nextText: string;
   readonly heardText: string;
   readonly stepMessage: string;
-  readonly microphoneText: string;
+  /** a brief word on the last note, while playing: "On time", "A little late", "Try E3" */
+  readonly liveText: string;
+  readonly input: InputView;
+  readonly controls: PracticeControls;
+  /** while an assessed run plays: the capture's trouble, now — or '' */
+  readonly alertText: string;
   readonly headphonesText: string;
-  readonly latencyText: string;
+  /** the timing details: what the browser reports, named as it names it (src/app/input-view.ts) */
+  readonly timing: readonly string[];
   /** the guitar, horizontal — the artwork for context, the enlarged fretboard beneath it to read (src/app/guitar-view.ts) */
   readonly guitar: GuitarView;
   /** said to a screen reader when it changes: the phase, never every note of a flowing passage */
   readonly announcement: string;
-  readonly review: { readonly visible: boolean; readonly sentences: readonly string[]; readonly bars: readonly { readonly bar: number; readonly text: string }[]; readonly repeatBar: string; readonly repeatLabel: string; readonly attemptText: string };
+  readonly review: {
+    readonly visible: boolean;
+    readonly sentences: readonly string[];
+    readonly bars: readonly { readonly bar: number; readonly text: string }[];
+    readonly repeatBar: string;
+    readonly repeatLabel: string;
+    readonly attemptText: string;
+    /** what the microphone delivered during the attempt: the review's own diagnosis */
+    readonly capture: readonly string[];
+  };
   readonly errorText: string;
 }
 
@@ -61,36 +94,51 @@ export interface PracticeViewContext {
   readonly leftHanded: boolean;
   /** the content's width, CSS pixels: the fretboard is drawn for it */
   readonly width: number;
-  readonly microphone: 'off' | 'starting' | 'on' | 'denied' | 'unavailable';
-  readonly latencyText: string;
+  readonly input: InputView;
+  readonly timing: readonly string[];
+  /** the last assessed attempt's capture, for the review */
+  readonly capture: { readonly summary: CaptureSummary; readonly origin: number } | null;
+  readonly alertText: string;
   readonly errorText: string;
 }
 
 const resultText = (results: readonly NoteResult[], bar: number): string => {
   const inBar = results.filter((r) => r.expected.bar === bar);
-  const right = inBar.filter((r) => r.pitch === 'correct').length;
+  const assessed = inBar.filter((r) => r.pitch !== 'unassessed');
+  if (assessed.length === 0) return 'not assessed';
+  const count = (p: NoteResult['pitch']): number => inBar.filter((r) => r.pitch === p).length;
   const onTime = inBar.filter((r) => r.timing === 'on-time').length;
-  const missed = inBar.filter((r) => r.pitch === 'missed').length;
-  return `${right} of ${inBar.length} right${inBar.some((r) => r.timing !== null) ? `, ${onTime} on time` : ''}${missed > 0 ? `, ${missed} not heard` : ''}`;
+  const parts = [`${count('correct')} of ${assessed.length} right`];
+  if (inBar.some((r) => r.timing !== null)) parts.push(`${onTime} on time`);
+  if (count('wrong') + count('octave') > 0) parts.push(`${count('wrong') + count('octave')} a different note`);
+  if (count('missed') > 0) parts.push(`${count('missed')} not heard`);
+  if (count('uncertain') > 0) parts.push(`${count('uncertain')} unclear`);
+  if (count('unassessed') > 0) parts.push(`${count('unassessed')} not assessed`);
+  return parts.join(', ');
 };
 
+const BUSY = ['requesting', 'checking', 'ready'];
+
 export function toPracticeView(state: PracticeState | null, ctx: PracticeViewContext): PracticeView {
+  const hand = ctx.leftHanded ? 'left' : 'right';
   if (state === null) {
     return {
       available: false, title: '', arrangementText: 'Choose a song in the Library to practise it.', phase: 'none', phaseText: '', running: false, canConfigure: false,
       tempoOptions: [], fromBarOptions: [], toBarOptions: [], modeOptions: [], handOptions: [], metronome: false, playReference: false, countInText: '', currentText: '',
-      positionText: '', nextText: '', heardText: '', stepMessage: '', microphoneText: '', headphonesText: '', latencyText: '',
-      guitar: guitarView(ctx.map, ctx.artworkUrl, null, null, ctx.width, ctx.leftHanded ? 'left' : 'right'), announcement: '',
-      review: { visible: false, sentences: [], bars: [], repeatBar: '', repeatLabel: '', attemptText: '' }, errorText: ctx.errorText,
+      positionText: '', nextText: '', heardText: '', stepMessage: '', liveText: '', input: ctx.input,
+      controls: { start: false, startLabel: 'Start', begin: false, cancel: false, free: false, stop: false, listen: false }, alertText: '', headphonesText: '', timing: ctx.timing,
+      guitar: guitarView(ctx.map, ctx.artworkUrl, null, null, ctx.width, hand), announcement: '',
+      review: { visible: false, sentences: [], bars: [], repeatBar: '', repeatLabel: '', attemptText: '', capture: [] }, errorText: ctx.errorText,
     };
   }
   const s = state.settings;
   const running = state.phase === 'count-in' || state.phase === 'playing';
+  const busy = BUSY.includes(ctx.input.state);
   const bars = Array.from({ length: state.bars + 1 }, (_, b) => b);
   const loopFrom = s.loop?.fromBar ?? 0;
   const loopTo = s.loop?.toBar ?? state.bars;
   const last = state.heard[state.heard.length - 1];
-  const lastPass = state.passes[state.passes.length - 1];
+  const lastPass = state.passes.find((x) => x.pass === state.reviewPass) ?? state.passes[state.passes.length - 1];
   const attemptText =
     state.attempt.kind === 'saved' ? `This attempt is saved (${state.attempt.events} events), apart from the reference.`
     : state.attempt.kind === 'recording' ? 'Recording this attempt…'
@@ -98,10 +146,12 @@ export function toPracticeView(state: PracticeState | null, ctx: PracticeViewCon
     : state.attempt.kind === 'unavailable' ? `This attempt is not saved: ${state.attempt.why}.`
     : '';
   const phaseText =
-    state.phase === 'ready' ? (s.mode === 'step' ? 'Ready. In step mode the music waits for each note.' : 'Ready. Press Start: a count-in, then play along.')
+    state.phase === 'ready' ? (s.mode === 'step' ? 'Step by step: the music waits for each note. Press Start: the microphone is checked first.' : 'Press Start: the microphone is checked first — pluck a string — then a count-in, and play along.')
     : state.phase === 'count-in' ? `Get ready… ${Math.ceil(state.secondsToStart ?? 0)}`
-    : state.phase === 'playing' ? (s.mode === 'step' ? 'Play the note shown. I wait for it.' : `Playing — pass ${state.pass + 1}`)
-    : 'Review';
+    : state.phase === 'playing' ? (!state.assessing ? 'Playing along — not assessed' : s.mode === 'step' ? 'Play the note shown. I wait for it.' : `Playing — pass ${state.pass + 1}`)
+    : state.assessing ? 'Review' : 'Review — played along without assessment';
+  const sentences = !state.assessing ? ['Played along without assessment: nothing was listened to, so there is no score.'] : (state.feedback?.sentences ?? []);
+  const repeatBar = state.assessing && state.feedback !== null && state.feedback.repeatBar !== null ? String(state.feedback.repeatBar) : '';
   return {
     available: true,
     title: state.title,
@@ -109,7 +159,7 @@ export function toPracticeView(state: PracticeState | null, ctx: PracticeViewCon
     phase: state.phase,
     phaseText,
     running,
-    canConfigure: !running,
+    canConfigure: !running && !busy,
     tempoOptions: [0.5, 0.75, 1].map((f) => ({ value: String(f), label: `${Math.round(f * 100)} %${f === 1 ? ' (as written)' : ''}`, selected: Math.abs(s.tempoFactor - f) < 1e-9 })),
     fromBarOptions: bars.map((b) => ({ value: String(b), label: b === 0 ? 'the pickup' : `bar ${b}`, selected: b === loopFrom })),
     toBarOptions: bars.filter((b) => b >= loopFrom).map((b) => ({ value: String(b), label: b === 0 ? 'the pickup' : `bar ${b}`, selected: b === loopTo })),
@@ -124,32 +174,39 @@ export function toPracticeView(state: PracticeState | null, ctx: PracticeViewCon
     metronome: s.metronome,
     playReference: s.playReference,
     countInText: state.phase === 'count-in' ? `Starting in ${Math.ceil(state.secondsToStart ?? 0)}` : '',
-    currentText: state.current === null ? (state.phase === 'reviewing' ? '' : '—') : `${state.phase === 'ready' ? 'First' : 'Now'}: ${noteText(state.current)}`,
+    currentText: state.current === null ? (state.phase === 'reviewing' ? '' : '—') : `${state.phase === 'ready' || state.phase === 'reviewing' ? 'First' : 'Now'}: ${noteText(state.current)}`,
     positionText: positionText(state.current),
     nextText: state.next === null ? '' : `Then: ${noteText(state.next)}`,
-    heardText: last === undefined ? '' : `Heard ${noteOf(last.key).label}${Math.abs(last.cents) >= 5 ? `, ${Math.abs(Math.round(last.cents))} cents ${last.cents < 0 ? 'flat' : 'sharp'}` : ''}`,
+    heardText: last === undefined || !running ? '' : `Heard ${noteOf(last.key).label}${Math.abs(last.cents) >= 5 ? `, ${Math.abs(Math.round(last.cents))} cents ${last.cents < 0 ? 'flat' : 'sharp'}` : ''}`,
     stepMessage: state.stepMessage ?? '',
-    microphoneText:
-      ctx.microphone === 'on' ? 'Microphone on — what it hears is analysed on this device and never uploaded.'
-      : ctx.microphone === 'starting' ? 'Asking for the microphone…'
-      : ctx.microphone === 'denied' ? 'The microphone was not allowed: practice needs it to hear you. Allow it and press Start again.'
-      : ctx.microphone === 'unavailable' ? 'No microphone is available here.'
-      : 'Microphone off.',
+    liveText: running && state.assessing ? state.liveText : '',
+    input: ctx.input,
+    controls: {
+      start: !running && !busy,
+      startLabel: ctx.input.problem ? 'Try again' : state.phase === 'reviewing' ? 'Start again' : 'Start',
+      begin: !running && ctx.input.state === 'ready',
+      cancel: !running && busy,
+      free: !running && !busy,
+      stop: running,
+      listen: !running && !busy,
+    },
+    alertText: running && state.assessing ? ctx.alertText : '',
     headphonesText: s.playReference ? 'Use headphones: if the microphone hears the speaker, it can mistake the reference for you.' : '',
-    latencyText: ctx.latencyText,
-    guitar: guitarView(ctx.map, ctx.artworkUrl, shapeOf(state.current), shapeOf(state.next), ctx.width, ctx.leftHanded ? 'left' : 'right'),
+    timing: ctx.timing,
+    guitar: guitarView(ctx.map, ctx.artworkUrl, shapeOf(state.current), shapeOf(state.next), ctx.width, hand),
     announcement:
       state.phase === 'ready' ? ''
       : state.phase === 'count-in' ? 'Count-in'
-      : state.phase === 'playing' ? (s.mode === 'step' ? `Play ${noteText(state.current)}` : `Playing, pass ${state.pass + 1}`)
-      : `Review: ${state.feedback?.sentences[0] ?? 'done'}`,
+      : state.phase === 'playing' ? (s.mode === 'step' && state.assessing ? `Play ${noteText(state.current)}` : `Playing, pass ${state.pass + 1}`)
+      : `Review: ${sentences[0] ?? 'done'}`,
     review: {
       visible: state.phase === 'reviewing' || state.passes.length > 0,
-      sentences: state.feedback?.sentences ?? [],
-      bars: lastPass === undefined ? [] : [...new Set(lastPass.results.map((r) => r.expected.bar))].sort((a, b) => a - b).map((bar) => ({ bar, text: `${bar === 0 ? 'Pickup' : `Bar ${bar}`}: ${resultText(lastPass.results, bar)}` })),
-      repeatBar: state.feedback?.repeatBar === null || state.feedback === null ? '' : String(state.feedback.repeatBar),
-      repeatLabel: state.feedback?.repeatBar === null || state.feedback === null ? '' : `Practise bar ${state.feedback.repeatBar} slowly`,
+      sentences,
+      bars: !state.assessing || lastPass === undefined ? [] : [...new Set(lastPass.results.map((r) => r.expected.bar))].sort((a, b) => a - b).map((bar) => ({ bar, text: `${bar === 0 ? 'Pickup' : `Bar ${bar}`}: ${resultText(lastPass.results, bar)}` })),
+      repeatBar,
+      repeatLabel: repeatBar === '' ? '' : `Practise bar ${repeatBar} slowly`,
       attemptText,
+      capture: state.phase === 'reviewing' && state.assessing && ctx.capture !== null ? captureText(ctx.capture.summary, ctx.capture.origin) : [],
     },
     errorText: ctx.errorText,
   };

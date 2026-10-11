@@ -101,7 +101,7 @@ test('feedback says what went right, then the bar to repeat, the octave slip, th
   heard[0] = { ...(heard[0] as HeardNote), confidence: 0.2 };
   const notes = assessNotes(SCALE, heard);
   const fb = feedbackOf(notes.results, [], notes.extra.length);
-  assert.deepEqual(fb.pitch, { right: 5, octave: 1, wrong: 0, missed: 1, uncertain: 1, of: 8 });
+  assert.deepEqual(fb.pitch, { right: 5, octave: 1, wrong: 0, missed: 1, uncertain: 1, unassessed: 0, of: 8, assessed: 8 });
   assert.equal(fb.repeatBar, 3);
   assert.equal(fb.timing.typicalOffsetMs, 120);
   assert.deepEqual(fb.sentences, [

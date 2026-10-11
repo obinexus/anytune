@@ -25,9 +25,12 @@ defineProps<{
     nextText: string;
     heardText: string;
     stepMessage: string;
-    microphoneText: string;
+    liveText: string;
+    input: { state: string; text: string; problem: boolean; meter: { visible: boolean; value: number; text: string } };
+    controls: { start: boolean; startLabel: string; begin: boolean; cancel: boolean; free: boolean; stop: boolean; listen: boolean };
+    alertText: string;
     headphonesText: string;
-    latencyText: string;
+    timing: string[];
     guitar: {
       fretboard: {
         width: number;
@@ -56,7 +59,7 @@ defineProps<{
       };
     };
     announcement: string;
-    review: { visible: boolean; sentences: string[]; bars: { bar: number; text: string }[]; repeatBar: string; repeatLabel: string; attemptText: string };
+    review: { visible: boolean; sentences: string[]; bars: { bar: number; text: string }[]; repeatBar: string; repeatLabel: string; attemptText: string; capture: string[] };
     errorText: string;
   };
 }>();
@@ -64,6 +67,9 @@ defineProps<{
 // the learner's intents, one event each — the practice session does the rest
 const emit = defineEmits<{
   (e: "start"): void;
+  (e: "begin"): void;
+  (e: "cancel"): void;
+  (e: "free"): void;
   (e: "stop"): void;
   (e: "listen"): void;
   (e: "repeat", bar: string): void;
@@ -111,19 +117,31 @@ function onReference(event: Event): void {
         <p class="current">{{ practice.currentText }}</p>
         <p class="position">{{ practice.positionText }}</p>
         <p class="next">{{ practice.nextText }}</p>
+        <p v-if="practice.liveText" class="live">{{ practice.liveText }}</p>
         <p v-if="practice.stepMessage" class="step-message">{{ practice.stepMessage }}</p>
-        <p class="heard">{{ practice.heardText }}</p>
+        <p v-if="practice.heardText" class="heard">{{ practice.heardText }}</p>
       </section>
+      <p v-if="practice.alertText" class="capture-alert" role="alert">{{ practice.alertText }}</p>
       <div class="guitar">
         <GuitarArtwork :artwork="practice.guitar.artwork" />
         <FretboardDiagram :fretboard="practice.guitar.fretboard" />
       </div>
+      <section v-if="practice.input.text" class="input-check" :data-state="practice.input.state" :data-problem="practice.input.problem">
+        <p class="input-text" role="status">{{ practice.input.text }}</p>
+        <label v-if="practice.input.meter.visible" class="meter-label">
+          <span>Input level</span>
+          <meter min="-60" max="0" low="-45" high="-6" optimum="-20" :value="practice.input.meter.value" :aria-valuetext="practice.input.meter.text">{{ practice.input.meter.text }}</meter>
+          <span class="meter-text">{{ practice.input.meter.text }}</span>
+        </label>
+      </section>
       <div class="actions">
-        <button v-if="!practice.running" type="button" class="primary" @click="emit('start')">Start</button>
-        <button v-else type="button" class="primary stop" @click="emit('stop')">Stop</button>
-        <button type="button" :disabled="practice.running" @click="emit('listen')">Listen first</button>
+        <button v-if="practice.controls.begin" type="button" class="primary begin" @click="emit('begin')">Begin</button>
+        <button v-if="practice.controls.start" type="button" class="primary start" @click="emit('start')">{{ practice.controls.startLabel }}</button>
+        <button v-if="practice.controls.stop" type="button" class="primary stop" @click="emit('stop')">Stop</button>
+        <button v-if="practice.controls.cancel" type="button" class="cancel" @click="emit('cancel')">Cancel</button>
+        <button v-if="practice.controls.free" type="button" class="free" @click="emit('free')">Play along without assessment</button>
+        <button v-if="practice.controls.listen" type="button" class="listen" @click="emit('listen')">Listen first</button>
       </div>
-      <p class="microphone" role="status">{{ practice.microphoneText }}</p>
       <p v-if="practice.headphonesText" class="headphones">{{ practice.headphonesText }}</p>
       <section v-if="practice.review.visible" class="review" aria-labelledby="review-heading">
         <h2 id="review-heading">How it went</h2>
@@ -135,8 +153,11 @@ function onReference(event: Event): void {
         </ul>
         <button v-if="practice.review.repeatBar" type="button" @click="emit('repeat', practice.review.repeatBar)">{{ practice.review.repeatLabel }}</button>
         <p class="attempt">{{ practice.review.attemptText }}</p>
+        <ul v-if="practice.review.capture.length" class="capture-lines" aria-label="What the microphone delivered">
+          <li v-for="line in practice.review.capture" :key="line">{{ line }}</li>
+        </ul>
       </section>
-      <fieldset class="settings" :disabled="practice.running">
+      <fieldset class="settings" :disabled="!practice.canConfigure">
         <legend>Practice settings</legend>
         <label>Tempo
           <select @change="onTempo">
@@ -168,7 +189,7 @@ function onReference(event: Event): void {
       </fieldset>
       <details class="diagnostics">
         <summary>Timing and microphone details</summary>
-        <p class="latency">{{ practice.latencyText }}</p>
+        <p v-for="line in practice.timing" :key="line" class="timing-line">{{ line }}</p>
       </details>
     </div>
     <p v-if="practice.errorText" class="error" role="alert">{{ practice.errorText }}</p>
