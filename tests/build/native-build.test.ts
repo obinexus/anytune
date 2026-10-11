@@ -32,7 +32,7 @@ test('the native build: the same page, no module of Vue\'s runtime in it, OBIX\'
   const { outDir, modules } = await built('native');
   try {
     const html = fs.readFileSync(path.join(outDir, 'index.html'), 'utf8');
-    assert.match(html, /<title>AnyTune — Tune any instrument<\/title>/);
+    assert.match(html, /<title>AnyTune — Groove to any tune<\/title>/);
     assert.match(html, /<link rel="stylesheet" crossorigin href="\/assets\/index-[\w-]+\.css">/);
     assert.deepEqual(modules.filter((id) => VUE_RUNTIME.test(id)), [], 'no module of Vue\'s runtime');
     for (const name of ['reactivity', 'dom', 'component', 'browser']) assert.ok(modules.some((id) => id.includes(`obix-runtime-${name}/dist/`)), `obix-runtime-${name} is in the bundle`);

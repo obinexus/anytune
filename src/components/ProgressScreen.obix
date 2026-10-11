@@ -1,0 +1,16 @@
+<script setup lang="ts">
+defineProps<{ progress: { emptyText: string; attempts: { key: string; title: string; when: string; text: string }[] } }>();
+</script>
+
+<template>
+  <main class="screen progress">
+    <h1>Progress</h1>
+    <p v-if="progress.emptyText" class="empty">{{ progress.emptyText }}</p>
+    <ol class="attempts">
+      <li v-for="attempt in progress.attempts" :key="attempt.key">
+        <p class="attempt-title">{{ attempt.title }} <span class="when">{{ attempt.when }}</span></p>
+        <p>{{ attempt.text }}</p>
+      </li>
+    </ol>
+  </main>
+</template>

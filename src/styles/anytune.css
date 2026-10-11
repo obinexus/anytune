@@ -199,3 +199,332 @@ button.stop {
     transition: none !important;
   }
 }
+
+/* ---------------------------------------------------------------------------------------------------------------------- the journey (the app shell) */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* a grid item never grows wider than the phone because of its content (a long option, a long word) */
+.anytune > *,
+.screen > *,
+.settings > * {
+  min-width: 0;
+}
+
+select {
+  width: 100%;
+  max-width: 100%;
+}
+
+.shell {
+  max-width: 40rem;
+  margin: 0 auto;
+}
+
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.5rem 1rem;
+  background: var(--paper);
+  border-bottom: 1px solid var(--muted);
+}
+
+.brand {
+  margin: 0;
+  font-weight: 700;
+}
+
+.nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.nav-item {
+  min-height: 2.75rem;
+  min-width: 2.75rem;
+  padding: 0.25rem 0.6rem;
+  border-width: 1px;
+}
+
+.nav-item[aria-current='page'] {
+  border-width: 3px;
+  font-weight: 700;
+}
+
+.screen {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem 1rem 3rem;
+}
+
+.screen h1 {
+  margin: 0;
+  font-size: 1.6rem;
+}
+
+.lead,
+.arrangement,
+.song-detail,
+.credit,
+.latency,
+.headphones,
+.microphone,
+.attempt,
+.when,
+.empty {
+  margin: 0;
+  color: var(--muted);
+}
+
+.journey {
+  margin: 0;
+  padding-left: 1.5rem;
+  line-height: 1.8;
+}
+
+.primary {
+  width: 100%;
+  font-weight: 700;
+  font-size: 1.1rem;
+  min-height: 3.25rem;
+}
+
+.secondary-actions,
+.actions {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.songs,
+.attempts,
+.sentences,
+.bars {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.song {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border: 1px solid var(--muted);
+  border-radius: 0.5rem;
+}
+
+.song-title,
+.title,
+.attempt-title {
+  margin: 0;
+  font-weight: 700;
+}
+
+.import {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.import h2,
+.review h2 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.file {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.message {
+  margin: 0;
+  padding: 0.75rem;
+  border-left: 4px solid var(--focus);
+}
+
+/* ------------------------------------------------------------------------------------------------------------------------------------------ practise */
+
+.practice-body {
+  display: grid;
+  gap: 1rem;
+}
+
+.prompt {
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.75rem;
+  border: 2px solid currentColor;
+  border-radius: 0.75rem;
+}
+
+.prompt p {
+  margin: 0;
+}
+
+.prompt .current {
+  font-size: 2.25rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.prompt .position {
+  font-size: 1.05rem;
+}
+
+.prompt .next,
+.prompt .heard,
+.prompt .phase {
+  color: var(--muted);
+}
+
+.step-message {
+  font-weight: 700;
+}
+
+.fretboard {
+  margin: 0;
+}
+
+.diagram {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.diagram .string {
+  stroke: var(--ink);
+  stroke-width: 2;
+}
+
+.diagram .fret {
+  stroke: var(--muted);
+  stroke-width: 3;
+}
+
+.diagram .fret-number,
+.diagram .string-name {
+  fill: var(--muted);
+  font-size: 16px;
+  text-anchor: middle;
+}
+
+/* the target now is a filled circle with the finger number; the next one an outlined ring — told apart by shape and fill, not by colour alone */
+.marker[data-kind='current'] {
+  fill: var(--focus);
+  stroke: var(--ink);
+  stroke-width: 2;
+}
+
+.marker[data-kind='next'] {
+  fill: none;
+  stroke: var(--focus);
+  stroke-width: 4;
+  stroke-dasharray: 6 4;
+}
+
+.finger {
+  font-size: 18px;
+  font-weight: 700;
+  text-anchor: middle;
+  fill: var(--paper);
+}
+
+.finger[data-kind='next'] {
+  fill: var(--ink);
+}
+
+.settings {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0.75rem;
+  border: 1px solid var(--muted);
+  border-radius: 0.5rem;
+}
+
+.settings label {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.settings label.check {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2.75rem;
+}
+
+.check input {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.review {
+  display: grid;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border: 2px solid var(--in-tune);
+  border-radius: 0.75rem;
+}
+
+/* the guitar artwork: the neck is narrow, so the enlarged fretboard above is the one to read; the artwork places the hand */
+.artwork {
+  margin: 0;
+  display: grid;
+  gap: 0.25rem;
+  justify-items: center;
+}
+
+.artwork-frame {
+  position: relative;
+  width: min(14rem, 60vw);
+  aspect-ratio: 774.83 / 1997.1;
+}
+
+.artwork-image,
+.artwork-overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.artwork[data-hand='left'] .artwork-frame {
+  transform: scaleX(-1);
+}
+
+@media (min-width: 48rem) {
+  .practice-body {
+    grid-template-columns: 1fr 15rem;
+  }
+
+  .practice-body > .artwork {
+    grid-column: 2;
+    grid-row: 1 / span 6;
+    align-self: start;
+  }
+}
+
+@media (forced-colors: active) {
+  .marker[data-kind='current'] {
+    fill: Highlight;
+  }
+
+  .marker[data-kind='next'] {
+    stroke: Highlight;
+  }
+}

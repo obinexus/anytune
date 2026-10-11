@@ -1,0 +1,26 @@
+<script setup lang="ts">
+// the enlarged fretboard: the first five frets, strings and markers from the view (src/app/practice-view.ts) — the drawing computes nothing
+defineProps<{
+  diagram: {
+    viewBox: string;
+    hand: string;
+    description: string;
+    strings: { x1: number; y1: number; x2: number; y2: number; label: string; labelX: number; labelY: number }[];
+    frets: { x1: number; y1: number; x2: number; y2: number; label: string; labelX: number; labelY: number }[];
+    markers: { x: number; y: number; textY: number; kind: string; label: string; description: string }[];
+  };
+}>();
+</script>
+
+<template>
+  <figure class="fretboard">
+    <svg class="diagram" :data-hand="diagram.hand" :viewBox="diagram.viewBox" role="img" :aria-label="diagram.description">
+      <line v-for="fret in diagram.frets" :key="fret.x1" class="fret" :x1="fret.x1" :y1="fret.y1" :x2="fret.x2" :y2="fret.y2" />
+      <text v-for="fret in diagram.frets" :key="fret.labelX" class="fret-number" :x="fret.labelX" :y="fret.labelY" aria-hidden="true">{{ fret.label }}</text>
+      <line v-for="string in diagram.strings" :key="string.y1" class="string" :x1="string.x1" :y1="string.y1" :x2="string.x2" :y2="string.y2" />
+      <text v-for="string in diagram.strings" :key="string.label" class="string-name" :x="string.labelX" :y="string.labelY" aria-hidden="true">{{ string.label }}</text>
+      <circle v-for="marker in diagram.markers" :key="marker.kind" class="marker" :data-kind="marker.kind" :cx="marker.x" :cy="marker.y" r="14" />
+      <text v-for="marker in diagram.markers" :key="marker.description" class="finger" :data-kind="marker.kind" :x="marker.x" :y="marker.textY" aria-hidden="true">{{ marker.label }}</text>
+    </svg>
+  </figure>
+</template>

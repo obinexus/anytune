@@ -18,15 +18,20 @@ import { irModuleOf } from '../../tools/obix/ir-module.ts';
 const ROOT = path.resolve(import.meta.dirname, '..', '..');
 const COMPONENTS = path.join(ROOT, 'src', 'components');
 
-test('AnyTuneApp.obix?ir: its canonical IR, the trace\'s — and a registry of every component it invokes, each the trace\'s IR of that file', async () => {
-  const module = (await import('../../src/components/AnyTuneApp.obix?ir')) as { default: unknown; registry: Record<string, unknown>; sourceSha256: string };
-  const trace = traceComponent(path.join(COMPONENTS, 'AnyTuneApp.obix'), ROOT);
+test('AnyTuneShell.obix?ir — the whole app: its canonical IR, the trace\'s — and a registry of every component it invokes, each the trace\'s IR of that file', async () => {
+  const module = (await import('../../src/components/AnyTuneShell.obix?ir')) as { default: unknown; registry: Record<string, unknown>; sourceSha256: string };
+  const trace = traceComponent(path.join(COMPONENTS, 'AnyTuneShell.obix'), ROOT);
   assert.equal(trace.status, 'compiled');
   assert.equal(irEqual(module.default as never, trace.ir), true, 'the IR the native runtime runs is the one the trace records');
   assert.equal(module.sourceSha256, trace.sourceSha256, 'from the same source');
-  const others = componentFiles(ROOT).map((f) => path.basename(f)).filter((n) => n !== 'AnyTuneApp.obix').sort();
+  const others = componentFiles(ROOT).map((f) => path.basename(f)).filter((n) => n !== 'AnyTuneShell.obix').sort();
   assert.deepEqual(Object.keys(module.registry).sort(), others.map((n) => `./${n}`), 'every other component, reached directly or through others');
   for (const name of others) assert.equal(irEqual(module.registry[`./${name}`] as never, traceComponent(path.join(COMPONENTS, name), ROOT).ir), true, name);
+});
+
+test('AnyTuneApp.obix?ir — the tuner, on its own: a registry of the tuner\'s components only', async () => {
+  const module = (await import('../../src/components/AnyTuneApp.obix?ir')) as { registry: Record<string, unknown> };
+  assert.deepEqual(Object.keys(module.registry).sort(), ['ConfidenceIndicator', 'InputSelector', 'InputStatus', 'InstrumentSelector', 'NoteDisplay', 'PitchMeter', 'TunerDisplay', 'TuningStatus'].map((n) => `./${n}.obix`));
 });
 
 test('the module holds no code of any framework: plain data', () => {

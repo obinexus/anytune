@@ -5,19 +5,9 @@
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import fs from 'node:fs';
-import path from 'node:path';
 import type { LiveEvent } from '../../src/analysis/live.ts';
 import { PracticeSession, type AttemptStore, type Playback } from '../../src/app/practice.ts';
-import { referenceFromMidi, type Reference } from '../../src/music/reference.ts';
-
-const ROOT = path.resolve(import.meta.dirname, '..', '..');
-export function furElise(): Reference {
-  const bytes = new Uint8Array(fs.readFileSync(path.join(ROOT, 'tests', 'fixtures', 'midi', 'fur-elise-opening.mid')));
-  const made = referenceFromMidi(bytes, { song: { id: 'fur-elise', title: 'Für Elise', composer: 'Beethoven' }, arrangement: { id: 'fe', version: 1, instrument: 'piano', part: 'full' }, provenance: { kind: 'midi-import', midi: { role: 'midi', fileName: 'fe.mid', mediaType: 'audio/midi', sha256: 'c821', bytes: 495 } } });
-  if (!made.ok) throw new Error(made.reason);
-  return made.reference;
-}
+import { furElise } from '../support/fur-elise.ts';
 
 type Event = { t: number; kind: string; [k: string]: unknown };
 
@@ -99,7 +89,12 @@ test('flow mode, bars 1–2 looped at half speed: a count-in on the click, the r
   for (const pass of [0, 1]) {
     session.hear(loop.map((t, i) => note((session.due(pass, t.time) as number) + 0.03, pass === 1 && i === 4 ? t.key + 1 : t.key)));
   }
-  session.tick((session.due(1, (loop[0] as { time: number }).time) as number) + 0.01);
+  // the pass ends; it is judged once its last note can have been reported by the live analysis (a quarter second later), not before
+  const passEnd = session.due(1, (loop[0] as { time: number }).time) as number;
+  session.tick(passEnd + 0.01);
+  assert.equal(session.getState().pass, 1);
+  assert.equal(session.getState().passes.length, 0);
+  session.tick(passEnd + 0.26);
   assert.equal(session.getState().passes.length, 1);
   assert.ok(session.getState().passes[0]?.results.every((r) => r.pitch === 'correct' && r.timing === 'on-time'), 'on time: 30 ms of capture time is 15 ms at half speed');
   await session.stop((session.due(1, (loop[9] as { time: number }).time) as number) + 0.5);

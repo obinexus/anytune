@@ -63,3 +63,58 @@ export function mountAnyTune(host: Element, { session, catalog, clock, input = (
     },
   };
 }
+
+import AnyTuneShell, { registry as shellRegistry } from '../components/AnyTuneShell.obix?ir';
+import type { ShellMountDeps } from './mount-types.ts';
+
+/** The whole app on OBIX's native runtime: the same shell, lowered to DOP IR, its events (outputs, by channel) handed to the app's handlers. */
+export function mountShell(host: Element, { app }: ShellMountDeps): MountedAnyTune {
+  const on = app.handlers;
+  const obix = createObixApp(AnyTuneShell, {
+    registry: shellRegistry,
+    props: { ...app.view() },
+    interactions: {
+      navigate: (screen: unknown) => on.navigate(String(screen)),
+      begin: () => on.begin(),
+      choose: (id: unknown) => on.choose(String(id)),
+      importRecording: () => on.importRecording(),
+      openMidi: () => void on.openMidi(),
+      openObr: () => void on.openObr(),
+      tuneInstrument: (id: unknown) => on.tuneInstrument(String(id)),
+      tuneInput: (id: unknown) => on.tuneInput(String(id)),
+      tuneStart: () => on.tuneStart(),
+      tuneStop: () => on.tuneStop(),
+      practiceStart: () => void on.practiceStart(),
+      practiceStop: () => void on.practiceStop(),
+      practiceListen: () => on.practiceListen(),
+      practiceRepeat: (bar: unknown) => on.practiceRepeat(String(bar)),
+      practiceTempo: (value: unknown) => on.practiceTempo(String(value)),
+      practiceFrom: (value: unknown) => on.practiceFrom(String(value)),
+      practiceTo: (value: unknown) => on.practiceTo(String(value)),
+      practiceMode: (value: unknown) => on.practiceMode(String(value)),
+      practiceHand: (value: unknown) => on.practiceHand(String(value)),
+      practiceMetronome: (checked: unknown) => on.practiceMetronome(checked === true),
+      practiceReference: (checked: unknown) => on.practiceReference(checked === true),
+    },
+  });
+  let renders = 1;
+  let pending = false;
+  const off = app.subscribe(() => {
+    obix.setProps({ ...app.view() });
+    if (pending) return;
+    pending = true;
+    queueMicrotask(() => {
+      pending = false;
+      renders++;
+    });
+  });
+  obix.mount(host);
+  return {
+    renders: () => renders,
+    settled: () => obix.settled(),
+    unmount(): void {
+      off();
+      obix.unmount();
+    },
+  };
+}

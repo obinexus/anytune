@@ -196,7 +196,8 @@
         "instruments",
         "music",
         "lesson",
-        "analysis"
+        "analysis",
+        "adapters"
       ],
       "modules": [],
       "forbiddenGlobals": "domGlobals",
@@ -254,14 +255,18 @@
         "fusion",
         "adapters",
         "app",
-        "components"
+        "components",
+        "music",
+        "analysis",
+        "synthesis",
+        "polycall"
       ],
       "modules": [
         "vue",
         "#anytune-mount"
       ],
       "forbiddenGlobals": [],
-      "why": "the demo execution boundary: composes the layers and mounts the UI on the official Vue runtime — the one TypeScript place that may import vue; the browser entry picks the mount (#anytune-mount: the Vue harness by default, the native harness in --mode native)"
+      "why": "the execution boundary: composes the layers — the tuner, the journey's shell, practice audio (one AudioContext clock for capture and playback), the recorder through the Android bridge — and mounts the UI on the official Vue runtime; the one TypeScript place that may import vue (mount.ts) and touch the browser's APIs"
     },
     {
       "name": "styles",

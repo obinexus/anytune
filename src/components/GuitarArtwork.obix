@@ -1,0 +1,24 @@
+<script setup lang="ts">
+// the supplied guitar artwork, unchanged, with the target placed on its strings from the fretboard map (assets/instruments/guitar/fretboard-map.json)
+defineProps<{
+  artwork: {
+    url: string;
+    viewBox: string;
+    hand: string;
+    credit: string;
+    markers: { x: number; y: number; textY: number; kind: string; label: string; description: string }[];
+  };
+}>();
+</script>
+
+<template>
+  <figure class="artwork" :data-hand="artwork.hand">
+    <div class="artwork-frame">
+      <img class="artwork-image" :src="artwork.url" alt="" />
+      <svg class="artwork-overlay" :viewBox="artwork.viewBox" aria-hidden="true" focusable="false">
+        <circle v-for="marker in artwork.markers" :key="marker.kind" class="marker" :data-kind="marker.kind" :cx="marker.x" :cy="marker.y" r="16" />
+      </svg>
+    </div>
+    <figcaption class="credit">{{ artwork.credit }}</figcaption>
+  </figure>
+</template>

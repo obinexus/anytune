@@ -59,3 +59,55 @@ export function mountAnyTune(host: Element, { session, catalog, clock, input = (
     },
   };
 }
+
+import AnyTuneShell from '../components/AnyTuneShell.obix';
+import type { ShellView } from '../app/shell-view.ts';
+import type { ShellMountDeps } from './mount-types.ts';
+
+/** The whole app on the Vue runtime: the shell's view bound as one render, its events handed to the app's handlers. */
+export function mountShell(host: Element, { app }: ShellMountDeps): MountedAnyTune {
+  const view = shallowRef<ShellView>(app.view());
+  const off = app.subscribe(() => {
+    view.value = app.view();
+  });
+  const on = app.handlers;
+  let renders = 0;
+  const vue = createApp({
+    render() {
+      renders++;
+      return h(AnyTuneShell, {
+        ...view.value,
+        onNavigate: (screen: string) => on.navigate(screen),
+        onBegin: () => on.begin(),
+        onChoose: (id: string) => on.choose(id),
+        onImportRecording: () => on.importRecording(),
+        onOpenMidi: () => void on.openMidi(),
+        onOpenObr: () => void on.openObr(),
+        onTuneInstrument: (id: string) => on.tuneInstrument(id),
+        onTuneInput: (id: string) => on.tuneInput(id),
+        onTuneStart: () => on.tuneStart(),
+        onTuneStop: () => on.tuneStop(),
+        onPracticeStart: () => void on.practiceStart(),
+        onPracticeStop: () => void on.practiceStop(),
+        onPracticeListen: () => on.practiceListen(),
+        onPracticeRepeat: (bar: string) => on.practiceRepeat(bar),
+        onPracticeTempo: (value: string) => on.practiceTempo(value),
+        onPracticeFrom: (value: string) => on.practiceFrom(value),
+        onPracticeTo: (value: string) => on.practiceTo(value),
+        onPracticeMode: (value: string) => on.practiceMode(value),
+        onPracticeHand: (value: string) => on.practiceHand(value),
+        onPracticeMetronome: (checked: boolean) => on.practiceMetronome(checked),
+        onPracticeReference: (checked: boolean) => on.practiceReference(checked),
+      });
+    },
+  });
+  vue.mount(host);
+  return {
+    renders: () => renders,
+    settled: () => nextTick(),
+    unmount(): void {
+      off();
+      vue.unmount();
+    },
+  };
+}

@@ -78,6 +78,11 @@ export interface PracticeState {
 
 const BUFFER = 64;
 
+/** How long after its onset the live analysis reports a note: once its pitch has settled — 140–160 ms on the synthetic strings, in frames of 1024 samples at
+ * 48 kHz (tests/components/shell.test.ts plays bar 1 through it). A pass is judged no sooner than this after its last note can have been captured, so that a
+ * note played in time at the end of a pass is not judged missed for being reported late. */
+const ANALYSIS_DELAY_SECONDS = 0.25;
+
 export class PracticeSession {
   readonly #reference: Reference;
   readonly #track: number;
@@ -92,6 +97,8 @@ export class PracticeSession {
   #pending: { t: number; kind: string; [k: string]: unknown }[] = [];
   #scheduledPasses = new Set<number>();
   #startedAt = 0;
+  /** the first pass not yet judged */
+  #nextToJudge = 0;
   /** the recorder's calls, one after another: a recording keeps time order, so two appends may never race */
   #chain: Promise<void> = Promise.resolve();
   /** the latest event time queued: every event's t is at least this, so the attempt's events never go back in time */
@@ -184,6 +191,7 @@ export class PracticeSession {
     const beat = this.#beatSeconds(span.from) / s.tempoFactor;
     const countIn = s.mode === 'step' ? 0 : s.countInBeats * beat;
     this.#startedAt = now;
+    this.#nextToJudge = 0;
     this.#clock = new LessonClock({ startedAt: now, countInSeconds: countIn, tempoFactor: s.tempoFactor, from: span.from, to: s.loop === null ? null : span.to, inputLatencySeconds: s.inputLatencySeconds, earlyAllowanceSeconds: 0.15 });
     this.#step = s.mode === 'step' ? new StepPractice(span.targets) : null;
     this.#heardByPass = new Map();
@@ -274,9 +282,8 @@ export class PracticeSession {
       void this.stop(now);
       return;
     }
-    if (reading.pass > this.#state.pass) {
-      for (let p = this.#state.pass; p < reading.pass; p++) this.#judgePass(p);
-    }
+    // the clock reads the next pass a little early (a first note played early belongs to it); the pass before is judged once its notes can all have been heard
+    while (this.#nextToJudge < reading.pass && now >= this.#clock.due(this.#nextToJudge + 1, span.from) + s.inputLatencySeconds + ANALYSIS_DELAY_SECONDS) this.#judgePass(this.#nextToJudge++);
     this.#schedulePass(reading.pass + 1);
     const upcoming = span.targets.find((t) => t.time >= reading.time - 0.05) ?? null;
     const after = upcoming === null ? null : (span.targets[span.targets.indexOf(upcoming) + 1] ?? null);
@@ -315,7 +322,8 @@ export class PracticeSession {
       const reading = this.#clock.read(now);
       if (reading.phase === 'playing') {
         // the passes before the one under way, whole; the one under way, on what had fallen due (a note gets the assessment window to be played)
-        for (let p = this.#state.pass; p <= reading.pass; p++) if (!this.#state.passes.some((x) => x.pass === p)) this.#judgePass(p, p < reading.pass ? Number.POSITIVE_INFINITY : reading.time - DEFAULT_POLICY.windowSeconds);
+        for (let p = this.#nextToJudge; p <= reading.pass; p++) this.#judgePass(p, p < reading.pass ? Number.POSITIVE_INFINITY : reading.time - DEFAULT_POLICY.windowSeconds);
+        this.#nextToJudge = reading.pass + 1;
       }
     }
     this.#set({ phase: 'reviewing', secondsToStart: null });

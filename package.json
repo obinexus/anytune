@@ -27,6 +27,7 @@
     "typecheck": "tsc -p tsconfig.json",
     "check": "npm run typecheck && npm test",
     "trace": "node tools/obix/write-trace.ts",
+    "assets:harness": "node tools/fixtures/write-harness-assets.ts",
     "native:stage": "node tools/native/stage.ts",
     "native:verify": "node tools/native/verify.ts",
     "native:recorder": "node tools/native/build-recorder.ts",

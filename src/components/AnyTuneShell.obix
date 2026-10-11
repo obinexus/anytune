@@ -1,0 +1,180 @@
+<script setup lang="ts">
+import AnyTuneApp from "./AnyTuneApp.obix";
+import HomeScreen from "./HomeScreen.obix";
+import LibraryScreen from "./LibraryScreen.obix";
+import PracticeScreen from "./PracticeScreen.obix";
+import ProgressScreen from "./ProgressScreen.obix";
+
+// the journey's screens, from the app's view (src/app/shell-view.ts): the shell shows one, and formats nothing
+defineProps<{
+  screen: string;
+  nav: { id: string; label: string; ariaCurrent: string; intent: string }[];
+  home: { tagline: string; journey: string[]; primaryLabel: string; primaryIntent: string };
+  library: { message: string; songs: { id: string; title: string; detail: string; selected: boolean; intent: string }[] };
+  progress: { emptyText: string; attempts: { key: string; title: string; when: string; text: string }[] };
+  tuner: {
+    session: string;
+    sessionText: string;
+    listening: boolean;
+    instrumentId: string;
+    instrumentName: string;
+    instruments: { id: string; name: string; selected: boolean }[];
+    hasReading: boolean;
+    note: string;
+    octaveText: string;
+    targetText: string;
+    frequencyText: string;
+    centsText: string;
+    status: string;
+    statusText: string;
+    stable: boolean;
+    needlePercent: number;
+    confidencePercent: number;
+    confidenceText: string;
+    inputText: string;
+    inputSourceText: string;
+    inputId: string;
+    inputOptions: { id: string; label: string; selected: boolean }[];
+    privacyText: string;
+    hasError: boolean;
+    errorText: string;
+    summaryText: string;
+    announcement: string;
+  };
+  practice: {
+    available: boolean;
+    title: string;
+    arrangementText: string;
+    phase: string;
+    phaseText: string;
+    running: boolean;
+    canConfigure: boolean;
+    tempoOptions: { value: string; label: string; selected: boolean }[];
+    fromBarOptions: { value: string; label: string; selected: boolean }[];
+    toBarOptions: { value: string; label: string; selected: boolean }[];
+    modeOptions: { value: string; label: string; selected: boolean }[];
+    handOptions: { value: string; label: string; selected: boolean }[];
+    metronome: boolean;
+    playReference: boolean;
+    countInText: string;
+    currentText: string;
+    positionText: string;
+    nextText: string;
+    heardText: string;
+    stepMessage: string;
+    microphoneText: string;
+    headphonesText: string;
+    latencyText: string;
+    diagram: {
+      viewBox: string;
+      hand: string;
+      description: string;
+      strings: { x1: number; y1: number; x2: number; y2: number; label: string; labelX: number; labelY: number }[];
+      frets: { x1: number; y1: number; x2: number; y2: number; label: string; labelX: number; labelY: number }[];
+      markers: { x: number; y: number; textY: number; kind: string; label: string; description: string }[];
+    };
+    artwork: { url: string; viewBox: string; hand: string; credit: string; markers: { x: number; y: number; textY: number; kind: string; label: string; description: string }[] };
+    review: { visible: boolean; sentences: string[]; bars: { bar: number; text: string }[]; repeatBar: string; repeatLabel: string; attemptText: string };
+    errorText: string;
+  };
+}>();
+
+// every intent goes up as an event of its own; the harness hands it to the shell, the tuning session or the practice session
+const emit = defineEmits<{
+  (e: "navigate", screen: string): void;
+  (e: "begin"): void;
+  (e: "choose", id: string): void;
+  (e: "import-recording"): void;
+  (e: "open-midi"): void;
+  (e: "open-obr"): void;
+  (e: "tune-instrument", id: string): void;
+  (e: "tune-input", id: string): void;
+  (e: "tune-start"): void;
+  (e: "tune-stop"): void;
+  (e: "practice-start"): void;
+  (e: "practice-stop"): void;
+  (e: "practice-listen"): void;
+  (e: "practice-repeat", bar: string): void;
+  (e: "practice-tempo", value: string): void;
+  (e: "practice-from", value: string): void;
+  (e: "practice-to", value: string): void;
+  (e: "practice-mode", value: string): void;
+  (e: "practice-hand", value: string): void;
+  (e: "practice-metronome", on: boolean): void;
+  (e: "practice-reference", on: boolean): void;
+}>();
+</script>
+
+<template>
+  <div class="shell">
+    <header class="app-header">
+      <p class="brand">AnyTune</p>
+      <nav aria-label="AnyTune">
+        <ul class="nav">
+          <li v-for="item in nav" :key="item.id">
+            <button type="button" class="nav-item" :aria-current="item.ariaCurrent" @click="emit('navigate', item.id)">{{ item.label }}</button>
+          </li>
+        </ul>
+      </nav>
+    </header>
+    <HomeScreen v-if="screen === 'home'" :home="home" @begin="emit('begin')" @navigate="(to: string) => emit('navigate', to)" />
+    <LibraryScreen
+      v-if="screen === 'library'"
+      :library="library"
+      @choose="(id: string) => emit('choose', id)"
+      @import-recording="emit('import-recording')"
+      @open-midi="emit('open-midi')"
+      @open-obr="emit('open-obr')"
+    />
+    <AnyTuneApp
+      v-if="screen === 'tune'"
+      :session="tuner.session"
+      :session-text="tuner.sessionText"
+      :listening="tuner.listening"
+      :instrument-id="tuner.instrumentId"
+      :instrument-name="tuner.instrumentName"
+      :instruments="tuner.instruments"
+      :has-reading="tuner.hasReading"
+      :note="tuner.note"
+      :octave-text="tuner.octaveText"
+      :target-text="tuner.targetText"
+      :frequency-text="tuner.frequencyText"
+      :cents-text="tuner.centsText"
+      :status="tuner.status"
+      :status-text="tuner.statusText"
+      :stable="tuner.stable"
+      :needle-percent="tuner.needlePercent"
+      :confidence-percent="tuner.confidencePercent"
+      :confidence-text="tuner.confidenceText"
+      :input-text="tuner.inputText"
+      :input-source-text="tuner.inputSourceText"
+      :input-id="tuner.inputId"
+      :input-options="tuner.inputOptions"
+      :privacy-text="tuner.privacyText"
+      :has-error="tuner.hasError"
+      :error-text="tuner.errorText"
+      :summary-text="tuner.summaryText"
+      :announcement="tuner.announcement"
+      @select-instrument="(id: string) => emit('tune-instrument', id)"
+      @select-input="(id: string) => emit('tune-input', id)"
+      @start="emit('tune-start')"
+      @stop="emit('tune-stop')"
+    />
+    <PracticeScreen
+      v-if="screen === 'practice'"
+      :practice="practice"
+      @start="emit('practice-start')"
+      @stop="emit('practice-stop')"
+      @listen="emit('practice-listen')"
+      @repeat="(bar: string) => emit('practice-repeat', bar)"
+      @tempo="(value: string) => emit('practice-tempo', value)"
+      @from="(value: string) => emit('practice-from', value)"
+      @to="(value: string) => emit('practice-to', value)"
+      @mode="(value: string) => emit('practice-mode', value)"
+      @hand="(value: string) => emit('practice-hand', value)"
+      @metronome="(on: boolean) => emit('practice-metronome', on)"
+      @reference="(on: boolean) => emit('practice-reference', on)"
+    />
+    <ProgressScreen v-if="screen === 'progress'" :progress="progress" />
+  </div>
+</template>

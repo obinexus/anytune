@@ -22,3 +22,10 @@ export interface MountedAnyTune {
   settled(): Promise<void>;
   unmount(): void;
 }
+
+import type { ShellApp } from './shell-app.ts';
+
+/** The whole app's mount: the journey's shell, around the tuner, the library, practice and progress. */
+export interface ShellMountDeps {
+  readonly app: ShellApp;
+}
