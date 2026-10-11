@@ -397,6 +397,46 @@
       }
     },
     {
+      "path": "native/windows-x86_64/lib/anytune_recorder.dll",
+      "component": "anytune-recorder",
+      "role": "AnyTune’s recorder module as a Polycall operation plugin: `polycall start --load anytune_recorder.dll` serves recording.create/append/finish/read/list (docs/RECORDING.md)",
+      "platform": "windows",
+      "arch": "x86_64",
+      "kind": "shared-library",
+      "linkage": "a Polycall plugin (exports polycall_ops_register); links libpolycall.a 1.1.0 statically; imports Windows system DLLs only",
+      "source": {
+        "repository": "https://github.com/obinexus/anytune",
+        "commit": "tree-sha256:53a64cb696afd4c3ac8e0a255846e8fc4cd8a8cf40f0a7ef426c55fa383c0d13",
+        "version": "1.0.0"
+      },
+      "toolchain": "MSYS2 UCRT64: gcc.exe (Rev3, Built by MSYS2 project) 16.2.0; -Wl,--no-insert-timestamp",
+      "sha256": "3b5a7348c5b8efbcd237084cae5d854137b296860acd1bb885251ab811c8e0c9",
+      "bytes": 184218,
+      "binary": {
+        "format": "pe",
+        "machine": "x86_64",
+        "kind": "dll",
+        "subsystem": "console",
+        "imports": [
+          "bcrypt.dll",
+          "KERNEL32.dll",
+          "api-ms-win-crt-convert-l1-1-0.dll",
+          "api-ms-win-crt-environment-l1-1-0.dll",
+          "api-ms-win-crt-heap-l1-1-0.dll",
+          "api-ms-win-crt-locale-l1-1-0.dll",
+          "api-ms-win-crt-private-l1-1-0.dll",
+          "api-ms-win-crt-runtime-l1-1-0.dll",
+          "api-ms-win-crt-stdio-l1-1-0.dll",
+          "api-ms-win-crt-string-l1-1-0.dll",
+          "api-ms-win-crt-time-l1-1-0.dll",
+          "WS2_32.dll"
+        ],
+        "exports": [
+          "polycall_ops_register"
+        ]
+      }
+    },
+    {
       "path": "native/windows-x86_64/lib/libpolycall.a",
       "component": "polycall",
       "platform": "windows",

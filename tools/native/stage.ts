@@ -30,7 +30,7 @@ export const NATIVE = path.join(ROOT, 'native');
 const CACHE = path.join(NATIVE, '.cache');
 const posix = (p: string): string => path.relative(ROOT, p).split(path.sep).join('/');
 
-function run(command: string, args: readonly string[], options: SpawnSyncOptions = {}): string {
+export function run(command: string, args: readonly string[], options: SpawnSyncOptions = {}): string {
   const result = spawnSync(command, args, { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, ...options });
   if (result.error) throw new Error(`${path.basename(command)} could not run: ${result.error.message}`);
   if (result.status !== 0) throw new Error(`${path.basename(command)} ${args.join(' ')} exited ${result.status}\n${String(result.stderr ?? '').slice(-4000)}${String(result.stdout ?? '').slice(-4000)}`);
@@ -71,7 +71,7 @@ export function ensureSource(localCheckout: string | null): string {
   return dir;
 }
 
-function msysEnv(extraPath: readonly string[] = []): NodeJS.ProcessEnv {
+export function msysEnv(extraPath: readonly string[] = []): NodeJS.ProcessEnv {
   const ucrt = path.join(TOOLCHAINS.msys2Root, 'ucrt64', 'bin');
   const usr = path.join(TOOLCHAINS.msys2Root, 'usr', 'bin');
   if (!fs.existsSync(path.join(ucrt, 'gcc.exe'))) throw new Error(`MSYS2 UCRT64 GCC is not at ${ucrt}: install MSYS2 and mingw-w64-ucrt-x86_64-{gcc,cmake,ninja}`);
@@ -171,13 +171,32 @@ export function describe(file: string, fields: Omit<ManifestArtifact, 'path' | '
   return { path: posix(file), ...fields, sha256: crypto.createHash('sha256').update(bytes).digest('hex'), bytes: bytes.length, binary };
 }
 
-const copy = (from: string, to: string): string => {
+export const copy = (from: string, to: string): string => {
   fs.mkdirSync(path.dirname(to), { recursive: true });
   fs.copyFileSync(from, to);
   return to;
 };
 
 export const MANIFEST = path.join(NATIVE, 'manifest.json');
+
+/** The SHA-256 of native/recorder's sources: each file's path and SHA-256, sorted, one per line — the identity of what the recorder plugin was built from. */
+export function recorderTreeSha256(): string {
+  const base = path.join(NATIVE, 'recorder');
+  const files: string[] = [];
+  const walk = (dir: string): void => {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) walk(full);
+      else files.push(full);
+    }
+  };
+  walk(base);
+  // line endings normalised: a checkout with CRLF and one with LF are the same sources
+  const lines = files
+    .map((f) => path.relative(base, f).split(path.sep).join('/') + String.fromCharCode(0) + crypto.createHash('sha256').update(fs.readFileSync(f, 'utf8').split(String.fromCharCode(13, 10)).join(String.fromCharCode(10))).digest('hex') + String.fromCharCode(10))
+    .sort();
+  return crypto.createHash('sha256').update(lines.join('')).digest('hex');
+}
 
 export interface Manifest {
   readonly about: string;

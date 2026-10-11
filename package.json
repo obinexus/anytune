@@ -28,7 +28,8 @@
     "check": "npm run typecheck && npm test",
     "trace": "node tools/obix/write-trace.ts",
     "native:stage": "node tools/native/stage.ts",
-    "native:verify": "node tools/native/verify.ts"
+    "native:verify": "node tools/native/verify.ts",
+    "native:recorder": "node tools/native/build-recorder.ts"
   },
   "devDependencies": {
     "@types/node": "22.20.4",

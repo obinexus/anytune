@@ -11,7 +11,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { binaryInfo } from './binary-info.ts';
-import { ROOT, checkArtifacts, readManifest, sha256Of, type ManifestArtifact } from './stage.ts';
+import { ROOT, checkArtifacts, readManifest, recorderTreeSha256, sha256Of, type ManifestArtifact } from './stage.ts';
 import { zipEntries } from './zip.ts';
 
 export function verifyStaged(artifacts: readonly ManifestArtifact[]): string[] {
@@ -30,6 +30,11 @@ export function verifyStaged(artifacts: readonly ManifestArtifact[]): string[] {
       const now = binaryInfo(new Uint8Array(fs.readFileSync(file)));
       if (JSON.stringify(now) !== JSON.stringify(a.binary)) problems.push(`${a.path}: its headers no longer say what the manifest recorded`);
     }
+  }
+  const recorder = artifacts.filter((a) => a.component === 'anytune-recorder');
+  if (recorder.length > 0) {
+    const tree = `tree-sha256:${recorderTreeSha256()}`;
+    for (const a of recorder) if (a.source.commit !== tree) problems.push(`${a.path}: built from other recorder sources than native/recorder's (${a.source.commit.slice(0, 24)}…, now ${tree.slice(0, 24)}…) — run npm run native:recorder`);
   }
   return [...problems, ...checkArtifacts(artifacts)];
 }

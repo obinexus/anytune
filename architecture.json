@@ -101,6 +101,42 @@
       "why": "readers and writers of file formats AnyTune keeps compatible with (the .obr journal), implemented here — never a component, never the DOM"
     },
     {
+      "name": "polycall-node",
+      "paths": [
+        "src/polycall/node/"
+      ],
+      "mayImport": [
+        "polycall"
+      ],
+      "modules": [
+        "node:net"
+      ],
+      "forbiddenGlobals": "domGlobals",
+      "why": "a Node transport of polycall_rpc v1 (TCP to a loopback Polycall runtime), for AnyTune's tools and import worker; never in the browser bundle"
+    },
+    {
+      "name": "polycall",
+      "paths": [
+        "src/polycall/"
+      ],
+      "mayImport": [],
+      "modules": [],
+      "forbiddenGlobals": "domGlobals",
+      "why": "Polycall's wire (polycall_rpc v1) and the transport port: framing and payloads only. Polycall connects components across languages and decides nothing musical"
+    },
+    {
+      "name": "recording",
+      "paths": [
+        "src/recording/"
+      ],
+      "mayImport": [
+        "polycall"
+      ],
+      "modules": [],
+      "forbiddenGlobals": "domGlobals",
+      "why": "anytune-recording/1: an independent codec (to check the recorder module) and the recorder client, which reaches the C recorder module through Polycall"
+    },
+    {
       "name": "app",
       "paths": [
         "src/app/"

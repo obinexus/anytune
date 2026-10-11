@@ -8,3 +8,5 @@ native/windows-x86_64/
 native/android/
 native/include/
 native/licenses/
+# Polycall telemetry sink (written where polycall runs)
+.polycall/
