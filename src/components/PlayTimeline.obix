@@ -26,11 +26,11 @@ defineProps<{
       <line v-for="beat in timeline.beats" :key="beat.key" class="beat-line" :x1="beat.x" :y1="timeline.playheadTop" :x2="beat.x" :y2="timeline.playheadBottom" />
       <line v-for="bar in timeline.bars" :key="bar.key" class="bar-line" :x1="bar.x" :y1="timeline.playheadTop" :x2="bar.x" :y2="timeline.playheadBottom" />
       <text v-for="bar in timeline.bars" :key="bar.labelKey" class="bar-number" :x="bar.x" :y="bar.labelY" aria-hidden="true">{{ bar.label }}</text>
+      <line class="playhead" :x1="timeline.playheadX" :y1="timeline.playheadTop" :x2="timeline.playheadX" :y2="timeline.playheadBottom" />
       <rect v-for="prompt in timeline.prompts" :key="prompt.key" class="prompt" :data-kind="prompt.kind" :x="prompt.x" :y="prompt.y" :width="prompt.width" :height="prompt.height" rx="6" />
       <text v-for="prompt in timeline.prompts" :key="prompt.textKey" class="prompt-text" :data-kind="prompt.kind" :x="prompt.textX" :y="prompt.textY" aria-hidden="true">{{ prompt.label }}</text>
       <rect class="lane-column" x="0" y="0" :width="timeline.labelColumn" :height="timeline.height" />
       <text v-for="lane in timeline.lanes" :key="lane.labelKey" class="lane-name" :x="lane.labelX" :y="lane.labelY" aria-hidden="true">{{ lane.label }}</text>
-      <line class="playhead" :x1="timeline.playheadX" :y1="timeline.playheadTop" :x2="timeline.playheadX" :y2="timeline.playheadBottom" />
       <text class="playhead-label" :x="timeline.playheadX" y="16" aria-hidden="true">Now</text>
     </svg>
   </figure>

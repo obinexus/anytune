@@ -68,7 +68,8 @@ export function timelineView(state: PlayState, width: number): TimelineView {
   const inView = state.beats.filter((b) => b.time >= from && b.time <= to);
   const bars = inView.filter((b) => b.beat === 1).map((b) => ({ x: xOf(b.time), label: String(b.bar), labelY: height - 4, key: `bar-${b.bar}`, labelKey: `bar-label-${b.bar}` }));
   const beats = inView.filter((b) => b.beat !== 1).map((b) => ({ x: xOf(b.time), key: `beat-${b.time}` }));
-  const kindOf = (t: Target): string => (t.id === state.current?.id ? 'now' : t.id === state.next?.id ? 'next' : t.time < state.position ? 'past' : 'later');
+  // the note at "Now" is filled; in a rest, the note coming is the next one, dashed
+  const kindOf = (t: Target): string => (t.id === state.current?.id ? (state.atPlayhead ? 'now' : 'next') : t.id === state.next?.id && state.atPlayhead ? 'next' : t.time < state.position ? 'past' : 'later');
   const prompts: TimelinePrompt[] = state.arrangement.targets
     .filter((t) => t.time >= from - 0.3 && t.time <= to + 0.3)
     .map((t) => {
@@ -157,7 +158,7 @@ export function toPlayView(state: PlayState | null, ctx: PlayViewContext): PlayV
   });
   const none: PlayControls = { play: false, playLabel: 'Play song', feedback: false, feedbackLabel: 'Play song with feedback', begin: false, cancel: false, pause: false, resume: false, restart: false, stop: false };
   if (state === null) {
-    const empty = { phase: 'ready', position: 0, settings: { tempoFactor: 1 }, beats: [], arrangement: { targets: [] }, current: null, next: null } as unknown as PlayState;
+    const empty = { phase: 'ready', position: 0, settings: { tempoFactor: 1 }, beats: [], arrangement: { targets: [] }, current: null, next: null, atPlayhead: false } as unknown as PlayState;
     return {
       available: false, title: '', songOptions, arrangementOptions: [], arrangementText: ctx.songs.length === 0 ? 'Add a song in the Library to play it.' : 'Choose a song to play.', phase: 'none', phaseText: '', playing: false,
       currentText: '', positionText: '', nextText: '', liveText: '', alertText: '', beat: { text: '', dots: [] }, progress: { value: 0, text: '' }, timeline: timelineView(empty, ctx.width),
@@ -169,7 +170,7 @@ export function toPlayView(state: PlayState | null, ctx: PlayViewContext): PlayV
   const busy = BUSY.includes(ctx.input.state);
   const idle = state.phase === 'ready' || state.phase === 'finished';
   const phaseText =
-    state.phase === 'ready' ? 'Play follows the song from start to end: the next note arrives at “Now” as it sounds. Play it — with feedback, the microphone listens.'
+    state.phase === 'ready' ? 'Press Play song: after a count-in, each note arrives at “Now” as it sounds.'
     : state.phase === 'count-in' ? `Get ready… ${Math.ceil(state.secondsToStart ?? 0)}`
     : state.phase === 'playing' ? (state.assessing ? 'Playing — with feedback' : 'Playing — no feedback')
     : state.phase === 'paused' ? 'Paused'
@@ -186,7 +187,7 @@ export function toPlayView(state: PlayState | null, ctx: PlayViewContext): PlayV
     phase: state.phase,
     phaseText,
     playing: running,
-    currentText: current === null ? '' : `${state.phase === 'ready' ? 'First' : 'Now'}: ${noteOf(current.key).label}`,
+    currentText: current === null ? '' : `${state.phase === 'ready' ? 'First' : state.atPlayhead ? 'Now' : 'Next'}: ${noteOf(current.key).label}`,
     positionText: shapeText(shapeOf(current)),
     nextText: state.next === null || current === null ? '' : `Then: ${noteOf(state.next.key).label}`,
     liveText: running && state.assessing ? state.liveText : '',

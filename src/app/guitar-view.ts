@@ -109,6 +109,10 @@ export interface FretboardView {
   readonly frets: readonly FretboardLine[];
   readonly markers: readonly FretboardMarker[];
   readonly marks: readonly StringMark[];
+  /** the open strings, drawn as rings before the nut */
+  readonly opens: readonly { readonly x: number; readonly y: number; readonly kind: MarkerKind; readonly key: string }[];
+  /** the muted strings, drawn as × before the nut */
+  readonly mutes: readonly { readonly x: number; readonly textY: number; readonly kind: MarkerKind; readonly key: string }[];
   /** the first and last fret shown */
   readonly firstFret: number;
   readonly lastFret: number;
@@ -174,7 +178,9 @@ export function fretboardView(now: Shape | null, next: Shape | null, width: numb
   const range = first === last ? `fret ${first}` : `frets ${first} to ${last}`;
   const caption = `${hand === 'left' ? 'Left' : 'Right'}-handed, ${range}${first > 1 ? ' (the nut is off to the side)' : ''}`;
   const parts = [now === null ? '' : `Now: ${shapeName(now)}, ${shapeText(now)}`, next === null ? '' : `Next: ${shapeName(next)}, ${shapeText(next)}`].filter((p) => p !== '');
-  return { width: boardWidth, height, viewBox: `0 0 ${boardWidth} ${height}`, hand, strings, frets, markers, marks, firstFret: first, lastFret: last, caption, description: `Fretboard, ${caption}.${parts.length > 0 ? ` ${parts.join('. ')}.` : ''}` };
+  const opens = marks.filter((m) => m.state === 'open').map((m) => ({ x: m.x, y: m.y, kind: m.kind, key: m.key }));
+  const mutes = marks.filter((m) => m.state === 'muted').map((m) => ({ x: m.x, textY: m.textY, kind: m.kind, key: m.key }));
+  return { width: boardWidth, height, viewBox: `0 0 ${boardWidth} ${height}`, hand, strings, frets, markers, marks, opens, mutes, firstFret: first, lastFret: last, caption, description: `Fretboard, ${caption}.${parts.length > 0 ? ` ${parts.join('. ')}.` : ''}` };
 }
 
 // -------------------------------------------------------------------------------------------------------------------------------------- the artwork

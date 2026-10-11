@@ -43,6 +43,8 @@ defineProps<{
         frets: { x1: number; y1: number; x2: number; y2: number; label: string; labelX: number; labelY: number; kind: string; key: string; labelKey: string }[];
         markers: { x: number; y: number; textY: number; kind: string; label: string; key: string; labelKey: string }[];
         marks: { x: number; y: number; textY: number; kind: string; state: string; label: string; key: string }[];
+        opens: { x: number; y: number; kind: string; key: string }[];
+        mutes: { x: number; textY: number; kind: string; key: string }[];
       };
       artwork: {
         url: string;

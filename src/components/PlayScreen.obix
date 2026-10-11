@@ -47,6 +47,8 @@ defineProps<{
         frets: { x1: number; y1: number; x2: number; y2: number; label: string; labelX: number; labelY: number; kind: string; key: string; labelKey: string }[];
         markers: { x: number; y: number; textY: number; kind: string; label: string; key: string; labelKey: string }[];
         marks: { x: number; y: number; textY: number; kind: string; state: string; label: string; key: string }[];
+        opens: { x: number; y: number; kind: string; key: string }[];
+        mutes: { x: number; textY: number; kind: string; key: string }[];
       };
       artwork: {
         url: string;
@@ -113,18 +115,7 @@ function onHand(event: Event): void {
 <template>
   <main class="screen play">
     <h1>Play</h1>
-    <div class="play-choice">
-      <label>Song
-        <select :disabled="play.playing" @change="onSong">
-          <option v-for="o in play.songOptions" :key="o.value" :value="o.value" :selected="o.selected">{{ o.label }}</option>
-        </select>
-      </label>
-      <label>Instrument and part
-        <select :disabled="play.playing">
-          <option v-for="o in play.arrangementOptions" :key="o.value" :value="o.value" :selected="o.selected">{{ o.label }}</option>
-        </select>
-      </label>
-    </div>
+    <p v-if="play.available" class="title">{{ play.title }}</p>
     <p class="arrangement">{{ play.arrangementText }}</p>
     <div v-if="play.available" class="play-body">
       <p class="visually-hidden" role="status" aria-live="polite" aria-atomic="true">{{ play.announcement }}</p>
@@ -167,6 +158,21 @@ function onHand(event: Event): void {
         <GuitarArtwork :artwork="play.guitar.artwork" />
         <FretboardDiagram :fretboard="play.guitar.fretboard" />
       </div>
+      <section class="play-song" aria-labelledby="play-song-heading">
+        <h2 id="play-song-heading">Song and part</h2>
+        <div class="play-choice">
+          <label>Song
+            <select :disabled="play.playing" @change="onSong">
+              <option v-for="o in play.songOptions" :key="o.value" :value="o.value" :selected="o.selected">{{ o.label }}</option>
+            </select>
+          </label>
+          <label>Instrument and part
+            <select :disabled="play.playing">
+              <option v-for="o in play.arrangementOptions" :key="o.value" :value="o.value" :selected="o.selected">{{ o.label }}</option>
+            </select>
+          </label>
+        </div>
+      </section>
       <section v-if="play.review.visible" class="review" aria-labelledby="play-review-heading">
         <h2 id="play-review-heading">How it went</h2>
         <ul class="sentences">

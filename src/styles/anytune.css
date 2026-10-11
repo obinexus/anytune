@@ -523,6 +523,18 @@ details > summary {
   text-anchor: middle;
 }
 
+/* an open string: a ring before the nut — the next one's dashed */
+.diagram .open-mark {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 3;
+}
+
+.diagram .open-mark[data-kind='next'] {
+  stroke: var(--focus);
+  stroke-dasharray: 4 3;
+}
+
 .diagram .string-mark[data-kind='next'] {
   fill: var(--muted);
 }
@@ -893,4 +905,14 @@ details > summary {
   .timeline-svg .prompt-text {
     fill: CanvasText;
   }
+}
+
+.play-song {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.play-song h2 {
+  margin: 0;
+  font-size: 1.2rem;
 }

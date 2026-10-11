@@ -208,3 +208,25 @@ test('Play without feedback: nothing is listened to — no results, no score —
   assert.deepEqual(play.getState().results, []);
   assert.equal(play.getState().feedback, null);
 });
+
+test('what is "now": the note at the playhead while it sounds; in a rest, nothing is at "Now" and the note coming is shown as next', () => {
+  const reference = furElise();
+  const arrangement = melodyArrangement(reference, 1, 240);
+  const release = (id: string): number => reference.notes.find((n) => n.id === id)?.releaseSeconds ?? 0;
+  // a rest in the melody: a note that ends well before the next begins
+  const i = arrangement.targets.findIndex((t, k) => k + 1 < arrangement.targets.length && (arrangement.targets[k + 1] as { time: number }).time - release(t.id) > 0.15);
+  assert.ok(i >= 0, 'the opening has a rest');
+  const note = arrangement.targets[i] as (typeof arrangement.targets)[number];
+  const coming = arrangement.targets[i + 1] as (typeof arrangement.targets)[number];
+  const play = new PlaySession(reference, arrangement, { pickupTicks: 240 });
+  play.start(0);
+  const audioAt = (song: number): number => play.dueAt(song) as number;
+  play.tick(audioAt(note.time) + 0.01);
+  assert.deepEqual([play.getState().current?.id, play.getState().atPlayhead], [note.id, true]);
+  const rest = (release(note.id) + coming.time) / 2;
+  play.tick(audioAt(rest));
+  assert.deepEqual([play.getState().current?.id, play.getState().atPlayhead], [coming.id, false]);
+  const view = timelineView(play.getState(), 360);
+  assert.equal(view.prompts.find((p) => p.key === `prompt-${coming.id}`)?.kind, 'next');
+  assert.equal(view.prompts.filter((p) => p.kind === 'now').length, 0, 'nothing filled at "Now" in a rest');
+});

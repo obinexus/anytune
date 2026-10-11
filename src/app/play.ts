@@ -58,6 +58,8 @@ export interface PlayState {
   /** the target to play now — the one at the playhead, or the next to arrive — and the one after */
   readonly current: Target | null;
   readonly next: Target | null;
+  /** whether `current` is at the playhead, sounding — false in a rest, when `current` is the note coming */
+  readonly atPlayhead: boolean;
   /** count-in seconds left */
   readonly secondsToStart: number | null;
   readonly assessing: boolean;
@@ -91,10 +93,13 @@ export class PlaySession {
   /** the targets judged so far, by id */
   readonly #judged = new Map<string, NoteResult>();
   readonly #reference: Reference;
+  /** each target's release, song seconds: until then it is "now" */
+  readonly #release = new Map<string, number>();
 
   constructor(reference: Reference, arrangement: Arrangement, options: { readonly playback?: Playback | null; readonly pickupTicks?: number } = {}) {
     this.#reference = reference;
     this.#targets = arrangement.targets;
+    for (const t of arrangement.targets) this.#release.set(t.id, reference.notes.find((n) => n.id === t.id)?.releaseSeconds ?? t.time + 0.2);
     this.#playback = options.playback ?? null;
     const last = arrangement.targets[arrangement.targets.length - 1];
     const lastNote = last === undefined ? undefined : reference.notes.find((n) => n.id === last.id);
@@ -109,6 +114,7 @@ export class PlaySession {
       beats: beatGrid(reference, options.pickupTicks ?? 0).filter((b) => b.time <= duration),
       beat: null,
       current: arrangement.targets[0] ?? null,
+      atPlayhead: true,
       next: arrangement.targets[1] ?? null,
       secondsToStart: null,
       assessing: false,
@@ -181,7 +187,7 @@ export class PlaySession {
     this.#playback?.cancelAll();
     this.#clock.start(now + countIn, 0, s.tempoFactor);
     for (let b = 0; b < s.countInBeats; b++) this.#playback?.click(now + b * beat, b === 0);
-    this.#set({ phase: 'count-in', position: 0, beat: null, secondsToStart: countIn, assessing: options.assess ?? false, liveText: '', results: [], feedback: null, run: this.#state.run + 1, current: this.#targets[0] ?? null, next: this.#targets[1] ?? null });
+    this.#set({ phase: 'count-in', position: 0, beat: null, secondsToStart: countIn, assessing: options.assess ?? false, liveText: '', results: [], feedback: null, run: this.#state.run + 1, current: this.#targets[0] ?? null, next: this.#targets[1] ?? null, atPlayhead: true });
     this.#schedule(now);
   }
 
@@ -244,10 +250,14 @@ export class PlaySession {
       this.#finish(now, false);
       return;
     }
-    const upcoming = this.#targets.find((t) => t.time >= position - 0.08) ?? null;
+    // the note at the playhead while it sounds; in a rest, the note coming
+    let reached = -1;
+    for (let i = 0; i < this.#targets.length && (this.#targets[i] as Target).time <= position + 0.05; i++) reached = i;
+    const sounding = reached >= 0 && position <= (this.#release.get((this.#targets[reached] as Target).id) ?? 0) + 0.05;
+    const upcoming = (sounding ? this.#targets[reached] : this.#targets[reached + 1]) ?? null;
     const after = upcoming === null ? null : (this.#targets[this.#targets.indexOf(upcoming) + 1] ?? null);
     const beat = [...this.#state.beats].reverse().find((b) => b.time <= position + 1e-9) ?? null;
-    this.#set({ phase: 'playing', secondsToStart: null, position, current: upcoming, next: after, beat });
+    this.#set({ phase: 'playing', secondsToStart: null, position, current: upcoming, next: after, atPlayhead: sounding, beat });
   }
 
   /** Schedule the notes and clicks due within the lookahead, at the clock's audio times. */

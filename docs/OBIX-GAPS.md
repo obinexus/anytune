@@ -21,7 +21,7 @@ the component without a diagnostic: these are limits of the IR, not of the Vue p
 | An event payload of type `File` | `OBIX_DOP_DEFERRED_SCRIPT`: the type `File` is not one the IR names | The file inputs (`#midi-file`, `#obr-file`) emit with no payload. The harness reads the chosen file from the input by its id (`readFile` in `src/harness/main.ts`). |
 | An event payload of type `Event` | `OBIX_DOP_DEFERRED_SCRIPT`: the type `Event` is not one the IR names | As above. A `<select>`'s value is emitted as a string, read from `event.target` inside the handler, which the IR does lower. |
 
-With these choices, all 16 components lower with no diagnostic. `tests/obix/trace.test.ts` asserts this, so a component that regresses to
+With these choices, all 18 components lower with no diagnostic. `tests/obix/trace.test.ts` asserts this, so a component that regresses to
 deferred fails the tests.
 
 ## Not reported upstream

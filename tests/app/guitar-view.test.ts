@@ -107,6 +107,7 @@ test('what the fretboard marks: now filled with its suggested finger, next as a 
   // a chord: C (x32010) — the low E muted, the G and high e open, three fingers
   const c = fretboardView({ kind: 'chord', symbol: 'C', voicing: OPEN_VOICINGS['C'] as never }, null, 328, 'right');
   assert.deepEqual(c.markers.map((m) => m.label), ['3', '2', '1']);
+  assert.deepEqual([c.opens.length, c.mutes.length], [2, 1], 'drawn: two open rings, one ×');
   assert.deepEqual(c.marks.map((m) => [m.label, m.y === c.strings[5]?.y1 ? 'E' : m.y === c.strings[2]?.y1 ? 'G' : m.y === c.strings[0]?.y1 ? 'e' : '?']), [['×', 'E'], ['○', 'G'], ['○', 'e']]);
   assert.match(shapeText({ kind: 'chord', symbol: 'C', voicing: OPEN_VOICINGS['C'] as never }), /^C: E muted, A fret 3 \(finger 3\), D fret 2 \(finger 2\), G open, B fret 1 \(finger 1\), e open — a suggested fingering$/);
 });

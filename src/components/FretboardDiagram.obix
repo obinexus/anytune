@@ -12,6 +12,8 @@ defineProps<{
     frets: { x1: number; y1: number; x2: number; y2: number; label: string; labelX: number; labelY: number; kind: string; key: string; labelKey: string }[];
     markers: { x: number; y: number; textY: number; kind: string; label: string; key: string; labelKey: string }[];
     marks: { x: number; y: number; textY: number; kind: string; state: string; label: string; key: string }[];
+    opens: { x: number; y: number; kind: string; key: string }[];
+    mutes: { x: number; textY: number; kind: string; key: string }[];
   };
 }>();
 </script>
@@ -24,7 +26,8 @@ defineProps<{
         <text v-for="fret in fretboard.frets" :key="fret.labelKey" class="fret-number" :x="fret.labelX" :y="fret.labelY" aria-hidden="true">{{ fret.label }}</text>
         <line v-for="string in fretboard.strings" :key="string.key" class="string" :x1="string.x1" :y1="string.y1" :x2="string.x2" :y2="string.y2" />
         <text v-for="string in fretboard.strings" :key="string.labelKey" class="string-name" :x="string.labelX" :y="string.labelY" aria-hidden="true">{{ string.label }}</text>
-        <text v-for="mark in fretboard.marks" :key="mark.key" class="string-mark" :data-kind="mark.kind" :data-state="mark.state" :x="mark.x" :y="mark.textY" aria-hidden="true">{{ mark.label }}</text>
+        <circle v-for="open in fretboard.opens" :key="open.key" class="open-mark" :data-kind="open.kind" :cx="open.x" :cy="open.y" r="10" />
+        <text v-for="mute in fretboard.mutes" :key="mute.key" class="string-mark" data-state="muted" :data-kind="mute.kind" :x="mute.x" :y="mute.textY" aria-hidden="true">×</text>
         <circle v-for="marker in fretboard.markers" :key="marker.key" class="marker" :data-kind="marker.kind" :cx="marker.x" :cy="marker.y" r="15" />
         <text v-for="marker in fretboard.markers" :key="marker.labelKey" class="finger" :data-kind="marker.kind" :x="marker.x" :y="marker.textY" aria-hidden="true">{{ marker.label }}</text>
       </svg>

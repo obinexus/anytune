@@ -89,6 +89,15 @@ This needs a device or a running emulator. `RecorderThroughPolycallTest` runs on
 
 **Recorded result (2026-10-11):** 6/6 passed on the emulator `Smoke_SmallPhone`: Android 17 (API 37), x86_64, **16 KB memory pages** (`getconf PAGE_SIZE` = 16384), Google APIs Play Store image. The camera request was refused with `NotAllowedError`. The microphone request was granted, then failed with `NotReadableError`, because that emulator was started with `-no-audio` and has no input device. The app launched, the log showed `Polycall 1.1.0, Binding ABI 1, runtime ABI 1; recorder at 127.0.0.1:<port>`, and screenshots showed Home, the Practise screen (the first note and its suggested position on the diagram), and the supplied guitar artwork with its credit, all within the phone's width and clear of the system bars.
 
+**Recorded result, Play and the new layout (2026-10-11, the same emulator):**
+
+- 6/6 instrumented tests again.
+- Screenshots showed the six-item navigation on two rows, inside the screen.
+- Play ran in the foreground: prompts arrived at a fixed "Now", past prompts faded, the next one dashed, and the beat was shown in words
+  and dots.
+- The native dropdown (Android's own picker) listed every option as light text on a dark surface.
+- In landscape, the fretboard was redrawn for the wider screen (frets 1 to 9), and the horizontal guitar's outline marked the same frets.
+
 **Not yet done:**
 
 - **No physical arm64 device** has run it: none was attached.

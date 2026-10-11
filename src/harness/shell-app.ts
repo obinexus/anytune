@@ -324,6 +324,12 @@ export class ShellApp {
           if (this.#listeningFor === null) this.#listener?.close();
         }
         if (screen === 'play') this.#playFor(null);
+        // Practise opens on a song: the one chosen, else the first — as Play does
+        const first = this.shell.getState().songs[0];
+        if (screen === 'practice' && this.shell.practice === null && first !== undefined) {
+          this.shell.choose(first.id);
+          return;
+        }
         this.shell.navigate(screen as Screen);
       },
       begin: () => {

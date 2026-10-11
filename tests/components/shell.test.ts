@@ -34,7 +34,7 @@ for (const runtime of RUNTIMES) {
     assert.equal(ui.text('main h1'), 'Progress');
     assert.equal(ui.text('.empty'), 'No attempts yet: practise a song, and each attempt is listed here.');
     await ui.click(ui.button('Practise'));
-    assert.equal(ui.text('.arrangement'), 'Choose a song in the Library to practise it.', 'nothing chosen yet: said, not an empty screen');
+    assert.equal(ui.text('.title'), 'Für Elise (opening)', 'nothing chosen yet: Practise opens on the first song');
     ui.mounted.unmount();
   });
 
@@ -87,7 +87,8 @@ for (const runtime of RUNTIMES) {
     // the enlarged fretboard: the first note is the open high e (○ before the nut), the next D#4 a dashed preview at fret 4 with its finger, at one unit per px
     const diagram = ui.$('svg.diagram');
     assert.deepEqual(ui.$$('svg.diagram circle.marker').map((m) => m.dataset['kind']), ['next']);
-    assert.deepEqual(ui.$$('svg.diagram .string-mark').map((m) => [m.dataset['kind'], m.dataset['state'], m.textContent]), [['now', 'open', '○']]);
+    assert.deepEqual(ui.$$('svg.diagram .open-mark').map((m) => m.dataset['kind']), ['now'], 'the open string: a ring before the nut');
+    assert.equal(ui.$$('svg.diagram .string-mark').length, 0, 'no muted strings for a single note');
     assert.deepEqual(ui.$$('svg.diagram .finger').map((m) => m.textContent), ['4']);
     assert.deepEqual(ui.$$('svg.diagram .string-name').map((m) => m.textContent), ['e', 'B', 'G', 'D', 'A', 'E']);
     assert.deepEqual(ui.$$('svg.diagram .fret-number').map((m) => m.textContent), ['', '1', '2', '3', '4']);
