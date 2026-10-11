@@ -193,11 +193,14 @@
       ],
       "mayImport": [
         "domain",
-        "instruments"
+        "instruments",
+        "music",
+        "lesson",
+        "analysis"
       ],
       "modules": [],
       "forbiddenGlobals": "domGlobals",
-      "why": "the application service and its state: framework-neutral; providers and fusion are injected, never imported"
+      "why": "the application services and their state: the tuning session and the practice session (Listen, Practise, Review, Repeat), the views and the announcement policy — framework-neutral; providers, capture, playback and the recorder are injected as ports, never imported"
     },
     {
       "name": "components",

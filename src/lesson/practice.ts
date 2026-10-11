@@ -119,7 +119,7 @@ export function notesByPass(clock: LessonClock, captured: readonly CapturedNote[
 }
 
 /** The targets a loop pass asks for: those due from its start (inclusive) to its end (exclusive). */
-export const targetsIn = (targets: readonly ExpectedNote[], from: number, to: number | null): ExpectedNote[] => targets.filter((t) => t.time >= from - 1e-9 && (to === null || t.time < to - 1e-9));
+export const targetsIn = <T extends ExpectedNote>(targets: readonly T[], from: number, to: number | null): T[] => targets.filter((t) => t.time >= from - 1e-9 && (to === null || t.time < to - 1e-9));
 
 export type StepOutcome = { readonly kind: 'advanced'; readonly next: ExpectedNote | null } | { readonly kind: 'not-yet'; readonly heard: 'wrong' | 'octave' | 'uncertain' };
 
