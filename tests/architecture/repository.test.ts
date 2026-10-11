@@ -1,8 +1,10 @@
 /**
  * AnyTune's own sources keep the layers of architecture.json — the separations the directive requires, each named:
  *
- *   domain/      ✗→ Vue, the DOM, Obicall          fusion/  ✗→ the DOM
- *   components/  ✗→ Obicall, providers, fusion      the Obicall adapter ✗→ components
+ *   domain/      ✗→ Vue, the DOM                   fusion/  ✗→ the DOM
+ *   components/  ✗→ providers, fusion                the format adapters ✗→ components
+ *
+ * and Obicall nowhere: AnyTune has no Obicall dependency (Polycall is its only polyglot runtime; docs/ARCHITECTURE.md).
  *
  * and the direction components → app → domain ← fusion / audio / adapters.
  */
@@ -35,16 +37,16 @@ test('the separations the directive names are rules of architecture.json, and no
     assert.ok(found, name);
     return found;
   };
-  // domain ✗→ Vue, DOM, Obicall: it imports no layer and no module, and names no DOM global
+  // domain ✗→ Vue, DOM: it imports no layer and no module, and names no DOM global
   assert.deepEqual([layer('domain').mayImport, layer('domain').modules], [[], []]);
   assert.ok(rules.globalsOf(layer('domain')).includes('document'));
-  // components ✗→ Obicall process code, providers, fusion: they import the app's types and "obix" alone
+  // components ✗→ providers, fusion, native code: they import the app's types and "obix" alone
   assert.deepEqual([layer('components').mayImport, layer('components').modules], [['app'], ['obix']]);
   // fusion ✗→ DOM
   assert.ok(rules.globalsOf(layer('fusion')).includes('document') && rules.globalsOf(layer('fusion')).includes('HTMLElement'));
-  // the Obicall adapter ✗→ components
+  // the format adapters ✗→ components
   assert.ok(!layer('adapters').mayImport.includes('components'));
-  // nothing but the harness may import vue, and nothing may import obicall
+  // nothing but the harness may import vue, and nothing may import obicall: it is not a dependency
   for (const l of rules.layers) {
     if (l.name !== 'harness') assert.ok(!l.modules.includes('vue'), `${l.name} may import vue`);
     assert.ok(!l.modules.some((m) => m.includes('obicall')), `${l.name} may import obicall`);

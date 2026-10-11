@@ -27,7 +27,7 @@
       "mayImport": [],
       "modules": [],
       "forbiddenGlobals": "domGlobals",
-      "why": "the musical tuning domain: pure, framework-neutral, testable without a browser, Vue, Obicall or a microphone"
+      "why": "the musical tuning domain: pure, framework-neutral, testable without a browser, Vue, Polycall or a microphone"
     },
     {
       "name": "music",
@@ -39,7 +39,7 @@
       ],
       "modules": [],
       "forbiddenGlobals": "domGlobals",
-      "why": "the music model: MIDI files, tempo maps and timelines, references, chords, tunings and the guitar fretboard — pure, framework-neutral, with no microphone, subprocess, Obicall or DOM"
+      "why": "the music model: MIDI files, tempo maps and timelines, references, chords, tunings and the guitar fretboard — pure, framework-neutral, with no microphone, subprocess, Polycall or DOM"
     },
     {
       "name": "instruments",
@@ -98,7 +98,7 @@
       ],
       "modules": [],
       "forbiddenGlobals": "domGlobals",
-      "why": "readers of foreign formats (the Obicall replay format); never a component, never the DOM"
+      "why": "readers and writers of file formats AnyTune keeps compatible with (the .obr journal), implemented here — never a component, never the DOM"
     },
     {
       "name": "app",

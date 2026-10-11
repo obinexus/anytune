@@ -2,7 +2,7 @@
   "name": "anytune",
   "version": "0.1.0",
   "private": true,
-  "description": "Tune any instrument. An OBINexus tuning application built with OBIX and Obicall.",
+  "description": "AnyTune — Groove to any tune. An OBINexus music-learning application built with OBIX, with Polycall as its polyglot runtime.",
   "type": "module",
   "license": "MIT",
   "repository": {

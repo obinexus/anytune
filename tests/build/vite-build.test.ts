@@ -3,7 +3,7 @@
  *
  *   - its runtime manifest lists every .obix component by the SHA-256 of its source — the same list, and the same hashes, the IR trace records;
  *   - "obix" is resolved at build time, never left for the browser: the bundle has no import of it, and runs on Vue's own runtime;
- *   - the bundle carries the demo input (the guitar's acceptance sequence) and nothing of Obicall — no DLL, no harness, no replay reader: the demo needs none.
+ *   - the bundle carries the demo input (the guitar's acceptance sequence) and nothing of Obicall — it is not a dependency — and no DLL: the demo needs none.
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -32,7 +32,7 @@ test('the production build: a page, its script and stylesheet, and the runtime m
     const js = assets.filter((f) => f.endsWith('.js')).map((f) => fs.readFileSync(path.join(outDir, 'assets', f), 'utf8')).join('\n');
     assert.doesNotMatch(js, /from\s*["']obix["']|import\(["']obix["']\)/, '"obix" is resolved at build time');
     assert.match(js, /anytune-pitch-recording\/1/, 'the demo input is in the bundle');
-    assert.doesNotMatch(js, /JORB|obicall_static_fuse_1d|fuse-harness|\.dll/i, 'nothing of Obicall is in the bundle: the demo does not need it');
+    assert.doesNotMatch(js, /JORB|obicall_static_fuse_1d|fuse-harness|\.dll/i, 'nothing of Obicall is in the bundle: AnyTune does not depend on it');
   } finally {
     fs.rmSync(outDir, { recursive: true, force: true });
   }

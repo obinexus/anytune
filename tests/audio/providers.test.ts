@@ -1,7 +1,7 @@
 /**
  * Pitch providers — the boundary between where a pitch comes from and what AnyTune does with it. A2 has two, both deterministic: a simulated provider that a
  * test (or the demo) drives by hand, and a provider that replays an AnyTune pitch recording (tests/fixtures/pitch, format `anytune-pitch-recording/1` —
- * simulated data, never an Obicall `.obr`). Failures are events, never exceptions: `start()` resolves whatever happens.
+ * simulated data, never an `.obr`). Failures are events, never exceptions: `start()` resolves whatever happens.
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -109,13 +109,13 @@ test('a pitch recording is read and checked: the format, the origin, every entry
     ],
   });
   assert.deepEqual(parseRecording(null), { ok: false, issues: ['a recording is an object'] });
-  assert.deepEqual(parseRecording({ format: 'anytune-pitch-recording/1', origin: 'obicall', description: '', instrument: '', entries: [] }), {
+  assert.deepEqual(parseRecording({ format: 'anytune-pitch-recording/1', origin: 'unknown', description: '', instrument: '', entries: [] }), {
     ok: false,
-    issues: ['origin: "simulated" or "recorded" — an AnyTune pitch recording is not an Obicall recording', 'description: a non-empty string', 'instrument: a non-empty string', 'entries: at least one entry'],
+    issues: ['origin: "simulated" or "recorded" — where the pitches came from', 'description: a non-empty string', 'instrument: a non-empty string', 'entries: at least one entry'],
   });
 });
 
-test('every committed pitch fixture is a valid recording, of the simulated origin, and none is an Obicall .obr', () => {
+test('every committed pitch fixture is a valid recording, of the simulated origin, and none is an .obr', () => {
   const files = fs.readdirSync(FIXTURES);
   assert.ok(files.length >= 10);
   for (const file of files) {

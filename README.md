@@ -1,6 +1,8 @@
 # AnyTune
 
-**Tune any instrument.** An OBINexus tuning application built with [OBIX](https://github.com/obinexus) and designed to fuse pitch the way [Obicall](https://github.com/obinexus) fuses sensor data.
+**Groove to any tune.** An OBINexus music-learning application: learn a song by listening, practising, getting useful feedback, and repeating the hard passages. It is built with [OBIX](https://github.com/obinexus), and uses [Polycall](https://github.com/obinexus/polycall) as its only polyglot runtime. AnyTune has no Obicall dependency.
+
+> The MVP — import, transcription to MIDI, guitar practice with live feedback, the Android app — is being built on the `anytune-mvp` branch, one verified step at a time. What exists today is listed under *What is real, and what isn't yet*; nothing below claims more.
 
 Press **Start** once, then play. The note, its frequency, how many cents flat or sharp it is, and whether it is in tune update by themselves: no button to press between notes. Every state is in words, and screen-reader users hear what changed, but only what matters.
 
@@ -66,7 +68,7 @@ npm run preview    # serves dist/app at http://localhost:4173/
 The checks:
 
 ```bash
-npm test           # all the tests: domain, app, fusion, the Obicall conformance, the UI on Vue, accessibility, the build
+npm test           # all the tests: domain, music, app, fusion, the .obr format, the UI on Vue, accessibility, the build
 npm run typecheck
 npm run trace      # the OBIX DOP IR of every component, into dist/obix-ir
 ```
@@ -75,7 +77,7 @@ npm run trace      # the OBIX DOP IR of every component, into dist/obix-ir
 
 AnyTune depends on the published OBIX packages, pinned to exactly `0.5.0`: nine `obix-compiler-*` packages (used at build and compile time) and four `obix-runtime-*` packages (the native runtime). `npm ci` installs them from registry.npmjs.org; no OBIX checkout is needed. OBIX packages carry no npm scope since D-102 (previous names `@obinexusltd/obix-*`). The published 0.5.0 packages build AnyTune byte-for-byte the same as the OBIX monorepo they were packed from.
 
-To try unreleased OBIX changes, point those dependencies at a local checkout of the OBIX monorepo (`file:../obix-recovery/compiler/…`, `file:../obix-recovery/runtime/…`), which is how AnyTune was developed before the packages were published. The demo itself never needs Obicall, a DLL or a microphone.
+To try unreleased OBIX changes, point those dependencies at a local checkout of the OBIX monorepo (`file:../obix-recovery/compiler/…`, `file:../obix-recovery/runtime/…`), which is how AnyTune was developed before the packages were published. The demo itself never needs a native library or a microphone.
 
 ## What is real, and what isn't yet
 
@@ -87,9 +89,10 @@ To try unreleased OBIX changes, point those dependencies at a local checkout of 
 | Browser demo (`npm run dev`, `build`, `preview`) | **implemented** — on the Vue runtime (the default, also `dev:vue`) and on OBIX's native runtime (`dev:native`, `build:native`, `preview:native`) |
 | Musical domain: equal temperament, cents, nearest note, strings, the tuning policy | **implemented and tested** (`docs/TUNING_MODEL.md`) |
 | Simulated and recorded pitch input | **implemented**: AnyTune's own JSON recordings, origin *simulated* |
-| Real Obicall `.obr` parsing | **conformance-tested** against Obicall's real `demo.obr` and the real `obicall replay` |
-| Inverse-variance fusion | **tested against Obicall**: equal to the native `obicall_static_fuse_1d`, bit for bit, on 2 050 cases |
-| Native Obicall pitch transport | **not implemented**: Obicall has no frequency unit (`docs/OBICALL.md`) |
+| Music core: Standard MIDI Files, the tempo-map timeline, the teaching reference (`src/music/`) | **implemented and tested**, including against an independent MIDI implementation (`midi-file`) |
+| `.obr` journal compatibility | **AnyTune's own reader and writer**, no Obicall code: conformance-tested on the format's demonstration journal; an `.obr` is refused as a practice reference, since it holds no music (`docs/OBR.md`) |
+| Inverse-variance fusion | **implemented and tested** against its definition |
+| Polycall integration, the recorder module, Android, import and transcription, guitar practice | **in progress** on `anytune-mvp` |
 | Microphone pitch detection | **implemented**: `MicrophonePitchProvider` with a YIN detector (`docs/MICROPHONE.md`), tested on generated signals through a fake browser. **Physical guitar: performed in Edge** (AMD microphone array, 48 kHz; D string read 145.1 Hz, 20 cents flat). **Firefox on that machine: not validated**, since the microphone delivered digital silence, now detected and said |
 | OBIX native runtime | **experimental — implemented (Phase 6, accepted by the owner); not the default, under final validation**: the same 9 `.obix` files, lowered to `obix-dop-ir/3` (`Component.obix?ir`), run by `obix-runtime-browser` with no Vue in the bundle (audited from the bundler's module graph). The hands-free, microphone (fake browser) and accessibility suites run on both runtimes, and the two pages are compared after every step (`tests/native/`). **Physical microphone on the native runtime: not performed** |
 | OBIX hybrid runtime | **not implemented** |
@@ -100,11 +103,12 @@ To try unreleased OBIX changes, point those dependencies at a local checkout of 
 PitchProvider(s) → PitchFusionPort → tuning domain → application state → view → .obix UI
 ```
 
-- **`src/domain/`**: pitch and tuning, pure TypeScript with no DOM, Vue or Obicall.
+- **`src/domain/`**: pitch and tuning, pure TypeScript with no DOM, Vue or native code.
+- **`src/music/`**: MIDI files, the tempo-map timeline and the teaching reference, pure.
 - **`src/instruments/`**: the tuning catalog.
 - **`src/audio/`**: pitch providers.
 - **`src/fusion/`**: inverse-variance fusion.
-- **`src/adapters/`**: the Obicall replay reader.
+- **`src/adapters/`**: file formats kept compatible: the `.obr` journal reader and writer.
 - **`src/app/`**: the session, the view and the announcement policy.
 - **`src/components/`**: the `.obix` UI.
 - **`src/harness/`**: the composition and the demo input.
@@ -116,7 +120,7 @@ PitchProvider(s) → PitchFusionPort → tuning domain → application state →
 | `docs/ARCHITECTURE.md` | the layers, the two proof paths, and the inputs: the microphone and the demo |
 | `docs/MICROPHONE.md` | the microphone input: the pitch detector and its measured accuracy, the lifecycle, the failures, privacy, browsers, and the manual guitar test |
 | `docs/TUNING_MODEL.md` | the mathematics and the policy |
-| `docs/OBICALL.md` | what AnyTune does with Obicall now, what is simulated, and what Obicall must gain to carry pitch |
+| `docs/OBR.md` | the `.obr` journal format, read and written by AnyTune's own code for compatibility, and why it is never a practice reference |
 | `docs/ACCESSIBILITY.md` | semantics, the live region and its policy, and how it is tested |
 | `docs/DEPLOYMENT.md` | the prepared (not done) deployment to anytune.obinexus.org |
 | `CONTRIBUTING.md` | the rules, and how to regenerate the conformance fixtures |
@@ -127,7 +131,6 @@ PitchProvider(s) → PitchFusionPort → tuning domain → application state →
 - **PitchMeter's IR**, once OBIX lowers call expressions: a compiler slice, not an AnyTune change.
 - **Publishing** the OBIX compiler packages under their scope, so that AnyTune installs on its own.
 - **Testing with a screen reader and real people**, beyond the automated checks.
-- **Pitch through Obicall**, once Obicall has a frequency unit (`docs/OBICALL.md`).
 - **Deployment** to anytune.obinexus.org (`docs/DEPLOYMENT.md`), with the owner's authorisation.
 
 ## Licence

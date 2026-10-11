@@ -17,13 +17,14 @@ npm run dev         # the browser demo
 ## The rules
 
 1. **Test first.** Write the failing test (RED), make it pass with the least code (GREEN), then tidy (REFACTOR). A bug gets a test that reproduces it before it is fixed.
-2. **Keep the layers.** `architecture.json` says what each layer may import and which globals it may not name, and `npm test` enforces it. The domain is pure: no DOM, Vue, Obicall or microphone. Components only bind the view and emit intents; all formatting is in `src/app/view.ts`.
+2. **Keep the layers.** `architecture.json` says what each layer may import and which globals it may not name, and `npm test` enforces it. The domain and the music model are pure: no DOM, Vue, native code or microphone. Components only bind the view and emit intents; all formatting is in `src/app/view.ts`.
 3. **One source per component.** A component is one `.obix` file, and there is never a `.vue` copy. Components import only `"obix"` (the allowlisted primitives in `tools/obix/allowlist.ts`) and the app's view types.
 4. **Don't work around the compiler.** If the OBIX compiler can't express something a component needs, don't bend the component or special-case the compiler here. Write the smallest framework-neutral reproduction and report it to OBIX. Until OBIX fixes it generically, the trace records the deferral honestly: that is why PitchMeter is deferred today.
 5. **Say what is real.**
-   - Pitch recordings in `tests/fixtures/pitch/` are AnyTune's JSON (`anytune-pitch-recording/1`, origin `simulated`), never Obicall `.obr`.
+   - Pitch recordings in `tests/fixtures/pitch/` are AnyTune's JSON (`anytune-pitch-recording/1`, origin `simulated`), never `.obr`.
    - The UI always states what supplies the measurements.
-   - Nothing claims Obicall carries a frequency. It doesn't (`docs/OBICALL.md`).
+   - AnyTune has no Obicall dependency: nothing bundles, links, loads or runs it. An `.obr` is read and written by AnyTune's own code, and never holds music (`docs/OBR.md`).
+   - A MIDI fixture is a score, encoded for AnyTune or permitted for use; no fixture comes from a download.
 6. **Accessibility is a feature.** Every state in words, one polite live region governed by the announcement policy, native labelled controls, and no violation from axe (`docs/ACCESSIBILITY.md`).
 7. **No markup by hand.** No `innerHTML`, `outerHTML`, `insertAdjacentHTML` or `document.write` anywhere in `src/`. A test checks this.
 
@@ -34,17 +35,10 @@ No test needs a microphone, and none may: the tests must run anywhere.
 - **`MicrophonePitchProvider`** is given the browser's APIs, and is tested on a fake browser (`tests/support/fake-audio.ts`). The fake grants, refuses or waits, unplugs tracks, and counts every track, context, node and timer, so that a leak fails a test.
 - **A physical instrument** is tested by hand, following `docs/MICROPHONE.md`. Say whether it was done; never assume it.
 
-## The Obicall conformance fixtures
+## The fixtures
 
-`tests/fixtures/obicall/` holds Obicall's own `demo.obr` and the answers of the real Obicall build: `replay-oracle.json` from `obicall replay`, and `fuse-oracle.json` from `obicall_static_fuse_1d`. They are regenerated, never edited:
-
-```bash
-node tools/obicall/record-oracle.ts                # needs a staged Obicall build (OBICALL_EXE)
-tools/obicall-native/build.sh                      # in a UCRT64 shell, against the staged Obicall
-node tools/obicall-native/record-oracle.ts
-```
-
-Without a staged Obicall, the committed answers stand, and the live comparisons report themselves as skipped.
+- `tests/fixtures/obr/`: the `.obr` format's demonstration journal and the answers its reference implementation once gave. They are frozen, never edited and never regenerated (`tests/fixtures/obr/README.md`).
+- `tests/fixtures/midi/`: scores encoded for AnyTune. Regenerate them with `node tools/fixtures/fur-elise.ts`.
 
 ## Commits
 

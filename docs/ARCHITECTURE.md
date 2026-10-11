@@ -19,8 +19,9 @@ AnyTune separates *what a tuner knows* (pitch, tuning, fusion) from *where pitch
 | instruments | `src/instruments/` | the tuning catalog, as data | touch the DOM |
 | audio | `src/audio/` | pitch providers (simulated, recorded, microphone) and the pure pitch detector | touch the document or the network |
 | fusion | `src/fusion/` | `PitchFusionPort` implementations: inverse-variance fusion, `SimulatedPitchFusion`, `RecordedPitchFusion` | touch the DOM |
-| adapters | `src/adapters/` | readers of foreign formats: `ObicallReplayReader` | be a component; touch the DOM |
-| app | `src/app/` | the tuning session (state and intents), the view (all formatting), the announcement policy | name a provider, Obicall or Vue |
+| music | `src/music/` | MIDI files, the tempo-map timeline, the teaching reference | import anything but the domain; touch the DOM |
+| adapters | `src/adapters/` | file formats kept compatible: the `.obr` journal reader and writer (`docs/OBR.md`) | be a component; touch the DOM |
+| app | `src/app/` | the tuning session (state and intents), the view (all formatting), the announcement policy | name a provider, a format reader or Vue |
 | components | `src/components/*.obix` | the Vue-flavoured OBIX UI: binds the view, emits intents | import anything but `"obix"` and the app's view types; touch `document`, `window`, `navigator`, audio or the network |
 | native-harness | `src/harness/mount-native.ts` | Phase 6: mounts the same UI, lowered to canonical DOP IR, on OBIX's native runtime; may import `obix-runtime-browser` and never Vue | — |
 | harness | `src/harness/` | composes the layers and the inputs (`compose.ts`); hands the browser's audio APIs over (`browser-audio.ts`); mounts the UI on the Vue runtime (`mount.ts`), the entry picking the mount as `#anytune-mount`; the demo input | — |
@@ -69,7 +70,7 @@ The demo composes two inputs (`src/harness/compose.ts`). Each is a `PitchFusionP
   - The browser's APIs are injected; `src/harness/browser-audio.ts` is the only code that names them, so the tests run the provider on a fake browser.
   - Its failures are states from the domain's one list (`SOURCE_FAILURES`), said in words.
   - Details: `docs/MICROPHONE.md`.
-- **Demo (recorded / simulated)**, the default. `src/harness/demo-input.ts` plays, at each Start, the input made for the chosen instrument: a recording of the acceptance sequence for Standard Guitar, a recording of 440 Hz for Chromatic, and a simulation of its first string for any other. It needs no Obicall, DLL or microphone.
+- **Demo (recorded / simulated)**, the default. `src/harness/demo-input.ts` plays, at each Start, the input made for the chosen instrument: a recording of the acceptance sequence for Standard Guitar, a recording of 440 Hz for Chromatic, and a simulation of its first string for any other. It needs no native library or microphone.
 
 The page always says which input is supplying the measurements (*Input: Microphone — …*, *Input: Recorded — … (simulated data)*, *Input: Simulated — …*). The microphone's permission is asked for only when the user has chosen it and pressed Start.
 

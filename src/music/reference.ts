@@ -1,6 +1,6 @@
 /**
  * The teaching reference: what a learner practises against. It is AnyTune's own document, `anytune-reference/1` (JSON), kept beside — never instead of — the
- * assets it came from: the source audio or video, the Standard MIDI File, and (once Obicall can carry it) the `.obr`. It holds what AnyTune must not lose:
+ * assets it came from: the source audio or video, and the Standard MIDI File, which stays the musical reference. It holds what AnyTune must not lose:
  *
  * - stable ids (the song, the reference, every note), the arrangement and its version, the instrument profile;
  * - the provenance: which asset, by its SHA-256; how it became notes (a MIDI import, or a named transcription engine with its version and parameters);
