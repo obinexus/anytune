@@ -241,9 +241,10 @@ select {
   font-weight: 700;
 }
 
+/* the five screens on one row, at a phone's width too: equal columns, the label sized to fit "Practise" at 360 px */
 .nav {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 0.25rem;
   margin: 0;
   padding: 0;
@@ -251,10 +252,11 @@ select {
 }
 
 .nav-item {
+  width: 100%;
   min-height: 2.75rem;
-  min-width: 2.75rem;
-  padding: 0.25rem 0.6rem;
+  padding: 0.25rem 0.15rem;
   border-width: 1px;
+  font-size: 0.875rem;
 }
 
 .nav-item[aria-current='page'] {
@@ -491,7 +493,7 @@ select {
 
 .artwork-frame {
   position: relative;
-  width: min(14rem, 60vw);
+  width: min(14rem, 40vw); /* a reference picture: on a phone it stays within the screen; the diagram above is the enlarged fretboard */
   aspect-ratio: 774.83 / 1997.1;
 }
 

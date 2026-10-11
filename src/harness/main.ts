@@ -50,6 +50,8 @@ const app = new ShellApp({
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'hidden') app.pause();
 });
+// the Android app leaving the foreground (MainActivity.onPause): a WebView's page is not always told it is hidden
+document.addEventListener('anytune-pause', () => app.pause());
 const host = document.getElementById('app');
 if (host === null) throw new Error('index.html has no #app');
 mountShell(host, { app });

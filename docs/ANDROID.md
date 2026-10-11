@@ -26,7 +26,10 @@ libpolycall.so: an in-process Polycall runtime  ──►  recording.* operation
   - `npm run native:verify -- --apk <apk>` checks it in the APK.
 - **AnyTune's native code** (`libanytune_bridge.so`) is built by Gradle's CMake from `app/src/main/cpp/` and `native/recorder/`. It is linked with 16 KB page alignment.
 - **The UI** is the same `.obix` components and TypeScript as the web build. `npm run build:android` builds it with relative paths into `dist/android-web`, and Gradle's `syncWebAssets` copies it into the APK's `assets/web/`. A missing build fails the Gradle build with the command to run.
-- **The timing-critical audio path** (capture, timestamps, analysis) belongs in Kotlin on its own thread, never in a WebView timer. Microphone capture is not wired yet (see *Status*).
+- **The timing-critical audio path** never runs on a WebView timer. Capture is an AudioWorklet on the WebView's audio thread (`src/harness/practice-audio.ts`). It posts frames of 1024 samples, each stamped with the AudioContext frame of its first sample. The reference and the click are scheduled on that same AudioContext clock, so what was played and what was heard are compared on one clock. The analysis runs on the stamped frames, never on arrival time. There is no Kotlin capture path. The speaker-to-microphone delay is the browser's own estimate and has not been measured on a device (see *Tests*).
+- **The microphone in the WebView.** `MainActivity`'s `WebChromeClient` grants audio capture only to AnyTune's own origin, and grants nothing else (a camera request is denied). If Android's `RECORD_AUDIO` permission is not held, it is asked for at that moment, so the dialog appears when the learner presses Start, not at launch.
+- **Leaving the foreground.** `onPause` tells the page (`anytune-pause`) to stop practice and the tuner and release the microphone. A WebView's page is not reliably told it is hidden.
+- **Edge to edge (Android 15+).** The WebView's container is padded by the system-bar and cutout insets, so the page never draws under the status or navigation bar.
 
 ## Security and privacy
 
@@ -77,10 +80,17 @@ This needs a device or a running emulator. `RecorderThroughPolycallTest` runs on
 - calls without the session token, or with a wrong one, are refused (`auth.denied`), and a caller can't bring its own token;
 - time order is enforced (`recording.order`), and a path given as a recording ID is refused.
 
-**Recorded result (2026-10-11):** 3/3 passed on the emulator `Smoke_SmallPhone`: Android 17 (API 37), x86_64, **16 KB memory pages** (`getconf PAGE_SIZE` = 16384), Google APIs Play Store image. The app launched there, the log showed `Polycall 1.1.0, Binding ABI 1, runtime ABI 1; recorder at 127.0.0.1:<port>`, and the WebView rendered AnyTune's UI.
+`AppPageTest` drives the app's own page in `MainActivity`'s WebView:
+
+- the journey's shell loads from the APK as a secure context at `https://appassets.androidplatform.net`;
+- the bridge offers the recorder (a `list` through Polycall succeeds) and does not expose the token;
+- with `RECORD_AUDIO` held, the page's `getUserMedia({ audio: true })` is not refused for permission, so the WebView granted it;
+- `getUserMedia({ video: true })` is refused.
+
+**Recorded result (2026-10-11):** 6/6 passed on the emulator `Smoke_SmallPhone`: Android 17 (API 37), x86_64, **16 KB memory pages** (`getconf PAGE_SIZE` = 16384), Google APIs Play Store image. The camera request was refused with `NotAllowedError`. The microphone request was granted, then failed with `NotReadableError`, because that emulator was started with `-no-audio` and has no input device. The app launched, the log showed `Polycall 1.1.0, Binding ABI 1, runtime ABI 1; recorder at 127.0.0.1:<port>`, and screenshots showed Home, the Practise screen (the first note and its suggested position on the diagram), and the supplied guitar artwork with its credit, all within the phone's width and clear of the system bars.
 
 **Not yet done:**
 
 - **No physical arm64 device** has run it: none was attached.
-- **No microphone capture** on Android yet.
-- **The UI overflows a phone's width**, a layout defect seen on the emulator.
+- **No audio has been captured on Android.** The permission path is tested, but no device with a microphone has delivered sound to the practice analysis, so practice on a phone is unverified.
+- **No latency measurement.** The speaker-to-microphone delay used is the WebView's own estimate.
