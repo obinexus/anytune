@@ -3,3 +3,8 @@
 dist/
 node_modules/
 .native/
+native/.cache/
+native/windows-x86_64/
+native/android/
+native/include/
+native/licenses/
