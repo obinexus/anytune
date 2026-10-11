@@ -174,6 +174,19 @@
       "why": "practice: aligning what was heard with the arrangement (pitch and timing apart), feedback in words, the lesson clock (count-in, tempo, A-B loops, latency) and step mode — pure, with no microphone, DSP or Polycall"
     },
     {
+      "name": "import",
+      "paths": [
+        "src/import/"
+      ],
+      "mayImport": [
+        "music",
+        "domain"
+      ],
+      "modules": [],
+      "forbiddenGlobals": "domGlobals",
+      "why": "the import's decisions: which URLs are fetched and with which arguments, the job's stages, what is done with a transcription engine's notes and how they are scored — pure; the worker (services/import-worker) runs the subprocesses"
+    },
+    {
       "name": "app",
       "paths": [
         "src/app/"

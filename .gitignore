@@ -16,3 +16,6 @@ apps/android/build/
 apps/android/app/build/
 apps/android/app/.cxx/
 apps/android/local.properties
+# the import worker's own dependencies, and the learner's library (media, references, recordings): never committed
+services/import-worker/node_modules/
+library/

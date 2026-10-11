@@ -25,6 +25,15 @@ The build ships no fonts (the stylesheet uses the system font). The page's icon 
 | OBIX compiler packages (`obix-compiler-*`; previous names `@obinexusltd/obix-compiler-*`) | 0.5.0 | MIT, © OBINexus Computing | compile the `.obix` components for the Vue runtime, and lower them to the OBIX DOP IR trace |
 | TypeScript | 6.0.3 | Apache-2.0 | typecheck |
 
+## The import worker (services/import-worker): a desktop companion, never shipped in the app
+
+| Work | Version | Licence | Role |
+|---|---|---|---|
+| Basic Pitch (`@spotify/basic-pitch`), with its bundled model | 1.0.1 | Apache-2.0, © Spotify AB | the transcription engine: audio to estimated notes (docs/IMPORT.md) |
+| TensorFlow.js (`@tensorflow/tfjs` and its packages) | 3.21.0 | Apache-2.0, © Google LLC | runs Basic Pitch's model, on the CPU |
+| yt-dlp | 2026.08.19 (checked against its release's SHA-256) | The Unlicense | an external tool the worker runs to download permitted media; not distributed with AnyTune |
+| FFmpeg, ffprobe | 8.1.1 (gyan.dev essentials build) | LGPL-2.1+/GPL-2.0+ (the build's configuration decides) | external tools the worker runs to inspect and decode media; not distributed with AnyTune |
+
 ## Used by the tests only, never shipped
 
 | Work | Version | Licence | Role |
