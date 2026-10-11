@@ -137,6 +137,30 @@
       "why": "anytune-recording/1: an independent codec (to check the recorder module) and the recorder client, which reaches the C recorder module through Polycall"
     },
     {
+      "name": "synthesis",
+      "paths": [
+        "src/synthesis/"
+      ],
+      "mayImport": [],
+      "modules": [],
+      "forbiddenGlobals": "domGlobals",
+      "why": "sound sources rendered from notes (Karplus-Strong plucked strings): reference playback that follows any tempo, and the analysis's test signals — never mistaken for a recording"
+    },
+    {
+      "name": "analysis",
+      "paths": [
+        "src/analysis/"
+      ],
+      "mayImport": [
+        "music",
+        "audio",
+        "domain"
+      ],
+      "modules": [],
+      "forbiddenGlobals": "domGlobals",
+      "why": "what the sound says, uncertainly: onsets, chroma and chord candidates of a declared vocabulary (refusing what is not in it), monophonic notes — pure frame processing, no microphone, no UI"
+    },
+    {
       "name": "lesson",
       "paths": [
         "src/lesson/"
