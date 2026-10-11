@@ -13,7 +13,8 @@ set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS OFF)
 set(CMAKE_C_VISIBILITY_PRESET hidden)
-if(CMAKE_SYSTEM_NAME STREQUAL "Linux" OR ANDROID)
+# glibc hides POSIX declarations under strict C11 without these; bionic (Android) and MinGW expose them, and bionic would hide arc4random_buf with them
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   add_compile_definitions(_POSIX_C_SOURCE=200809L _DEFAULT_SOURCE)
 endif()
 

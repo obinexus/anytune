@@ -406,7 +406,7 @@
       "linkage": "a Polycall plugin (exports polycall_ops_register); links libpolycall.a 1.1.0 statically; imports Windows system DLLs only",
       "source": {
         "repository": "https://github.com/obinexus/anytune",
-        "commit": "tree-sha256:53a64cb696afd4c3ac8e0a255846e8fc4cd8a8cf40f0a7ef426c55fa383c0d13",
+        "commit": "tree-sha256:333010b2e4012c4f83f015a8554c6f0dbb935d4ac8080b8e9c7bc0d6cacc58c7",
         "version": "1.0.0"
       },
       "toolchain": "MSYS2 UCRT64: gcc.exe (Rev3, Built by MSYS2 project) 16.2.0; -Wl,--no-insert-timestamp",

@@ -4,3 +4,8 @@
 # Standard MIDI Files are binary
 *.mid binary
 *.midi binary
+
+# shell scripts run on Linux and in WSL: always LF; Windows batch files: CRLF
+gradlew text eol=lf
+*.sh text eol=lf
+*.bat text eol=crlf

@@ -29,7 +29,8 @@
     "trace": "node tools/obix/write-trace.ts",
     "native:stage": "node tools/native/stage.ts",
     "native:verify": "node tools/native/verify.ts",
-    "native:recorder": "node tools/native/build-recorder.ts"
+    "native:recorder": "node tools/native/build-recorder.ts",
+    "build:android": "vite build --base ./ --outDir dist/android-web"
   },
   "devDependencies": {
     "@types/node": "22.20.4",
