@@ -2,7 +2,7 @@
   "name": "anytune",
   "version": "0.1.0",
   "private": true,
-  "description": "Tune any instrument. An OBINexus tuning application built with OBIX and Obicall.",
+  "description": "AnyTune — Groove to any tune. An OBINexus music-learning application built with OBIX, with Polycall as its polyglot runtime.",
   "type": "module",
   "license": "MIT",
   "repository": {
@@ -26,9 +26,18 @@
     "test:architecture": "node --test \"tests/architecture/*.test.ts\"",
     "typecheck": "tsc -p tsconfig.json",
     "check": "npm run typecheck && npm test",
-    "trace": "node tools/obix/write-trace.ts"
+    "trace": "node tools/obix/write-trace.ts",
+    "assets:harness": "node tools/fixtures/write-harness-assets.ts",
+    "native:stage": "node tools/native/stage.ts",
+    "native:verify": "node tools/native/verify.ts",
+    "native:recorder": "node tools/native/build-recorder.ts",
+    "build:android": "vite build --base ./ --outDir dist/android-web"
   },
   "devDependencies": {
+    "@types/node": "22.20.4",
+    "axe-core": "4.13.0",
+    "jsdom": "30.1.1",
+    "midi-file": "1.2.4",
     "obix-compiler-diagnostics": "0.5.0",
     "obix-compiler-dop": "0.5.0",
     "obix-compiler-ir": "0.5.0",
@@ -38,9 +47,6 @@
     "obix-compiler-sfc": "0.5.0",
     "obix-compiler-template": "0.5.0",
     "obix-compiler-typescript": "0.5.0",
-    "@types/node": "22.20.4",
-    "axe-core": "4.13.0",
-    "jsdom": "30.1.1",
     "typescript": "6.0.3",
     "vite": "8.3.1"
   },

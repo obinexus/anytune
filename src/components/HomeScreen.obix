@@ -1,0 +1,19 @@
+<script setup lang="ts">
+defineProps<{ home: { tagline: string; journey: string[]; primaryLabel: string; primaryIntent: string } }>();
+const emit = defineEmits<{ (e: "begin"): void; (e: "navigate", screen: string): void }>();
+</script>
+
+<template>
+  <main class="screen home">
+    <h1>{{ home.tagline }}</h1>
+    <p class="lead">Learn a song by listening, playing along, and repeating the hard bars — with your guitar and this device's microphone.</p>
+    <ol class="journey">
+      <li v-for="step in home.journey" :key="step">{{ step }}</li>
+    </ol>
+    <button type="button" class="primary" @click="emit('begin')">{{ home.primaryLabel }}</button>
+    <div class="secondary-actions">
+      <button type="button" @click="emit('navigate', 'library')">Choose another song</button>
+      <button type="button" @click="emit('navigate', 'tune')">Tune your guitar first</button>
+    </div>
+  </main>
+</template>

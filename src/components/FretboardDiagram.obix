@@ -1,0 +1,58 @@
+<script setup lang="ts">
+// the enlarged fretboard, horizontal: drawn at one unit per CSS pixel from the guitar view (src/app/guitar-view.ts) — the drawing computes nothing.
+// Note names on the markers, finger numbers in circles on their corners, string numbers in squares, fret numbers below: never confused.
+defineProps<{
+  fretboard: {
+    width: number;
+    height: number;
+    viewBox: string;
+    hand: string;
+    caption: string;
+    description: string;
+    instruction: string;
+    fingerText: string;
+    currentName: string;
+    nextName: string;
+    nextInstruction: string;
+    strings: { x1: number; y1: number; x2: number; y2: number; label: string; labelX: number; labelY: number; kind: string; key: string; labelKey: string }[];
+    stringLabels: { y: number; number: string; boxX: number; boxY: number; numberX: number; name: string; nameX: number; textY: number; key: string; numberKey: string; nameKey: string }[];
+    frets: { x1: number; y1: number; x2: number; y2: number; label: string; labelX: number; labelY: number; kind: string; key: string; labelKey: string }[];
+    markers: { x: number; y: number; width: number; height: number; kind: string; text: string; textX: number; textY: number; key: string; textKey: string }[];
+    badges: { cx: number; cy: number; textY: number; kind: string; role: string; label: string; key: string; textKey: string }[];
+    mutes: { x: number; textY: number; kind: string; key: string }[];
+    fretWord: { x: number; y: number };
+    capoLabel: { text: string; x: number; y: number };
+  };
+}>();
+</script>
+
+<template>
+  <figure class="fretboard" :data-hand="fretboard.hand">
+    <p v-if="fretboard.instruction" class="fretboard-instruction">{{ fretboard.instruction }}</p>
+    <p v-if="fretboard.fingerText" class="fretboard-finger">{{ fretboard.fingerText }} — a suggestion</p>
+    <div class="fretboard-scroll">
+      <svg class="diagram" :width="fretboard.width" :height="fretboard.height" :viewBox="fretboard.viewBox" role="img" :aria-label="fretboard.description">
+        <line v-for="fret in fretboard.frets" :key="fret.key" class="fret" :data-kind="fret.kind" :x1="fret.x1" :y1="fret.y1" :x2="fret.x2" :y2="fret.y2" />
+        <text v-for="fret in fretboard.frets" :key="fret.labelKey" class="fret-number" :x="fret.labelX" :y="fret.labelY" aria-hidden="true">{{ fret.label }}</text>
+        <text class="fret-word" :x="fretboard.fretWord.x" :y="fretboard.fretWord.y" aria-hidden="true">fret</text>
+        <text class="capo-label" :x="fretboard.capoLabel.x" :y="fretboard.capoLabel.y" aria-hidden="true">{{ fretboard.capoLabel.text }}</text>
+        <line v-for="string in fretboard.strings" :key="string.key" class="string" :x1="string.x1" :y1="string.y1" :x2="string.x2" :y2="string.y2" />
+        <rect v-for="label in fretboard.stringLabels" :key="label.key" class="string-box" :x="label.boxX" :y="label.boxY" width="20" height="20" rx="3" />
+        <text v-for="label in fretboard.stringLabels" :key="label.numberKey" class="string-number" :x="label.numberX" :y="label.textY" aria-hidden="true">{{ label.number }}</text>
+        <text v-for="label in fretboard.stringLabels" :key="label.nameKey" class="string-name" :x="label.nameX" :y="label.textY" aria-hidden="true">{{ label.name }}</text>
+        <text v-for="mute in fretboard.mutes" :key="mute.key" class="string-mark" data-state="muted" :data-kind="mute.kind" :x="mute.x" :y="mute.textY" aria-hidden="true">X</text>
+        <rect v-for="marker in fretboard.markers" :key="marker.key" class="note-marker" :data-kind="marker.kind" :x="marker.x" :y="marker.y" :width="marker.width" :height="marker.height" rx="12" />
+        <text v-for="marker in fretboard.markers" :key="marker.textKey" class="note-name" :data-kind="marker.kind" :x="marker.textX" :y="marker.textY" aria-hidden="true">{{ marker.text }}</text>
+        <circle v-for="badge in fretboard.badges" :key="badge.key" class="corner-badge" :data-kind="badge.kind" :data-role="badge.role" :cx="badge.cx" :cy="badge.cy" r="11" />
+        <text v-for="badge in fretboard.badges" :key="badge.textKey" class="corner-number" :data-kind="badge.kind" :data-role="badge.role" :x="badge.cx" :y="badge.textY" aria-hidden="true">{{ badge.label }}</text>
+      </svg>
+    </div>
+    <figcaption class="fretboard-legend">
+      <span v-if="fretboard.currentName" class="legend-item" data-kind="current">Current: {{ fretboard.currentName }}</span>
+      <span v-if="fretboard.nextName" class="legend-item" data-kind="next">Next: {{ fretboard.nextName }}</span>
+      <span class="legend-item" data-kind="finger">Finger number</span>
+      <span class="legend-item" data-kind="string">String number</span>
+      <span class="legend-caption">{{ fretboard.caption }}</span>
+    </figcaption>
+  </figure>
+</template>

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- The microphone: asked for only when the learner starts tuning or practising, and released when the app leaves the foreground. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <!-- Sockets: the in-process Polycall runtime listens on 127.0.0.1, and Android needs this permission for any socket, loopback included. AnyTune sends
+         nothing off the device: no microphone audio, no recording is uploaded (docs/ANDROID.md). -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <application
+        android:allowBackup="false"
+        android:label="AnyTune"
+        android:supportsRtl="true"
+        android:theme="@android:style/Theme.Material.NoActionBar">
+        <activity
+            android:name=".MainActivity"
+            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>

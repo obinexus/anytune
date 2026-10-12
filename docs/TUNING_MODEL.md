@@ -1,6 +1,6 @@
 # The tuning model
 
-The musical domain (`src/domain/pitch.ts`, `src/domain/tuning.ts`, and the catalog in `src/instruments/catalog.ts`) is pure TypeScript. It knows nothing of the browser, Vue, Obicall or a microphone, and it is tested without them (`tests/domain/`).
+The musical domain (`src/domain/pitch.ts`, `src/domain/tuning.ts`, and the catalog in `src/instruments/catalog.ts`) is pure TypeScript. It knows nothing of the browser, Vue, Polycall or a microphone, and it is tested without them (`tests/domain/`).
 
 ## Pitch
 
@@ -56,4 +56,4 @@ Several pitch sources heard together, within a 100 ms window, are fused by **inv
 - `σ̂² = 1 / Σ(1/σᵢ²)`
 - the confidence is weighted the same way.
 
-The fused value lies between the inputs, nearer the surer one, and the fused variance is below every input variance. This is the same mathematics as Obicall's native `obicall_static_fuse_1d`, bit for bit (`docs/OBICALL.md`). A source whose variance isn't positive, or whose frequency isn't finite, is dropped and reported.
+The fused value lies between the inputs, nearer the surer one, and the fused variance is below every input variance. The sums accumulate first to last, so a given list of sources always fuses to the same doubles. A source whose variance isn't positive, or whose frequency isn't finite, is dropped and reported.

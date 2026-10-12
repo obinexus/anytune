@@ -1,7 +1,7 @@
 /**
  * The PitchFusionPort — where observations of one or more pitch sources become one fused pitch for the tuning domain. Its implementations here are
- * SimulatedPitchFusion and RecordedPitchFusion: inverse-variance fusion (the compatibility implementation of Obicall's scalar rule) over simulated or recorded
- * providers. No Obicall process runs; pitch is not an Obicall observation type (docs/OBICALL.md). Failures are events.
+ * SimulatedPitchFusion and RecordedPitchFusion: inverse-variance fusion (src/fusion/scalar-fusion.ts) over simulated or recorded providers. Failures are
+ * events.
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';

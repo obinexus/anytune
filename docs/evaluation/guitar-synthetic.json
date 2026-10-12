@@ -1,0 +1,371 @@
+{
+  "generatedBy": "tools/analysis/evaluate-guitar.ts",
+  "signals": "synthetic Karplus–Strong strums — not recordings",
+  "sampleRate": 48000,
+  "minConfidence": 0.6,
+  "fitThresholds": {
+    "minCoverage": 0.45,
+    "maxOutside": 0.15
+  },
+  "strumsPerChord": 25,
+  "chords": {
+    "30 dB": {
+      "C": {
+        "C": 22,
+        "D": 0,
+        "E": 0,
+        "G": 0,
+        "A": 0,
+        "Am": 0,
+        "Em": 0,
+        "Dm": 0,
+        "uncertain": 3
+      },
+      "D": {
+        "C": 0,
+        "D": 24,
+        "E": 0,
+        "G": 0,
+        "A": 0,
+        "Am": 0,
+        "Em": 0,
+        "Dm": 0,
+        "uncertain": 1
+      },
+      "E": {
+        "C": 0,
+        "D": 0,
+        "E": 24,
+        "G": 0,
+        "A": 0,
+        "Am": 0,
+        "Em": 0,
+        "Dm": 0,
+        "uncertain": 1
+      },
+      "G": {
+        "C": 0,
+        "D": 0,
+        "E": 0,
+        "G": 25,
+        "A": 0,
+        "Am": 0,
+        "Em": 0,
+        "Dm": 0,
+        "uncertain": 0
+      },
+      "A": {
+        "C": 0,
+        "D": 0,
+        "E": 0,
+        "G": 0,
+        "A": 23,
+        "Am": 0,
+        "Em": 0,
+        "Dm": 0,
+        "uncertain": 2
+      },
+      "Am": {
+        "C": 0,
+        "D": 0,
+        "E": 0,
+        "G": 0,
+        "A": 0,
+        "Am": 25,
+        "Em": 0,
+        "Dm": 0,
+        "uncertain": 0
+      },
+      "Em": {
+        "C": 0,
+        "D": 0,
+        "E": 1,
+        "G": 0,
+        "A": 0,
+        "Am": 0,
+        "Em": 22,
+        "Dm": 0,
+        "uncertain": 2
+      },
+      "Dm": {
+        "C": 0,
+        "D": 0,
+        "E": 0,
+        "G": 0,
+        "A": 0,
+        "Am": 0,
+        "Em": 0,
+        "Dm": 23,
+        "uncertain": 2
+      }
+    },
+    "20 dB": {
+      "C": {
+        "C": 23,
+        "D": 0,
+        "E": 0,
+        "G": 0,
+        "A": 0,
+        "Am": 0,
+        "Em": 0,
+        "Dm": 0,
+        "uncertain": 2
+      },
+      "D": {
+        "C": 0,
+        "D": 24,
+        "E": 0,
+        "G": 0,
+        "A": 0,
+        "Am": 0,
+        "Em": 0,
+        "Dm": 0,
+        "uncertain": 1
+      },
+      "E": {
+        "C": 0,
+        "D": 0,
+        "E": 25,
+        "G": 0,
+        "A": 0,
+        "Am": 0,
+        "Em": 0,
+        "Dm": 0,
+        "uncertain": 0
+      },
+      "G": {
+        "C": 0,
+        "D": 0,
+        "E": 0,
+        "G": 25,
+        "A": 0,
+        "Am": 0,
+        "Em": 0,
+        "Dm": 0,
+        "uncertain": 0
+      },
+      "A": {
+        "C": 0,
+        "D": 0,
+        "E": 0,
+        "G": 0,
+        "A": 23,
+        "Am": 0,
+        "Em": 0,
+        "Dm": 0,
+        "uncertain": 2
+      },
+      "Am": {
+        "C": 0,
+        "D": 0,
+        "E": 0,
+        "G": 0,
+        "A": 0,
+        "Am": 25,
+        "Em": 0,
+        "Dm": 0,
+        "uncertain": 0
+      },
+      "Em": {
+        "C": 0,
+        "D": 0,
+        "E": 1,
+        "G": 0,
+        "A": 0,
+        "Am": 0,
+        "Em": 22,
+        "Dm": 0,
+        "uncertain": 2
+      },
+      "Dm": {
+        "C": 0,
+        "D": 0,
+        "E": 0,
+        "G": 0,
+        "A": 0,
+        "Am": 0,
+        "Em": 0,
+        "Dm": 23,
+        "uncertain": 2
+      }
+    },
+    "10 dB": {
+      "C": {
+        "C": 25,
+        "D": 0,
+        "E": 0,
+        "G": 0,
+        "A": 0,
+        "Am": 0,
+        "Em": 0,
+        "Dm": 0,
+        "uncertain": 0
+      },
+      "D": {
+        "C": 0,
+        "D": 23,
+        "E": 0,
+        "G": 0,
+        "A": 0,
+        "Am": 0,
+        "Em": 0,
+        "Dm": 0,
+        "uncertain": 2
+      },
+      "E": {
+        "C": 0,
+        "D": 0,
+        "E": 23,
+        "G": 0,
+        "A": 0,
+        "Am": 0,
+        "Em": 0,
+        "Dm": 0,
+        "uncertain": 2
+      },
+      "G": {
+        "C": 0,
+        "D": 0,
+        "E": 0,
+        "G": 23,
+        "A": 0,
+        "Am": 0,
+        "Em": 0,
+        "Dm": 0,
+        "uncertain": 2
+      },
+      "A": {
+        "C": 0,
+        "D": 0,
+        "E": 0,
+        "G": 0,
+        "A": 22,
+        "Am": 0,
+        "Em": 0,
+        "Dm": 0,
+        "uncertain": 3
+      },
+      "Am": {
+        "C": 0,
+        "D": 0,
+        "E": 0,
+        "G": 0,
+        "A": 0,
+        "Am": 25,
+        "Em": 0,
+        "Dm": 0,
+        "uncertain": 0
+      },
+      "Em": {
+        "C": 0,
+        "D": 0,
+        "E": 1,
+        "G": 0,
+        "A": 0,
+        "Am": 0,
+        "Em": 20,
+        "Dm": 0,
+        "uncertain": 4
+      },
+      "Dm": {
+        "C": 0,
+        "D": 0,
+        "E": 0,
+        "G": 0,
+        "A": 0,
+        "Am": 0,
+        "Em": 0,
+        "Dm": 23,
+        "uncertain": 2
+      }
+    }
+  },
+  "refusals": {
+    "single note E4": {
+      "uncertain": 10
+    },
+    "single note A2": {
+      "uncertain": 9,
+      "A": 1
+    },
+    "single note G3": {
+      "uncertain": 7,
+      "G": 3
+    },
+    "power chord E5": {
+      "uncertain": 7,
+      "E": 3
+    },
+    "power chord A5": {
+      "uncertain": 9,
+      "A": 1
+    },
+    "F major (barre)": {
+      "uncertain": 10
+    },
+    "B minor x24432": {
+      "uncertain": 10
+    },
+    "C7 x32310": {
+      "uncertain": 9,
+      "C": 1
+    },
+    "Fmaj7 xx3210": {
+      "uncertain": 6,
+      "Am": 4
+    },
+    "Asus2 x02200": {
+      "uncertain": 9,
+      "A": 1
+    },
+    "Dsus4 xx0233": {
+      "uncertain": 9,
+      "G": 1
+    },
+    "white noise": {
+      "uncertain": 10
+    },
+    "silence": {
+      "uncertain": 1
+    }
+  },
+  "speakerBleed": {
+    "learner Em, reference C at -20 dB": {
+      "uncertain": 2,
+      "Em": 10
+    },
+    "learner Em, reference C at -12 dB": {
+      "uncertain": 3,
+      "Em": 9
+    },
+    "learner Em, reference C at -6 dB": {
+      "uncertain": 7,
+      "Em": 5
+    }
+  },
+  "melody": {
+    "clean": {
+      "targets": 35,
+      "heard": 35,
+      "recall": 1,
+      "precision": 1,
+      "onsetErrorMs": {
+        "median": 4.998083333333625,
+        "p95": 7.99783333333437,
+        "max": 8.000000000000007
+      }
+    },
+    "20 dB": {
+      "targets": 35,
+      "heard": 35,
+      "recall": 1,
+      "precision": 1,
+      "onsetErrorMs": {
+        "median": 3.666416666666561,
+        "p95": 5.332666666666652,
+        "max": 5.664583333333084
+      }
+    }
+  },
+  "computeMsPerChordFrame": 0.49
+}

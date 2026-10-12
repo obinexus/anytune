@@ -1,0 +1,216 @@
+<script setup lang="ts">
+import FretboardDiagram from "./FretboardDiagram.obix";
+import GuitarArtwork from "./GuitarArtwork.obix";
+
+// the practice screen's view (src/app/practice-view.ts): every word and number formatted there
+defineProps<{
+  practice: {
+    available: boolean;
+    title: string;
+    arrangementText: string;
+    phase: string;
+    phaseText: string;
+    running: boolean;
+    canConfigure: boolean;
+    tempoOptions: { value: string; label: string; selected: boolean }[];
+    fromBarOptions: { value: string; label: string; selected: boolean }[];
+    toBarOptions: { value: string; label: string; selected: boolean }[];
+    modeOptions: { value: string; label: string; selected: boolean }[];
+    handOptions: { value: string; label: string; selected: boolean }[];
+    capoOptions: { value: string; label: string; selected: boolean }[];
+    metronome: boolean;
+    playReference: boolean;
+    countInText: string;
+    currentText: string;
+    positionText: string;
+    nextText: string;
+    heardText: string;
+    stepMessage: string;
+    liveText: string;
+    input: { state: string; text: string; problem: boolean; meter: { visible: boolean; value: number; text: string } };
+    controls: { start: boolean; startLabel: string; begin: boolean; cancel: boolean; free: boolean; stop: boolean; listen: boolean };
+    alertText: string;
+    headphonesText: string;
+    timing: string[];
+    guitar: {
+      fretboard: {
+        width: number;
+        height: number;
+        viewBox: string;
+        hand: string;
+        caption: string;
+        description: string;
+        instruction: string;
+        fingerText: string;
+        currentName: string;
+        nextName: string;
+        nextInstruction: string;
+        strings: { x1: number; y1: number; x2: number; y2: number; label: string; labelX: number; labelY: number; kind: string; key: string; labelKey: string }[];
+        stringLabels: { y: number; number: string; boxX: number; boxY: number; numberX: number; name: string; nameX: number; textY: number; key: string; numberKey: string; nameKey: string }[];
+        frets: { x1: number; y1: number; x2: number; y2: number; label: string; labelX: number; labelY: number; kind: string; key: string; labelKey: string }[];
+        markers: { x: number; y: number; width: number; height: number; kind: string; text: string; textX: number; textY: number; key: string; textKey: string }[];
+        badges: { cx: number; cy: number; textY: number; kind: string; role: string; label: string; key: string; textKey: string }[];
+        mutes: { x: number; textY: number; kind: string; key: string }[];
+        fretWord: { x: number; y: number };
+        capoLabel: { text: string; x: number; y: number };
+      };
+      artwork: {
+        url: string;
+        viewBox: string;
+        width: number;
+        height: number;
+        imageWidth: number;
+        imageHeight: number;
+        transform: string;
+        hand: string;
+        credit: string;
+        window: { x: number; y: number; width: number; height: number };
+        markers: { x: number; y: number; kind: string; key: string }[];
+      };
+    };
+    announcement: string;
+    review: { visible: boolean; sentences: string[]; bars: { bar: number; text: string }[]; repeatBar: string; repeatLabel: string; attemptText: string; capture: string[] };
+    errorText: string;
+  };
+}>();
+
+// the learner's intents, one event each — the practice session does the rest
+const emit = defineEmits<{
+  (e: "start"): void;
+  (e: "begin"): void;
+  (e: "cancel"): void;
+  (e: "free"): void;
+  (e: "stop"): void;
+  (e: "listen"): void;
+  (e: "repeat", bar: string): void;
+  (e: "tempo", value: string): void;
+  (e: "from", value: string): void;
+  (e: "to", value: string): void;
+  (e: "mode", value: string): void;
+  (e: "hand", value: string): void;
+  (e: "capo", value: string): void;
+  (e: "metronome", on: boolean): void;
+  (e: "reference", on: boolean): void;
+}>();
+
+function onTempo(event: Event): void {
+  emit("tempo", (event.target as HTMLSelectElement).value);
+}
+function onFrom(event: Event): void {
+  emit("from", (event.target as HTMLSelectElement).value);
+}
+function onTo(event: Event): void {
+  emit("to", (event.target as HTMLSelectElement).value);
+}
+function onMode(event: Event): void {
+  emit("mode", (event.target as HTMLSelectElement).value);
+}
+function onHand(event: Event): void {
+  emit("hand", (event.target as HTMLSelectElement).value);
+}
+function onCapo(event: Event): void {
+  emit("capo", (event.target as HTMLSelectElement).value);
+}
+function onMetronome(event: Event): void {
+  emit("metronome", (event.target as HTMLInputElement).checked);
+}
+function onReference(event: Event): void {
+  emit("reference", (event.target as HTMLInputElement).checked);
+}
+</script>
+
+<template>
+  <main class="screen practice">
+    <h1>Practise</h1>
+    <p v-if="practice.available" class="title">{{ practice.title }}</p>
+    <p class="arrangement">{{ practice.arrangementText }}</p>
+    <div v-if="practice.available" class="practice-body">
+      <p class="visually-hidden" role="status" aria-live="polite" aria-atomic="true">{{ practice.announcement }}</p>
+      <section class="prompt" :data-phase="practice.phase">
+        <p class="phase">{{ practice.phaseText }}</p>
+        <p class="current">{{ practice.currentText }}</p>
+        <p class="position">{{ practice.positionText }}</p>
+        <p class="next">{{ practice.nextText }}</p>
+        <p v-if="practice.liveText" class="live">{{ practice.liveText }}</p>
+        <p v-if="practice.stepMessage" class="step-message">{{ practice.stepMessage }}</p>
+        <p v-if="practice.heardText" class="heard">{{ practice.heardText }}</p>
+      </section>
+      <p v-if="practice.alertText" class="capture-alert" role="alert">{{ practice.alertText }}</p>
+      <div class="guitar">
+        <GuitarArtwork :artwork="practice.guitar.artwork" />
+        <FretboardDiagram :fretboard="practice.guitar.fretboard" />
+      </div>
+      <section v-if="practice.input.text" class="input-check" :data-state="practice.input.state" :data-problem="practice.input.problem">
+        <p class="input-text" role="status">{{ practice.input.text }}</p>
+        <label v-if="practice.input.meter.visible" class="meter-label">
+          <span>Input level</span>
+          <meter min="-60" max="0" low="-45" high="-6" optimum="-20" :value="practice.input.meter.value" :aria-valuetext="practice.input.meter.text">{{ practice.input.meter.text }}</meter>
+          <span class="meter-text">{{ practice.input.meter.text }}</span>
+        </label>
+      </section>
+      <div class="actions">
+        <button v-if="practice.controls.begin" type="button" class="primary begin" @click="emit('begin')">Begin</button>
+        <button v-if="practice.controls.start" type="button" class="primary start" @click="emit('start')">{{ practice.controls.startLabel }}</button>
+        <button v-if="practice.controls.stop" type="button" class="primary stop" @click="emit('stop')">Stop</button>
+        <button v-if="practice.controls.cancel" type="button" class="cancel" @click="emit('cancel')">Cancel</button>
+        <button v-if="practice.controls.free" type="button" class="free" @click="emit('free')">Play along without assessment</button>
+        <button v-if="practice.controls.listen" type="button" class="listen" @click="emit('listen')">Listen first</button>
+      </div>
+      <p v-if="practice.headphonesText" class="headphones">{{ practice.headphonesText }}</p>
+      <section v-if="practice.review.visible" class="review" aria-labelledby="review-heading">
+        <h2 id="review-heading">How it went</h2>
+        <ul class="sentences">
+          <li v-for="sentence in practice.review.sentences" :key="sentence">{{ sentence }}</li>
+        </ul>
+        <ul class="bars">
+          <li v-for="bar in practice.review.bars" :key="bar.bar">{{ bar.text }}</li>
+        </ul>
+        <button v-if="practice.review.repeatBar" type="button" @click="emit('repeat', practice.review.repeatBar)">{{ practice.review.repeatLabel }}</button>
+        <p class="attempt">{{ practice.review.attemptText }}</p>
+        <ul v-if="practice.review.capture.length" class="capture-lines" aria-label="What the microphone delivered">
+          <li v-for="line in practice.review.capture" :key="line">{{ line }}</li>
+        </ul>
+      </section>
+      <fieldset class="settings" :disabled="!practice.canConfigure">
+        <legend>Practice settings</legend>
+        <label>Tempo
+          <select @change="onTempo">
+            <option v-for="o in practice.tempoOptions" :key="o.value" :value="o.value" :selected="o.selected">{{ o.label }}</option>
+          </select>
+        </label>
+        <label>Loop from
+          <select @change="onFrom">
+            <option v-for="o in practice.fromBarOptions" :key="o.value" :value="o.value" :selected="o.selected">{{ o.label }}</option>
+          </select>
+        </label>
+        <label>to
+          <select @change="onTo">
+            <option v-for="o in practice.toBarOptions" :key="o.value" :value="o.value" :selected="o.selected">{{ o.label }}</option>
+          </select>
+        </label>
+        <label>Mode
+          <select @change="onMode">
+            <option v-for="o in practice.modeOptions" :key="o.value" :value="o.value" :selected="o.selected">{{ o.label }}</option>
+          </select>
+        </label>
+        <label>Guitar
+          <select @change="onHand">
+            <option v-for="o in practice.handOptions" :key="o.value" :value="o.value" :selected="o.selected">{{ o.label }}</option>
+          </select>
+        </label>
+        <label>Capo
+          <select @change="onCapo">
+            <option v-for="o in practice.capoOptions" :key="o.value" :value="o.value" :selected="o.selected">{{ o.label }}</option>
+          </select>
+        </label>
+        <label class="check"><input type="checkbox" :checked="practice.metronome" @change="onMetronome" /> Metronome click</label>
+        <label class="check"><input type="checkbox" :checked="practice.playReference" @change="onReference" /> Play the reference with me</label>
+      </fieldset>
+      <details class="diagnostics">
+        <summary>Timing and microphone details</summary>
+        <p v-for="line in practice.timing" :key="line" class="timing-line">{{ line }}</p>
+      </details>
+    </div>
+    <p v-if="practice.errorText" class="error" role="alert">{{ practice.errorText }}</p>
+  </main>
+</template>

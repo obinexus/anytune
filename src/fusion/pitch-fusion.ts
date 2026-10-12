@@ -1,8 +1,7 @@
 /**
- * PitchFusionPort implementations. `InverseVarianceFusion` fuses the latest observation of every source heard within a window by inverse variance (the
- * compatibility implementation of Obicall's scalar rule, scalar-fusion.ts), and turns the states of its sources into one state. `SimulatedPitchFusion` and
- * `RecordedPitchFusion` put it over a simulated or a recorded provider. None of this runs Obicall: pitch is not yet an Obicall observation type
- * (docs/OBICALL.md) — a future `NativeObicallPitchFusion` belongs here once it is.
+ * PitchFusionPort implementations. `InverseVarianceFusion` fuses the latest observation of every source heard within a window by inverse variance
+ * (scalar-fusion.ts), and turns the states of its sources into one state. `SimulatedPitchFusion` and `RecordedPitchFusion` put it over a simulated or a
+ * recorded provider. A native pitch source (the Android capture path) is one more provider behind the same port.
  */
 import type { FusionEvent, FusionState, PitchFusionPort, PitchObservation, PitchProvider, ProviderEvent, Scheduler, SourceState } from '../domain/ports.ts';
 import { SOURCE_FAILURES } from '../domain/ports.ts';

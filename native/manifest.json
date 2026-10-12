@@ -1,0 +1,480 @@
+{
+  "about": "The native artifacts staged in this workspace, written by tools/native/stage.ts and checked by tools/native/verify.ts (npm run native:verify). The files themselves are not committed: they are rebuilt from the pinned sources, and with the same toolchains they hash to what is recorded here.",
+  "polycall": {
+    "repository": "https://github.com/obinexus/polycall.git",
+    "branch": "main",
+    "commit": "2dcab63ead950d5d061843c6394085eb3dba4c64",
+    "version": "1.1.0",
+    "licenseFiles": [
+      "LICENSE",
+      "LICENSE.md"
+    ],
+    "licenseNote": "The repository carries two different licence texts: LICENSE (\"Use It, Respect It\", an OBINexus contribution clause) and LICENSE.md (\"OBINexus NT Open Access License\": the MIT text with additional terms); its packaging names LicenseRef-OBINexus-NT-Open-Access. The owner must settle which applies before Polycall binaries are redistributed (in an APK, for instance)."
+  },
+  "toolchains": {
+    "windows-x86_64": "MSYS2 UCRT64: gcc.exe (Rev3, Built by MSYS2 project) 16.2.0; cmake version 4.4.3; -Wl,--no-insert-timestamp",
+    "android-arm64-v8a": "Android NDK r27b (27.1.12297006): Android (12285214, based on r522817b) clang version 18.0.2 (https://android.googlesource.com/toolchain/llvm-project d8003a456d14a3deb8054cdaa529ffbf02d9b262); API 28; max-page-size 16384; llvm-strip --strip-unneeded",
+    "android-x86_64": "Android NDK r27b (27.1.12297006): Android (12285214, based on r522817b) clang version 18.0.2 (https://android.googlesource.com/toolchain/llvm-project d8003a456d14a3deb8054cdaa529ffbf02d9b262); API 28; max-page-size 16384; llvm-strip --strip-unneeded"
+  },
+  "artifacts": [
+    {
+      "path": "native/android/arm64-v8a/libpolycall.so",
+      "component": "polycall",
+      "platform": "android",
+      "arch": "arm64-v8a",
+      "source": {
+        "repository": "https://github.com/obinexus/polycall.git",
+        "commit": "2dcab63ead950d5d061843c6394085eb3dba4c64",
+        "version": "1.1.0"
+      },
+      "toolchain": "Android NDK r27b (27.1.12297006): Android (12285214, based on r522817b) clang version 18.0.2 (https://android.googlesource.com/toolchain/llvm-project d8003a456d14a3deb8054cdaa529ffbf02d9b262); API 28; max-page-size 16384; llvm-strip --strip-unneeded",
+      "role": "the Polycall shared library for Android, packaged in the APK by Gradle and loaded by AnyTune’s JNI bridge",
+      "kind": "shared-library",
+      "linkage": "dynamic; needs libc, libm, libdl only",
+      "sha256": "5df9260aaf313ec3310001db09d92e9d1470779cae8075f67b5a6f346694a4be",
+      "bytes": 128120,
+      "binary": {
+        "format": "elf",
+        "machine": "aarch64",
+        "kind": "shared-object",
+        "needed": [
+          "libdl.so",
+          "libm.so",
+          "libc.so"
+        ],
+        "soname": "libpolycall.so",
+        "minLoadAlign": 16384
+      }
+    },
+    {
+      "path": "native/android/x86_64/libpolycall.so",
+      "component": "polycall",
+      "platform": "android",
+      "arch": "x86_64",
+      "source": {
+        "repository": "https://github.com/obinexus/polycall.git",
+        "commit": "2dcab63ead950d5d061843c6394085eb3dba4c64",
+        "version": "1.1.0"
+      },
+      "toolchain": "Android NDK r27b (27.1.12297006): Android (12285214, based on r522817b) clang version 18.0.2 (https://android.googlesource.com/toolchain/llvm-project d8003a456d14a3deb8054cdaa529ffbf02d9b262); API 28; max-page-size 16384; llvm-strip --strip-unneeded",
+      "role": "the Polycall shared library for Android, packaged in the APK by Gradle and loaded by AnyTune’s JNI bridge",
+      "kind": "shared-library",
+      "linkage": "dynamic; needs libc, libm, libdl only",
+      "sha256": "abcbe0500cd97d6249298a14c058a78fd3f319f4492a9e1c2ac4499550f19361",
+      "bytes": 134584,
+      "binary": {
+        "format": "elf",
+        "machine": "x86_64",
+        "kind": "shared-object",
+        "needed": [
+          "libdl.so",
+          "libm.so",
+          "libc.so"
+        ],
+        "soname": "libpolycall.so",
+        "minLoadAlign": 16384
+      }
+    },
+    {
+      "path": "native/include/polycall/libpolycall.h",
+      "component": "polycall",
+      "platform": "any",
+      "arch": "any",
+      "linkage": null,
+      "source": {
+        "repository": "https://github.com/obinexus/polycall.git",
+        "commit": "2dcab63ead950d5d061843c6394085eb3dba4c64",
+        "version": "1.1.0"
+      },
+      "toolchain": null,
+      "role": "public header",
+      "kind": "header",
+      "sha256": "e51b37be3e23ff22ec4a158769feed28af43e1e126088c86764fa37898b88be5",
+      "bytes": 842,
+      "binary": null
+    },
+    {
+      "path": "native/include/polycall/polycall_cli.h",
+      "component": "polycall",
+      "platform": "any",
+      "arch": "any",
+      "linkage": null,
+      "source": {
+        "repository": "https://github.com/obinexus/polycall.git",
+        "commit": "2dcab63ead950d5d061843c6394085eb3dba4c64",
+        "version": "1.1.0"
+      },
+      "toolchain": null,
+      "role": "public header",
+      "kind": "header",
+      "sha256": "770acacbe974fb421530b2945821ba1303e9485596cbe1cd0b3810c7c91da5a1",
+      "bytes": 1691,
+      "binary": null
+    },
+    {
+      "path": "native/include/polycall/polycall_config2.h",
+      "component": "polycall",
+      "platform": "any",
+      "arch": "any",
+      "linkage": null,
+      "source": {
+        "repository": "https://github.com/obinexus/polycall.git",
+        "commit": "2dcab63ead950d5d061843c6394085eb3dba4c64",
+        "version": "1.1.0"
+      },
+      "toolchain": null,
+      "role": "public header",
+      "kind": "header",
+      "sha256": "0f4129da92e28b54e74f75d8a5bab396fedc04732b17e2287d6d6d34222ff3aa",
+      "bytes": 9635,
+      "binary": null
+    },
+    {
+      "path": "native/include/polycall/polycall_export.h",
+      "component": "polycall",
+      "platform": "any",
+      "arch": "any",
+      "linkage": null,
+      "source": {
+        "repository": "https://github.com/obinexus/polycall.git",
+        "commit": "2dcab63ead950d5d061843c6394085eb3dba4c64",
+        "version": "1.1.0"
+      },
+      "toolchain": null,
+      "role": "public header",
+      "kind": "header",
+      "sha256": "ff3293afa0895b9c1ed28ae844b3d1c0774c561792847840e862e62f81ed4599",
+      "bytes": 2711,
+      "binary": null
+    },
+    {
+      "path": "native/include/polycall/polycall_provider.h",
+      "component": "polycall",
+      "platform": "any",
+      "arch": "any",
+      "linkage": null,
+      "source": {
+        "repository": "https://github.com/obinexus/polycall.git",
+        "commit": "2dcab63ead950d5d061843c6394085eb3dba4c64",
+        "version": "1.1.0"
+      },
+      "toolchain": null,
+      "role": "public header",
+      "kind": "header",
+      "sha256": "ceac662e960f3e5ffa634bce39b1a17cb4bc0c77dcb16929c417b307c57e88de",
+      "bytes": 3290,
+      "binary": null
+    },
+    {
+      "path": "native/include/polycall/polycall_runtime.h",
+      "component": "polycall",
+      "platform": "any",
+      "arch": "any",
+      "linkage": null,
+      "source": {
+        "repository": "https://github.com/obinexus/polycall.git",
+        "commit": "2dcab63ead950d5d061843c6394085eb3dba4c64",
+        "version": "1.1.0"
+      },
+      "toolchain": null,
+      "role": "public header",
+      "kind": "header",
+      "sha256": "27a28f3b11f01ef623264c5eb8643cc401ae61b0a75bfb0618d459421bf68366",
+      "bytes": 8402,
+      "binary": null
+    },
+    {
+      "path": "native/include/polycall/polycall_telemetry.h",
+      "component": "polycall",
+      "platform": "any",
+      "arch": "any",
+      "linkage": null,
+      "source": {
+        "repository": "https://github.com/obinexus/polycall.git",
+        "commit": "2dcab63ead950d5d061843c6394085eb3dba4c64",
+        "version": "1.1.0"
+      },
+      "toolchain": null,
+      "role": "public header",
+      "kind": "header",
+      "sha256": "7d45109609eb6c5ceb076000e9483ea6d2e6b1fe74533b09b58f8b1fb82d7095",
+      "bytes": 3328,
+      "binary": null
+    },
+    {
+      "path": "native/include/polycall/polycall.h",
+      "component": "polycall",
+      "platform": "any",
+      "arch": "any",
+      "linkage": null,
+      "source": {
+        "repository": "https://github.com/obinexus/polycall.git",
+        "commit": "2dcab63ead950d5d061843c6394085eb3dba4c64",
+        "version": "1.1.0"
+      },
+      "toolchain": null,
+      "role": "public header",
+      "kind": "header",
+      "sha256": "954d703f18b3b88dfc678d791948ebc32b25a0ba2142ee9fd493cd56ce84141c",
+      "bytes": 14278,
+      "binary": null
+    },
+    {
+      "path": "native/licenses/polycall/LICENSE",
+      "component": "polycall",
+      "platform": "any",
+      "arch": "any",
+      "linkage": null,
+      "source": {
+        "repository": "https://github.com/obinexus/polycall.git",
+        "commit": "2dcab63ead950d5d061843c6394085eb3dba4c64",
+        "version": "1.1.0"
+      },
+      "toolchain": null,
+      "role": "licence text (The repository carries two different licence texts: LICENSE (\"Use It, Respect It\", an OBINexus contribution clause) and LICENSE.md (\"OBINexus NT Open Access License\": the MIT text with additional terms); its packaging names LicenseRef-OBINexus-NT-Open-Access. The owner must settle which applies before Polycall binaries are redistributed (in an APK, for instance).)",
+      "kind": "license",
+      "sha256": "d3f93588fc73e038a84776adee5af3fa657184a005f8ced590a86c635827f7b0",
+      "bytes": 1280,
+      "binary": null
+    },
+    {
+      "path": "native/licenses/polycall/LICENSE.md",
+      "component": "polycall",
+      "platform": "any",
+      "arch": "any",
+      "linkage": null,
+      "source": {
+        "repository": "https://github.com/obinexus/polycall.git",
+        "commit": "2dcab63ead950d5d061843c6394085eb3dba4c64",
+        "version": "1.1.0"
+      },
+      "toolchain": null,
+      "role": "licence text (The repository carries two different licence texts: LICENSE (\"Use It, Respect It\", an OBINexus contribution clause) and LICENSE.md (\"OBINexus NT Open Access License\": the MIT text with additional terms); its packaging names LicenseRef-OBINexus-NT-Open-Access. The owner must settle which applies before Polycall binaries are redistributed (in an APK, for instance).)",
+      "kind": "license",
+      "sha256": "30c14fe6494c7755012c277a0a1af4a91895915a13f7b767ae011641cfd3c2ed",
+      "bytes": 5884,
+      "binary": null
+    },
+    {
+      "path": "native/windows-x86_64/bin/libpolycall.dll",
+      "component": "polycall",
+      "platform": "windows",
+      "arch": "x86_64",
+      "source": {
+        "repository": "https://github.com/obinexus/polycall.git",
+        "commit": "2dcab63ead950d5d061843c6394085eb3dba4c64",
+        "version": "1.1.0"
+      },
+      "toolchain": "MSYS2 UCRT64: gcc.exe (Rev3, Built by MSYS2 project) 16.2.0; cmake version 4.4.3; -Wl,--no-insert-timestamp",
+      "role": "the Polycall shared library (Binding ABI v1, runtime, config): for consumers that link it dynamically",
+      "kind": "shared-library",
+      "linkage": "dynamic; imports Windows system DLLs only",
+      "sha256": "ee879b837ea135e6cc7c4ce62b2f7c58b917d74e1b1db4cb0601f70dd9f533c3",
+      "bytes": 309184,
+      "binary": {
+        "format": "pe",
+        "machine": "x86_64",
+        "kind": "dll",
+        "subsystem": "console",
+        "imports": [
+          "KERNEL32.dll",
+          "api-ms-win-crt-convert-l1-1-0.dll",
+          "api-ms-win-crt-environment-l1-1-0.dll",
+          "api-ms-win-crt-filesystem-l1-1-0.dll",
+          "api-ms-win-crt-heap-l1-1-0.dll",
+          "api-ms-win-crt-locale-l1-1-0.dll",
+          "api-ms-win-crt-private-l1-1-0.dll",
+          "api-ms-win-crt-runtime-l1-1-0.dll",
+          "api-ms-win-crt-stdio-l1-1-0.dll",
+          "api-ms-win-crt-string-l1-1-0.dll",
+          "api-ms-win-crt-time-l1-1-0.dll",
+          "api-ms-win-crt-utility-l1-1-0.dll",
+          "WS2_32.dll"
+        ],
+        "exports": [
+          "polycall_call",
+          "polycall_cleanup",
+          "polycall_config2_builder_add_service",
+          "polycall_config2_builder_build",
+          "polycall_config2_builder_create",
+          "polycall_config2_builder_free",
+          "polycall_config2_builder_service_set_bind",
+          "polycall_config2_builder_service_set_limits",
+          "polycall_config2_builder_service_set_ports",
+          "polycall_config2_builder_service_set_tls",
+          "polycall_config2_builder_service_set_workspace",
+          "polycall_config2_builder_set_base_dir",
+          "polycall_config2_builder_set_project",
+          "polycall_config2_error_init",
+          "polycall_config2_extension_namespace",
+          "polycall_config2_free",
+          "polycall_config2_from_envelope",
+          "polycall_config2_import_legacy",
+          "polycall_config2_project_name",
+          "polycall_config2_provenance",
+          "polycall_config2_service_at",
+          "polycall_config2_service_count",
+          "polycall_config2_to_envelope",
+          "polycall_ffi_abi_version",
+          "polycall_ffi_describe",
+          "polycall_ffi_run_config",
+          "polycall_ffi_version",
+          "polycall_get_last_error",
+          "polycall_get_version",
+          "polycall_init_with_config",
+          "polycall_last_error",
+          "polycall_peer_cancel",
+          "polycall_peer_close",
+          "polycall_peer_endpoint",
+          "polycall_peer_health",
+          "polycall_peer_list",
+          "polycall_peer_node_id",
+          "polycall_peer_open",
+          "polycall_peer_ping",
+          "polycall_peer_recv",
+          "polycall_peer_register",
+          "polycall_peer_send",
+          "polycall_peer_unregister",
+          "polycall_provider_load_c",
+          "polycall_provider_opts_init",
+          "polycall_provider_run_subprocess",
+          "polycall_runtime_create",
+          "polycall_runtime_destroy",
+          "polycall_runtime_load_plugin",
+          "polycall_runtime_register",
+          "polycall_runtime_request_stop",
+          "polycall_runtime_serve",
+          "polycall_runtime_set_limits",
+          "polycall_runtime_stop",
+          "polycall_strerror",
+          "polycall_telemetry_emit",
+          "polycall_telemetry_enabled",
+          "polycall_telemetry_mono_ns",
+          "polycall_telemetry_new_guid",
+          "polycall_telemetry_sink_path",
+          "polycall_telemetry_timestamp"
+        ]
+      }
+    },
+    {
+      "path": "native/windows-x86_64/bin/polycall.exe",
+      "component": "polycall",
+      "platform": "windows",
+      "arch": "x86_64",
+      "source": {
+        "repository": "https://github.com/obinexus/polycall.git",
+        "commit": "2dcab63ead950d5d061843c6394085eb3dba4c64",
+        "version": "1.1.0"
+      },
+      "toolchain": "MSYS2 UCRT64: gcc.exe (Rev3, Built by MSYS2 project) 16.2.0; cmake version 4.4.3; -Wl,--no-insert-timestamp",
+      "role": "the Polycall CLI and runtime host: `polycall start --load <plugin>` serves polycall_rpc v1 on loopback",
+      "kind": "executable",
+      "linkage": "links libpolycall statically; imports Windows system DLLs only",
+      "sha256": "b34ee8c31182ab275b3794030f965f201a44c4fec2be6985aeec10bc1737efe5",
+      "bytes": 383152,
+      "binary": {
+        "format": "pe",
+        "machine": "x86_64",
+        "kind": "executable",
+        "subsystem": "console",
+        "imports": [
+          "KERNEL32.dll",
+          "api-ms-win-crt-convert-l1-1-0.dll",
+          "api-ms-win-crt-environment-l1-1-0.dll",
+          "api-ms-win-crt-filesystem-l1-1-0.dll",
+          "api-ms-win-crt-heap-l1-1-0.dll",
+          "api-ms-win-crt-locale-l1-1-0.dll",
+          "api-ms-win-crt-math-l1-1-0.dll",
+          "api-ms-win-crt-private-l1-1-0.dll",
+          "api-ms-win-crt-runtime-l1-1-0.dll",
+          "api-ms-win-crt-stdio-l1-1-0.dll",
+          "api-ms-win-crt-string-l1-1-0.dll",
+          "api-ms-win-crt-utility-l1-1-0.dll",
+          "SHELL32.dll",
+          "WS2_32.dll"
+        ],
+        "exports": []
+      }
+    },
+    {
+      "path": "native/windows-x86_64/lib/anytune_recorder.dll",
+      "component": "anytune-recorder",
+      "role": "AnyTune’s recorder module as a Polycall operation plugin: `polycall start --load anytune_recorder.dll` serves recording.create/append/finish/read/list (docs/RECORDING.md)",
+      "platform": "windows",
+      "arch": "x86_64",
+      "kind": "shared-library",
+      "linkage": "a Polycall plugin (exports polycall_ops_register); links libpolycall.a 1.1.0 statically; imports Windows system DLLs only",
+      "source": {
+        "repository": "https://github.com/obinexus/anytune",
+        "commit": "tree-sha256:333010b2e4012c4f83f015a8554c6f0dbb935d4ac8080b8e9c7bc0d6cacc58c7",
+        "version": "1.0.0"
+      },
+      "toolchain": "MSYS2 UCRT64: gcc.exe (Rev3, Built by MSYS2 project) 16.2.0; -Wl,--no-insert-timestamp",
+      "sha256": "3b5a7348c5b8efbcd237084cae5d854137b296860acd1bb885251ab811c8e0c9",
+      "bytes": 184218,
+      "binary": {
+        "format": "pe",
+        "machine": "x86_64",
+        "kind": "dll",
+        "subsystem": "console",
+        "imports": [
+          "bcrypt.dll",
+          "KERNEL32.dll",
+          "api-ms-win-crt-convert-l1-1-0.dll",
+          "api-ms-win-crt-environment-l1-1-0.dll",
+          "api-ms-win-crt-heap-l1-1-0.dll",
+          "api-ms-win-crt-locale-l1-1-0.dll",
+          "api-ms-win-crt-private-l1-1-0.dll",
+          "api-ms-win-crt-runtime-l1-1-0.dll",
+          "api-ms-win-crt-stdio-l1-1-0.dll",
+          "api-ms-win-crt-string-l1-1-0.dll",
+          "api-ms-win-crt-time-l1-1-0.dll",
+          "WS2_32.dll"
+        ],
+        "exports": [
+          "polycall_ops_register"
+        ]
+      }
+    },
+    {
+      "path": "native/windows-x86_64/lib/libpolycall.a",
+      "component": "polycall",
+      "platform": "windows",
+      "arch": "x86_64",
+      "source": {
+        "repository": "https://github.com/obinexus/polycall.git",
+        "commit": "2dcab63ead950d5d061843c6394085eb3dba4c64",
+        "version": "1.1.0"
+      },
+      "toolchain": "MSYS2 UCRT64: gcc.exe (Rev3, Built by MSYS2 project) 16.2.0; cmake version 4.4.3; -Wl,--no-insert-timestamp",
+      "role": "the Polycall static library: operation plugins link it, as Polycall’s own plugins do (Polycall’s docs/PLUGINS.md)",
+      "kind": "static-library",
+      "linkage": "static",
+      "sha256": "3a9a8ed9ae77a59de25a760a9f8ea352713254079630f75320108f75bf803e37",
+      "bytes": 252324,
+      "binary": {
+        "format": "ar-archive"
+      }
+    },
+    {
+      "path": "native/windows-x86_64/lib/libpolycall.dll.a",
+      "component": "polycall",
+      "platform": "windows",
+      "arch": "x86_64",
+      "source": {
+        "repository": "https://github.com/obinexus/polycall.git",
+        "commit": "2dcab63ead950d5d061843c6394085eb3dba4c64",
+        "version": "1.1.0"
+      },
+      "toolchain": "MSYS2 UCRT64: gcc.exe (Rev3, Built by MSYS2 project) 16.2.0; cmake version 4.4.3; -Wl,--no-insert-timestamp",
+      "role": "import library of libpolycall.dll (MinGW)",
+      "kind": "import-library",
+      "linkage": "import library for libpolycall.dll",
+      "sha256": "7b76d0346e1430ac84be3fc02b6b488eb0dbb7098b30474196a8ab1120a69ca6",
+      "bytes": 43918,
+      "binary": {
+        "format": "ar-archive"
+      }
+    }
+  ]
+}

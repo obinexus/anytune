@@ -1,6 +1,6 @@
 /**
  * AnyTune pitch recordings — an AnyTune-owned format (`anytune-pitch-recording/1`, JSON): a timed list of pitch observations, silences and input states. It is
- * NOT Obicall's `.obr` journal and is never produced by Obicall: pitch is not an Obicall observation type (docs/OBICALL.md). The committed fixtures are
+ * not an `.obr` journal (which holds no pitch), and not an `anytune-recording/1` take (docs/RECORDING.md). The committed fixtures are
  * simulated (`origin: "simulated"`); `recorded` is for recordings made from a real input, when AnyTune has one.
  */
 
@@ -31,7 +31,7 @@ export function parseRecording(input: unknown): ParsedRecording {
   if (!isRecord(input)) return { ok: false, issues: ['a recording is an object'] };
   const issues: string[] = [];
   if (input['format'] !== RECORDING_FORMAT) issues.push(`format: expected "${RECORDING_FORMAT}"`);
-  if (input['origin'] !== 'simulated' && input['origin'] !== 'recorded') issues.push('origin: "simulated" or "recorded" — an AnyTune pitch recording is not an Obicall recording');
+  if (input['origin'] !== 'simulated' && input['origin'] !== 'recorded') issues.push('origin: "simulated" or "recorded" — where the pitches came from');
   if (!nonEmpty(input['description'])) issues.push('description: a non-empty string');
   if (!nonEmpty(input['instrument'])) issues.push('instrument: a non-empty string');
   const raw = input['entries'];

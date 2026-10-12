@@ -11,7 +11,7 @@ AnyTune isn't deployed. Its source is public at **github.com/obinexus/anytune** 
 - `assets/index-<hash>.css`
 - `obix-runtime-manifest.json`
 
-It needs no server code, no Obicall and no database. Any static host serves it.
+It needs no server code, no native library and no database. Any static host serves it.
 
 ## anytune.obinexus.org (proposed)
 

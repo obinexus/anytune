@@ -1,0 +1,277 @@
+<script setup lang="ts">
+import FretboardDiagram from "./FretboardDiagram.obix";
+import GuitarArtwork from "./GuitarArtwork.obix";
+import HandLegend from "./HandLegend.obix";
+import PlayTimeline from "./PlayTimeline.obix";
+
+// Follow my playing (src/app/follow-view.ts): the target now held until it is recognised or skipped, at the learner's own pace
+defineProps<{
+  follow: {
+    available: boolean;
+    modes: { value: string; label: string; pressed: string; key: string }[];
+    songOptions: { value: string; label: string; selected: boolean }[];
+    arrangementOptions: { value: string; label: string; selected: boolean }[];
+    title: string;
+    arrangementText: string;
+    phase: string;
+    phaseText: string;
+    listening: boolean;
+    positionText: string;
+    sessionText: string;
+    currentName: string;
+    instruction: string;
+    fingerText: string;
+    nextText: string;
+    message: { text: string; tone: string };
+    alertText: string;
+    controls: { start: boolean; startLabel: string; begin: boolean; cancel: boolean; hear: boolean; fingering: boolean; fingeringLabel: string; skip: boolean; repeatBar: boolean; moveOn: boolean; recheck: boolean; again: boolean; continueOn: boolean; stop: boolean };
+    input: { state: string; text: string; problem: boolean; meter: { visible: boolean; value: number; text: string } };
+    guitar: {
+      fretboard: {
+        width: number;
+        height: number;
+        viewBox: string;
+        hand: string;
+        caption: string;
+        description: string;
+        instruction: string;
+        fingerText: string;
+        currentName: string;
+        nextName: string;
+        nextInstruction: string;
+        strings: { x1: number; y1: number; x2: number; y2: number; label: string; labelX: number; labelY: number; kind: string; key: string; labelKey: string }[];
+        stringLabels: { y: number; number: string; boxX: number; boxY: number; numberX: number; name: string; nameX: number; textY: number; key: string; numberKey: string; nameKey: string }[];
+        frets: { x1: number; y1: number; x2: number; y2: number; label: string; labelX: number; labelY: number; kind: string; key: string; labelKey: string }[];
+        markers: { x: number; y: number; width: number; height: number; kind: string; text: string; textX: number; textY: number; key: string; textKey: string }[];
+        badges: { cx: number; cy: number; textY: number; kind: string; role: string; label: string; key: string; textKey: string }[];
+        mutes: { x: number; textY: number; kind: string; key: string }[];
+        fretWord: { x: number; y: number };
+        capoLabel: { text: string; x: number; y: number };
+      };
+      artwork: {
+        url: string;
+        viewBox: string;
+        width: number;
+        height: number;
+        imageWidth: number;
+        imageHeight: number;
+        transform: string;
+        hand: string;
+        credit: string;
+        window: { x: number; y: number; width: number; height: number };
+        markers: { x: number; y: number; kind: string; key: string }[];
+      };
+    };
+    hand: {
+      visible: boolean;
+      text: string;
+      fingers: { number: string; name: string; active: boolean; cx: number; cy: number; textY: number; key: string; textKey: string; nameKey: string }[];
+    };
+    timeline: {
+      width: number;
+      height: number;
+      viewBox: string;
+      playheadX: number;
+      playheadTop: number;
+      playheadBottom: number;
+      labelColumn: number;
+      description: string;
+      lanes: { y: number; x1: number; x2: number; label: string; labelX: number; labelY: number; key: string; labelKey: string }[];
+      bars: { x: number; label: string; labelY: number; key: string; labelKey: string }[];
+      beats: { x: number; key: string }[];
+      prompts: { x: number; y: number; width: number; height: number; textX: number; textY: number; label: string; kind: string; key: string; textKey: string }[];
+    };
+    summary: { visible: boolean; lines: string[]; corrections: string[]; comparison: string };
+    settings: {
+      tempoOptions: { value: string; label: string; selected: boolean }[];
+      accompanimentOptions: { value: string; label: string; selected: boolean }[];
+      accompanimentNote: string;
+      headphones: boolean;
+      confidenceOptions: { value: string; label: string; selected: boolean }[];
+      windowOptions: { value: string; label: string; selected: boolean }[];
+      capoOptions: { value: string; label: string; selected: boolean }[];
+      handOptions: { value: string; label: string; selected: boolean }[];
+      detectionLocked: boolean;
+    };
+    capture: string[];
+    timing: string[];
+    announcement: string;
+    errorText: string;
+  };
+}>();
+
+// one event per control — the follow session does the rest
+const emit = defineEmits<{
+  (e: "mode", value: string): void;
+  (e: "song", id: string): void;
+  (e: "start"): void;
+  (e: "begin"): void;
+  (e: "cancel"): void;
+  (e: "hear"): void;
+  (e: "fingering"): void;
+  (e: "skip"): void;
+  (e: "repeat-bar"): void;
+  (e: "move-on"): void;
+  (e: "recheck"): void;
+  (e: "again"): void;
+  (e: "continue"): void;
+  (e: "stop"): void;
+  (e: "tempo", value: string): void;
+  (e: "accompaniment", value: string): void;
+  (e: "headphones", on: boolean): void;
+  (e: "confidence", value: string): void;
+  (e: "window", value: string): void;
+  (e: "capo", value: string): void;
+  (e: "hand", value: string): void;
+}>();
+
+function onSong(event: Event): void {
+  emit("song", (event.target as HTMLSelectElement).value);
+}
+function onTempo(event: Event): void {
+  emit("tempo", (event.target as HTMLSelectElement).value);
+}
+function onAccompaniment(event: Event): void {
+  emit("accompaniment", (event.target as HTMLSelectElement).value);
+}
+function onHeadphones(event: Event): void {
+  emit("headphones", (event.target as HTMLInputElement).checked);
+}
+function onConfidence(event: Event): void {
+  emit("confidence", (event.target as HTMLSelectElement).value);
+}
+function onWindow(event: Event): void {
+  emit("window", (event.target as HTMLSelectElement).value);
+}
+function onCapo(event: Event): void {
+  emit("capo", (event.target as HTMLSelectElement).value);
+}
+function onHand(event: Event): void {
+  emit("hand", (event.target as HTMLSelectElement).value);
+}
+</script>
+
+<template>
+  <main class="screen play follow">
+    <h1>Play</h1>
+    <div class="mode-switch" role="group" aria-label="How to play">
+      <button v-for="mode in follow.modes" :key="mode.key" type="button" class="mode" :aria-pressed="mode.pressed" @click="emit('mode', mode.value)">{{ mode.label }}</button>
+    </div>
+    <p v-if="follow.available" class="title">{{ follow.title }}</p>
+    <p class="arrangement">{{ follow.arrangementText }}</p>
+    <div v-if="follow.available" class="follow-body">
+      <p class="visually-hidden" role="status" aria-live="polite" aria-atomic="true">{{ follow.announcement }}</p>
+      <section class="follow-now" :data-phase="follow.phase">
+        <p class="follow-position">
+          <span class="target-count">{{ follow.positionText }}</span>
+          <span class="session-time">{{ follow.sessionText }}</span>
+        </p>
+        <p class="phase">{{ follow.phaseText }}</p>
+        <p class="current">{{ follow.currentName }}</p>
+        <p class="instruction">{{ follow.instruction }}</p>
+        <p class="finger-text">{{ follow.fingerText }}</p>
+        <p v-if="follow.message.text" class="follow-message" :data-tone="follow.message.tone">{{ follow.message.text }}</p>
+        <p class="next">{{ follow.nextText }}</p>
+      </section>
+      <p v-if="follow.alertText" class="capture-alert" role="alert">{{ follow.alertText }}</p>
+      <div class="transport">
+        <button v-if="follow.controls.begin" type="button" class="primary begin" @click="emit('begin')">Begin</button>
+        <button v-if="follow.controls.start" type="button" class="primary start" @click="emit('start')">{{ follow.controls.startLabel }}</button>
+        <button v-if="follow.controls.hear" type="button" class="hear" @click="emit('hear')">Hear this target</button>
+        <button v-if="follow.controls.fingering" type="button" class="fingering" @click="emit('fingering')">{{ follow.controls.fingeringLabel }}</button>
+        <button v-if="follow.controls.skip" type="button" class="skip" @click="emit('skip')">Skip</button>
+        <button v-if="follow.controls.repeatBar" type="button" class="repeat-bar" @click="emit('repeat-bar')">Repeat this bar</button>
+        <button v-if="follow.controls.moveOn" type="button" class="move-on" @click="emit('move-on')">Move on without listening</button>
+        <button v-if="follow.controls.recheck" type="button" class="primary recheck" @click="emit('recheck')">Check the microphone again</button>
+        <button v-if="follow.controls.again" type="button" class="primary again" @click="emit('again')">Repeat this phrase</button>
+        <button v-if="follow.controls.continueOn" type="button" class="continue" @click="emit('continue')">Continue to the end</button>
+        <button v-if="follow.controls.cancel" type="button" class="cancel" @click="emit('cancel')">Cancel</button>
+        <button v-if="follow.controls.stop" type="button" class="stop" @click="emit('stop')">Stop</button>
+      </div>
+      <section v-if="follow.input.text" class="input-check" :data-state="follow.input.state" :data-problem="follow.input.problem">
+        <p class="input-text" role="status">{{ follow.input.text }}</p>
+        <label v-if="follow.input.meter.visible" class="meter-label">
+          <span>Input level</span>
+          <meter min="-60" max="0" low="-45" high="-6" optimum="-20" :value="follow.input.meter.value" :aria-valuetext="follow.input.meter.text">{{ follow.input.meter.text }}</meter>
+          <span class="meter-text">{{ follow.input.meter.text }}</span>
+        </label>
+      </section>
+      <HandLegend v-if="follow.hand.visible" :hand="follow.hand" />
+      <div class="guitar">
+        <GuitarArtwork :artwork="follow.guitar.artwork" />
+        <FretboardDiagram :fretboard="follow.guitar.fretboard" />
+      </div>
+      <PlayTimeline :timeline="follow.timeline" />
+      <section v-if="follow.summary.visible" class="review" aria-labelledby="follow-review-heading">
+        <h2 id="follow-review-heading">How it is going</h2>
+        <p v-if="follow.summary.comparison" class="comparison">{{ follow.summary.comparison }}</p>
+        <ul class="sentences">
+          <li v-for="line in follow.summary.lines" :key="line">{{ line }}</li>
+        </ul>
+        <ul v-if="follow.summary.corrections.length" class="corrections" aria-label="Corrected targets">
+          <li v-for="line in follow.summary.corrections" :key="line">{{ line }}</li>
+        </ul>
+        <ul v-if="follow.capture.length" class="capture-lines" aria-label="What the microphone delivered">
+          <li v-for="line in follow.capture" :key="line">{{ line }}</li>
+        </ul>
+      </section>
+      <section class="play-song" aria-labelledby="follow-song-heading">
+        <h2 id="follow-song-heading">Song and part</h2>
+        <div class="play-choice">
+          <label>Song
+            <select :disabled="follow.listening" @change="onSong">
+              <option v-for="o in follow.songOptions" :key="o.value" :value="o.value" :selected="o.selected">{{ o.label }}</option>
+            </select>
+          </label>
+          <label>Instrument and part
+            <select :disabled="follow.listening">
+              <option v-for="o in follow.arrangementOptions" :key="o.value" :value="o.value" :selected="o.selected">{{ o.label }}</option>
+            </select>
+          </label>
+        </div>
+      </section>
+      <details class="play-settings">
+        <summary>Settings</summary>
+        <div class="settings">
+          <label>Accompaniment
+            <select @change="onAccompaniment">
+              <option v-for="o in follow.settings.accompanimentOptions" :key="o.value" :value="o.value" :selected="o.selected">{{ o.label }}</option>
+            </select>
+          </label>
+          <p v-if="follow.settings.accompanimentNote" class="accompaniment-note">{{ follow.settings.accompanimentNote }}</p>
+          <label>Accompaniment tempo
+            <select @change="onTempo">
+              <option v-for="o in follow.settings.tempoOptions" :key="o.value" :value="o.value" :selected="o.selected">{{ o.label }}</option>
+            </select>
+          </label>
+          <label class="check"><input type="checkbox" :checked="follow.settings.headphones" @change="onHeadphones" /> I am using headphones (AnyTune's own notes cannot reach the microphone)</label>
+          <label>Capo
+            <select :disabled="follow.listening" @change="onCapo">
+              <option v-for="o in follow.settings.capoOptions" :key="o.value" :value="o.value" :selected="o.selected">{{ o.label }}</option>
+            </select>
+          </label>
+          <label>Guitar
+            <select @change="onHand">
+              <option v-for="o in follow.settings.handOptions" :key="o.value" :value="o.value" :selected="o.selected">{{ o.label }}</option>
+            </select>
+          </label>
+          <label>Confidence needed
+            <select @change="onConfidence">
+              <option v-for="o in follow.settings.confidenceOptions" :key="o.value" :value="o.value" :selected="o.selected">{{ o.label }}</option>
+            </select>
+          </label>
+          <label>Listen
+            <select :disabled="follow.settings.detectionLocked" @change="onWindow">
+              <option v-for="o in follow.settings.windowOptions" :key="o.value" :value="o.value" :selected="o.selected">{{ o.label }}</option>
+            </select>
+          </label>
+        </div>
+      </details>
+      <details class="diagnostics">
+        <summary>Timing and microphone details</summary>
+        <p v-for="line in follow.timing" :key="line" class="timing-line">{{ line }}</p>
+      </details>
+    </div>
+    <p v-if="follow.errorText" class="error" role="alert">{{ follow.errorText }}</p>
+  </main>
+</template>

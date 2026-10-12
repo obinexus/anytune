@@ -133,6 +133,41 @@ The processed-audio retry in Firefox on this machine was then observed (2026-09-
 
 Neither is loosened for the other. The YIN detector and its −48 dBFS threshold were not weakened for Firefox's zero-valued stream. `tests/audio/microphone-silence.test.ts` checks both: a −60 dBFS tone gives no pitch and triggers no retry, and a −70 dBFS room is never "muted".
 
+## Practice and Play: "I did not hear 35 notes" — a diagnosis
+
+The owner's attempts (2026-10-11, in a browser on the laptop above) were reviewed as *0 of 35 right*, with every note "not heard". One more
+attempt showed *17 of 35 right, 0 on time*. These were browser attempts, so nothing was saved, and the sessions' capture state and event
+times **cannot be recovered**. What the code shows is which failure paths existed then, and what has changed since.
+
+| What could have happened | Why it read as "not heard" then | What happens now |
+|---|---|---|
+| The raw microphone sent **digital silence**: the AMD array did this in Firefox, and practice asked for raw audio | Practice had no silence check and no retry with the browser's processing, unlike the tuner | The input check sees digital silence, asks again with processing on and says so, then says the microphone is muted. Nothing is judged before a note is heard. |
+| The guitar reached the microphone **too faintly** | A melody at a −38 dBFS peak gives onsets but no confident pitch, because YIN treats frames below −48 dBFS RMS as silence. Those onsets were dropped. (Measured on the synthetic melody: 13/13 notes at −32 dBFS, 0/13 at −38.) | The input meter shows the level, and the check says "only faintly". An onset whose pitch cannot be named is now *unclear*: never a mistake, and never "not heard". |
+| The capture **stalled** or the device ended | Every target without a heard note was judged missed, whether or not the microphone was delivering sound | The capture's coverage is recorded. Targets it did not cover are unassessed, the review says how much was assessed, and with nothing assessed: "This attempt could not be assessed — check your microphone". |
+| The microphone heard **the reference through the speakers**, or the browser's latency figure is far from the real delay (the *0 on time* attempt) | Notes judged right in pitch but consistently off in time | Not fixed: there is no calibration. The review gives the typical offset, and the timing details show the browser's figures as estimates. Headphones are advised. |
+
+Every assessed review now ends with what the microphone delivered: when audio arrived, how much was sound, the loudest level, and any
+silence, gap or disconnection. So a review like *0 of 35* can now be diagnosed from the attempt itself.
+
+## Follow my playing: the consensus, and what it has been tested on
+
+Follow my playing (`docs/ARCHITECTURE.md`) takes one decision per attack from the observations after it (`src/lesson/consensus.ts`):
+
+| | Notes | Chords |
+|---|---|---|
+| counted | pitch observations at confidence ≥ 0.6 (a setting: 50–80 %), from 30 ms to 120 ms after the attack (a setting: to 90, 120 or 180 ms), every 15 ms | chord readings at 20, 90 and 160 ms after the attack, at confidence ≥ 0.6 |
+| YES | ≥ 3 counted, ≥ 60 % of them on the target's key | ≥ 2 counted, ≥ 60 % naming the target |
+| NO | ≥ 3 counted, ≥ 60 % on another key (an octave apart said as such) | the agreed reading is another chord, or a clean single note was heard (the root alone is not the chord) |
+| MAYBE | silence, too few counted, or no agreement | the same; or a chord outside C D E G A Am Em Dm |
+
+A MAYBE is never a mistake: the target stays, and nothing is recorded against it.
+
+**What it has been tested on: synthetic plucked strings only** (`tests/lesson/consensus.test.ts`, `tests/app/follow.test.ts`,
+`tests/components/follow.test.ts`). No real guitar recording is in the repository, and none has been used. No detection on a real
+guitar is claimed: neither how often a real note gets YES, nor how often a real wrong note gets NO rather than MAYBE. Calibrating the
+defaults needs labelled recordings of a real guitar (single notes over the range, wrong notes, octaves, chords, strums, and a ringing
+note followed by the same note again), played through `LiveAnalyser` and `judgeNote`/`judgeChord`.
+
 ## Tuning a guitar with the microphone: the manual acceptance test
 
 **Status:** performed in Edge for one string (above); the full procedure has not been recorded yet. The automated tests use generated signals. This is the procedure for a person with a guitar.

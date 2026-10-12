@@ -1,21 +1,20 @@
 /**
- * Inverse-variance fusion of independent scalar estimates — a MATHEMATICAL COMPATIBILITY implementation of Obicall's `obicall_static_fuse_1d`
- * (src/core/estimator.c, obicall ae5581a): the same rule, the same checks in the same order, the same order of operations, so that it gives the same doubles.
- * It is not Obicall execution, and it does not make pitch an Obicall observation type (docs/OBICALL.md). The native comparison — bit for bit, against the
- * staged obicall.dll: tests/fusion/native-conformance.test.ts (A8).
+ * Inverse-variance fusion of independent scalar estimates: each estimate weighs 1/variance; the fused value is Σ(mean/variance) / Σ(1/variance) and the fused
+ * variance 1 / Σ(1/variance). The sums accumulate first to last, so a given list always gives the same doubles. No measurement is an invalid argument; a
+ * non-finite value, or a variance that is not positive, is refused — never fused. Pure, and AnyTune's own (tests/fusion/scalar-fusion.test.ts).
  */
 
 export type FuseResult = { readonly ok: true; readonly mean: number; readonly variance: number } | { readonly ok: false; readonly error: 'invalid-argument' | 'validation-non-finite' };
 
 export function fuseInverseVariance(means: readonly number[], variances: readonly number[]): FuseResult {
-  // obicall: count == 0 -> OBICALL_ERR_INVALID_ARGUMENT (a C caller passes one count for both arrays; here two lists must agree)
+  // no measurement, or lists that do not pair up: an invalid argument
   if (means.length === 0 || means.length !== variances.length) return { ok: false, error: 'invalid-argument' };
   let sumInvVar = 0;
   let sumMeanOverVar = 0;
   for (let i = 0; i < means.length; i++) {
     const mean = means[i] as number;
     const variance = variances[i] as number;
-    // obicall: !isfinite(mean) || !isfinite(variance) || variance <= 0 -> OBICALL_ERR_VALIDATION_NON_FINITE
+    // a value that is not finite, or a variance that is not positive, cannot be weighed
     if (!Number.isFinite(mean) || !Number.isFinite(variance) || variance <= 0) return { ok: false, error: 'validation-non-finite' };
     const w = 1 / variance;
     sumInvVar += w;

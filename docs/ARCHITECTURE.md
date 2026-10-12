@@ -1,83 +1,251 @@
 # Architecture
 
-AnyTune separates *what a tuner knows* (pitch, tuning, fusion) from *where pitch comes from* (a simulation, a recording, later a microphone) and from *how it is shown* (the `.obix` UI). Each can be replaced without touching the others.
+AnyTune helps a learner play a song: choose it, tune, listen, practise it slowly and in loops, see what to repeat, and repeat. The code keeps
+four things apart, so each can change without the others:
+
+- **what is musically true**: pitch, tuning, MIDI, the reference, the guitar, assessment;
+- **where sound comes from**: a microphone, a recording, a simulation;
+- **how it is shown**: the `.obix` UI;
+- **how the parts written in different languages reach each other**: Polycall, and nothing else.
+
+## The processes
+
+```
+ Phone (the Android app)                                          Desktop (the import worker, services/import-worker)
+ ┌──────────────────────────────────────────────────────┐         ┌──────────────────────────────────────────────────────────┐
+ │ WebView: AnyTune's page (TypeScript + .obix)         │         │ Node: file or permitted URL ─yt-dlp─► media ─FFmpeg─►    │
+ │   tuner · library · practice · live analysis         │         │   PCM ─Basic Pitch─► notes ─► MIDI + anytune-reference/1 │
+ │   AudioWorklet capture, Web Audio playback           │         │                    │                                     │
+ │        │ AnyTuneAndroid.recording(op, json)          │         │                    ▼ polycall_rpc v1 over 127.0.0.1      │
+ │        ▼                                             │         │   polycall.exe start --load anytune_recorder.dll         │
+ │ Kotlin (adds the session token) ─JNI─► C bridge      │         │     └─ recording.* (AnyTune's recorder module, C)        │
+ │        ▼ polycall_call (Binding ABI v1)              │         └──────────────────────────────────────────────────────────┘
+ │ libpolycall.so: in-process runtime on 127.0.0.1      │
+ │   └─ recording.* (AnyTune's recorder module, C)      │          A MIDI file made on the desktop is opened in the app's
+ │        ▼                                             │          Library. There is no phone-to-worker transport yet.
+ │ app-private files: <id>.atrec (anytune-recording/1)  │
+ └──────────────────────────────────────────────────────┘
+```
+
+**Polycall** carries calls between AnyTune's components in different languages:
+
+- on the phone, TypeScript → Kotlin → C, through `polycall_call`;
+- on the desktop, Node → C, over `polycall_rpc v1`.
+
+It knows nothing about music. AnyTune's own code does everything musical: the import, transcription (Basic Pitch), MIDI, analysis,
+tuning, recording, playback and feedback. Polycall is pinned and audited in `docs/integration-audit.md`, and Android is described in
+`docs/ANDROID.md`. **Obicall is not used anywhere.**
 
 ## The layers
 
-`architecture.json` states the layers and what each may depend on. `tools/architecture/check.ts` enforces them on every import and every global, as a test (`npm run test:architecture`, part of `npm test`).
+`architecture.json` states the layers and what each may import, and `tools/architecture/check.ts` enforces them on every import and every
+global, as a test (`npm run test:architecture`, part of `npm test`).
 
-```
-                    components (.obix UI) ──► app ──► domain ◄── fusion ──► audio ──► domain
-                                                        ▲
-                                          instruments ──┘          adapters ──► domain
-   harness  ──► everything (the one composition point; the only TypeScript that imports Vue)
-```
-
-| Layer | Directory | What it is | May not |
+| Layer | Directory | What it is | May import |
 |---|---|---|---|
-| domain | `src/domain/` | pitch, tuning, the ports (`PitchProvider`, `PitchFusionPort`, `Scheduler`, `InputSource`) | import anything; touch the DOM |
-| instruments | `src/instruments/` | the tuning catalog, as data | touch the DOM |
-| audio | `src/audio/` | pitch providers (simulated, recorded, microphone) and the pure pitch detector | touch the document or the network |
-| fusion | `src/fusion/` | `PitchFusionPort` implementations: inverse-variance fusion, `SimulatedPitchFusion`, `RecordedPitchFusion` | touch the DOM |
-| adapters | `src/adapters/` | readers of foreign formats: `ObicallReplayReader` | be a component; touch the DOM |
-| app | `src/app/` | the tuning session (state and intents), the view (all formatting), the announcement policy | name a provider, Obicall or Vue |
-| components | `src/components/*.obix` | the Vue-flavoured OBIX UI: binds the view, emits intents | import anything but `"obix"` and the app's view types; touch `document`, `window`, `navigator`, audio or the network |
-| native-harness | `src/harness/mount-native.ts` | Phase 6: mounts the same UI, lowered to canonical DOP IR, on OBIX's native runtime; may import `obix-runtime-browser` and never Vue | — |
-| harness | `src/harness/` | composes the layers and the inputs (`compose.ts`); hands the browser's audio APIs over (`browser-audio.ts`); mounts the UI on the Vue runtime (`mount.ts`), the entry picking the mount as `#anytune-mount`; the demo input | — |
+| domain | `src/domain/` | pitch, tuning, and the ports (`PitchProvider`, `PitchFusionPort`, `Scheduler`, `InputSource`) | nothing |
+| music | `src/music/` | Standard MIDI Files, the tempo-map timeline, the teaching reference (`anytune-reference/1`), chords, the guitar (tuning, open voicings with suggested fingerings, melody positions), the fretboard map | domain |
+| instruments | `src/instruments/` | the tuning catalog, as data | domain |
+| audio | `src/audio/` | pitch providers (simulated, recorded, microphone) and the pure YIN detector | domain |
+| fusion | `src/fusion/` | inverse-variance fusion, and the simulated and recorded fusions | domain, audio |
+| analysis | `src/analysis/` | the live analysis of what a learner plays: spectrum, onsets and strums, chord candidates with an open-set refusal, notes (`LiveAnalyser`) | music, audio, domain |
+| lesson | `src/lesson/` | assessment (pitch and timing judged apart; unassessed where the capture did not cover), feedback in words, the practice clock (count-in, tempo, loops, latency), step mode, the play clock and the beat grid, Follow's consensus on one attack (`consensus.ts`) | music, domain |
+| synthesis | `src/synthesis/` | the plucked-string synthesiser, used for the reference's playback and the test signals | nothing |
+| import | `src/import/` | the URL policy, the import job's stages, transcription to a reference | music, domain |
+| polycall | `src/polycall/` | `polycall_rpc v1` framing and replies, with no I/O | nothing |
+| polycall-node | `src/polycall/node/` | the TCP transport, for Node | polycall, `node:net` |
+| recording | `src/recording/` | `anytune-recording/1` (`.atrec`) and `PolycallRecorder`, the recorder's client | polycall |
+| adapters | `src/adapters/` | formats kept compatible: AnyTune's own `.obr` reader and writer (`docs/OBR.md`) | domain |
+| app | `src/app/` | the application without a screen: the tuning session, the journey's shell (`shell.ts`), the arrangement (`arrangement.ts`), the practice, play and follow sessions (`practice.ts`, `play.ts`, `follow.ts`), the capture's coverage and the input check (`capture.ts`, `input-check.ts`), the guitar view (`guitar-view.ts`), and every view (all formatting) | domain, instruments, music, lesson, analysis, adapters |
+| components | `src/components/*.obix` | the UI: binds the views and emits intents | the app's view types, `"obix"` |
+| native-harness | `src/harness/mount-native.ts` | mounts the same UI, lowered to IR, on OBIX's native runtime | `obix-runtime-browser`, never Vue |
+| harness | `src/harness/` | the composition: the tuner, the shell (`shell-app.ts`), the microphone (`listener.ts`), practice audio (`practice-audio.ts`), the Android recorder bridge, the browser entry (which measures the content's width for the fretboard and the timeline); mounts on Vue (`mount.ts`) | the layers it composes, `vue` |
 
-## The flow of a pitch
+Apart from `polycall-node` (a loopback socket, for Node only), no layer below `harness` touches the DOM, the network or a file. Those are
+given to it through ports, which is why the same code runs in the browser, in the Android WebView and in the Node tests.
+
+## The microphone: checked before anything is judged
+
+An assessed attempt never begins because Start was pressed. The listener (`src/harness/listener.ts`), shared by Practise and Play, goes
+through these states:
 
 ```
-PitchProvider(s) ─observations─► PitchFusionPort ─fused pitch─► TuningSession ─state─► toView ─view─► .obix UI (Vue runtime, or OBIX's native runtime)
-                                                                     ▲                                      │
-                                                                     └──────────── intents: select instrument, start, stop ─┘
+idle → requesting (the browser asks) → checking (an input meter: "pluck any string") → ready (a note was heard) → Begin → count-in → playing → review
 ```
 
-Failures (permission denied, no device, disconnected, no source) are **states**, carried as events, never exceptions thrown at the UI. The visual refresh is not the fusion's rate: fifty pitches in one tick render once (`tests/integration/hands-free.test.ts`).
+Instead of ready, it may stop in one of these, each said in its own words:
+
+- **denied:** the permission was refused;
+- **no-device:** no microphone was found;
+- **unreadable:** the device could not be opened;
+- **unsupported:** the browser has no microphone API;
+- **muted:** digital silence, raw and then with the browser's processing on;
+- **disconnected:** the device ended;
+- **failed:** anything else.
+
+A faint input is a hint while checking ("only faintly, loudest −52 dBFS"), not a failure. **Play along without assessment** opens no
+microphone and gives no score of any kind.
+
+While an attempt is assessed, the capture monitor (`src/app/capture.ts`) records which capture-clock time real sound covered. These are
+**not** coverage:
+
+- digital silence: every sample below −120 dBFS;
+- gaps with no frames;
+- the time after the device ended.
+
+A target whose window was not covered is **unassessed**: whatever was or was not heard there, it gets no verdict. A stall or a
+disconnection is said at once, and the review says how much was assessed and what the microphone delivered. Feedback
+(`src/lesson/feedback.ts`) counts only what was assessed:
+
+- With nothing assessed, the review says "This attempt could not be assessed — check your microphone."
+- A bar is recommended only when enough was assessed and something was heard.
+- An onset whose pitch could not be named is **unclear**, never a mistake and never a silence.
+
+## Practice, on one clock
+
+```
+microphone ─► AudioWorklet (audio thread) ─frames of 1024, each stamped with its AudioContext frame─► LiveAnalyser ─notes─► PracticeSession
+                                                                                                                              │
+reference notes + click ◄── Web Audio, scheduled at AudioContext times ◄── LessonClock (count-in, tempo, loop) ◄──────────────┘
+```
+
+- **One clock.** What was played and what was heard are compared on one clock: the AudioContext's. Capture is stamped with the context
+  frame of each buffer's first sample, and the reference and the click are scheduled at context times. No timer stamps anything.
+- **Judging from capture times.** Notes are judged from the times they were captured at, never their arrival time. A pass is judged once
+  its last note can have been reported, a quarter of a second after the pass ends, because the analysis reports a note when its pitch
+  settles, 140–160 ms after the onset.
+- **A stop just after a loop wraps** keeps the last full pass in the review, instead of replacing it with a one-note fragment.
+- **Slower practice re-times.** A slower tempo re-times the notes; it doesn't time-stretch the sound.
+- **Saving attempts.** Each assessed attempt is saved, apart from the reference, as an `anytune-recording/1` of what was heard and every
+  judgement, in time order, through Polycall. In a browser there is no recorder, and the attempt is said to be unsaved.
+- **Latency.** The correction applied is what the browser reports, named quantity by quantity: `AudioContext.baseLatency`,
+  `AudioContext.outputLatency` and the microphone track's `latency` setting. These are estimates of parts of the path, not a measured
+  speaker-to-microphone delay, and they appear only in the collapsed timing details. Nothing has been measured or calibrated.
+- **Leaving.** When the page is hidden, the Android app leaves the foreground, or the learner leaves the screen, the run stops and the
+  microphone is released.
+
+## Play, on one clock
+
+Play is instrument karaoke: the song runs from start to end, the prompts arrive in time, and the learner plays along. There are no loops
+and no waiting.
+
+```
+PlayClock (src/lesson/play-clock.ts): segments of the audio clock — [audioFrom, audioTo) ↦ song time from refFrom at a tempo
+   ├─► notes and clicks, scheduled 1 s ahead at audioTimeOf(song time)                       (what is heard)
+   ├─► the timeline: each prompt at x = Now + (song time − position) × 200 px per real second (what is seen)
+   └─◄ a captured note, placed on the song at refAt(capture time − latency)                  (what is judged)
+```
+
+- **Pause, resume, tempo, restart.** A pause cancels what was scheduled and holds the position. A resume (after a count-in), a tempo
+  change and a restart each re-anchor the clock where the song is, and schedule again from there. So the playback and the prompts never
+  drift apart: a test drives a run through all four and finds every note sounding once, at the audio time of its song time, with its
+  prompt at "Now".
+- **The display.** The display follows where the sound is heard: the prompts are placed at the clock's position less the reported output
+  latency.
+- **What is "now".** "Now" is the note at the playhead while it sounds. In a rest, the note coming is shown as next, and nothing is filled
+  at "Now".
+- **Feedback.** Feedback is optional. With it, the microphone is checked first, and notes heard in a count-in or a pause are no part of the
+  song; a first note a little early is. Targets are judged as the song passes, against the arrangement's keys, and only where the capture
+  covered them.
+- **Lyrics.** None: no reference of AnyTune's carries timed lyrics, and none are invented.
+
+## Follow my playing: the target, not the clock
+
+Play opens on **Follow my playing**. The current target stays until it is heard or the learner skips it. Time passing never moves it.
+**Play along (keeps time)** is the strict mode above, with early and late.
+
+```
+LiveAnalyser (src/analysis/live.ts): an attack → its pitch observations, 30–120 ms after it (or its chord readings at 20, 90, 160 ms)
+   └─► FollowSession.hear (src/app/follow.ts): each attack consumed once; attacks from before the target, a demonstration or a pause dropped
+         └─► judgeNote / judgeChord (src/lesson/consensus.ts)
+               ├─ YES   → "Correct" for 0.8 s; exactly one target on; its accompaniment queued up to the next target
+               ├─ NO    → "Heard F4; try E4 again." The same target; what was heard kept in its record
+               └─ MAYBE → nothing marked; said ("I could not make that out") only when something was played
+```
+
+- **One attack, one decision.** A ringing note makes no new attack. It cannot answer the next target, even when that target is the same
+  note; playing it again, with a fresh attack, can.
+- **The target index and the clock are separate.** "Target 7 of 35" counts targets; the session's time is shown apart and never
+  scored. The time from a target appearing to its answer is kept, as information only.
+- **Notes and chords are judged apart.** A note target wants its own key, octave included; the right note an octave off is said as
+  such. A chord target wants the chord's readings, so its root alone is a NO ("Heard only A2 — strum all the strings of Am"). A strum's
+  spread is allowed by reading it at several offsets. A chord outside the supported set (C D E G A Am Em Dm) is always MAYBE, and Skip
+  is offered. No song has a chord arrangement yet, so in the app every target is a note; chords are tested on the session.
+- **Demonstrations.** "Hear this target" plays it and suspends assessment until it has died away. Its own sound is never an answer.
+- **The microphone.** Follow uses the same listener and check as Practise and Play. If frames stop for 0.25 s, the device ends, or the
+  input falls digitally silent, assessment pauses and the place is kept, with nothing marked. When frames return it listens again. After
+  the device ends, "Check the microphone again" then Begin resumes at the same target. "Move on without listening" skips a target as
+  unassessed.
+- **Accompaniment.** Optional, per target: when a target is accepted, the other parts sounding between it and the next target are
+  scheduled once, clipped at the next target. The position is the target's, not a clock's, so nothing is duplicated or left hanging.
+  The choices are the other parts, a click on the beats, or none. A song with one part (a one-track file, or a transcription of a mixed
+  recording) offers only the click or none, and says why: separate instruments need stems or a transcription per instrument.
+- **AnyTune's own sound.** Without headphones, an attack during a note AnyTune is sounding, of that note's pitch class, is treated as
+  the speaker heard through the microphone. It is a MAYBE, not an answer. The headphones setting turns this guard off.
+- **Records.** Each pass keeps every target's outcome apart: first try, corrected (with what was heard on each retry), skipped, and
+  unassessed. "Repeat this bar" and "Repeat this phrase" start a new pass over the same targets, compared with the last one ("You
+  corrected this passage with two fewer retries (0; last time 2)."). Each pass is listed in Progress.
+
+## The formats
+
+| Format | What it holds | Where |
+|---|---|---|
+| Standard MIDI File + `anytune-reference/1` | the musical reference: the notes as stated, the tempo map, and the provenance (the source's and the MIDI's SHA-256, the engine and its parameters, the review state) | `src/music/` |
+| `anytune-recording/1` (`.atrec`) | a learner's attempt, or a timed reference recording: a header naming the reference, events in time order, an end record, each record CRC-checked | `docs/RECORDING.md` |
+| `.obr` | sensor observations (Obicall's journal), read by AnyTune's own code for compatibility and **refused as a practice reference** | `docs/OBR.md` |
+
+MIDI and JSON are never renamed to `.obr`, and music is never written into `.obr`.
 
 ## One source, two proof paths
 
-Every component is one `.obix` file, and there is no `.vue` file anywhere.
+There are 20 components, each one `.obix` file, and no `.vue` file anywhere.
 
 ```
                           AnyTune .obix
                                │
                ┌───────────────┴────────────────┐
                ▼                                ▼
-      Vue demo path                     OBIX semantic path
+      execution path                     OBIX semantic path
    OBIX Vue frontend stages          OBIX Vue frontend → lowerVueToDop
    (tools/obix/compile.ts)           (tools/obix/trace.ts)
                │                                │
-   official Vue runtime               canonical obix-dop-ir/3
+   official Vue runtime (default),    canonical obix-dop-ir/3
+   or the IR on OBIX's native runtime           │
                │                                │
           browser UI                  dist/obix-ir/<Name>.obix.json
 ```
 
-- **Execution.** The `.obix` sources are compiled by the real OBIX Vue frontend stages and run on the **official Vue runtime** — the default: in the browser through the Vite plugin (`tools/obix/vite-plugin.ts`), and in the Node tests through module hooks (`tools/obix/register.ts`). `"obix"` resolves to an **allowlist** of Vue-compatible primitives (`tools/obix/allowlist.ts`). Any other name from `"obix"`, and any import of it outside a component, fails the build. No source is rewritten.
-- **Native execution (Phase 6, awaiting review).** `Component.obix?ir` is the same file lowered to `obix-dop-ir/3` — the IR the trace records — with every component it invokes, by specifier (`tools/obix/ir-module.ts`, in the Vite plugin and the Node hooks alike). `src/harness/mount-native.ts` runs it with OBIX's own runtime, `obix-runtime-browser`: no Vue in the page (`npm run dev:native`; `tests/build/native-build.test.ts` audits the bundle's module graph). The runtime is chosen by the entry's `#anytune-mount` (the Vue harness by default; `--mode native` points it at the native one). Every UI suite runs on both runtimes, and `tests/native/vue-vs-native.test.ts` compares the two pages after every step. The hybrid runtime is not implemented.
-- **Semantics.** The same files are lowered by the OBIX compiler to its canonical, framework-neutral IR, **`obix-dop-ir/3`** (`npm run trace`). What the IR can't express is recorded as a deferral with the compiler's own diagnostic, never hidden. Today all 9 components lower. **PitchMeter** was the last deferred (`OBIX_DOP_DEFERRED_EXPRESSION`): its `computed` calls `Math.round`, and the IR had no call expression. OBIX C3 added one generically, in the compiler and not here: the call of an intrinsic function from a closed vocabulary (`round` alone today), so PitchMeter's offset is `round(needlePercent − 50)` in the IR.
-- **The two agree on their sources**: the production build writes `obix-runtime-manifest.json` (every component by the SHA-256 of its source), and a test checks it equals the trace's list (`tests/build/vite-build.test.ts`, `tests/obix/trace.test.ts`).
+- **Execution.** The sources are compiled by the real OBIX Vue frontend stages and run on the **official Vue runtime**, which is the
+  default:
+  - in the browser through the Vite plugin (`tools/obix/vite-plugin.ts`), and in the Node tests through module hooks
+    (`tools/obix/register.ts`);
+  - `"obix"` resolves to an **allowlist** of Vue-compatible primitives (`tools/obix/allowlist.ts`);
+  - no source is rewritten.
+- **Native execution (experimental, not the default).** `Component.obix?ir` is the same file lowered to `obix-dop-ir/3`.
+  - `src/harness/mount-native.ts` runs it on `obix-runtime-browser`, with no Vue in the page (`npm run dev:native`;
+    `tests/build/native-build.test.ts` audits the bundle's module graph).
+  - Every UI suite runs on both runtimes, the shell's included (`tests/components/shell.test.ts`).
+- **Semantics.** All 20 components lower to `obix-dop-ir/3` with no deferral (`npm run trace`, `tests/obix/trace.test.ts`).
+  - The journey's screens were written within what the IR expresses today: prop types written inline, `data-*` attributes rather than a
+    bound class, and one event per control.
+  - Each limit worked around is reproduced in `docs/OBIX-GAPS.md`.
+- **The two paths agree on their sources.** The production build's `obix-runtime-manifest.json` lists every component by the SHA-256 of
+  its source, and a test checks that it equals the trace's list.
 
-Component interaction (a selector telling the app which instrument was chosen) became IR in OBIX C2 (`obix-dop-ir/2`: outputs, output steps and interactions). It was proven equivalent between OBIX's Vue and React frontends before AnyTune relied on it.
+## The tuner's inputs: the microphone, and the demo
 
-## The inputs: the microphone, and the demo
+The tuner composes two inputs (`src/harness/compose.ts`), each a `PitchFusionPort` that the session chooses between:
 
-The demo composes two inputs (`src/harness/compose.ts`). Each is a `PitchFusionPort` the session chooses between (`TuningSession.selectInput`, driven by an input selector in the `.obix` UI):
+- **Microphone.** `MicrophonePitchProvider` reads getUserMedia, then Web Audio, then an AnalyserNode, taking a frame every 50 ms for the
+  YIN detector, which produces a `PitchObservation`. It is fused by `InverseVarianceFusion`.
+  - The browser's APIs are injected: `src/harness/browser-audio.ts` alone names them.
+  - Its failures are states, said in words (`docs/MICROPHONE.md`).
+- **Demo (recorded / simulated)**, the default. It plays a recording of the acceptance sequence for Standard Guitar, a recording of 440 Hz
+  for Chromatic, and a simulation for the others. It needs no microphone.
 
-- **Microphone.** `MicrophonePitchProvider` (`src/audio/microphone-provider.ts`) sits behind the same `PitchProvider` contract as the simulated and recorded providers. It is fused by `InverseVarianceFusion`, with the microphone as its only source.
-  - The pipeline: getUserMedia → Web Audio → an AnalyserNode → a frame every 50 ms → the pure YIN detector (`src/audio/pitch-detector.ts`) → a `PitchObservation`.
-  - The browser's APIs are injected; `src/harness/browser-audio.ts` is the only code that names them, so the tests run the provider on a fake browser.
-  - Its failures are states from the domain's one list (`SOURCE_FAILURES`), said in words.
-  - Details: `docs/MICROPHONE.md`.
-- **Demo (recorded / simulated)**, the default. `src/harness/demo-input.ts` plays, at each Start, the input made for the chosen instrument: a recording of the acceptance sequence for Standard Guitar, a recording of 440 Hz for Chromatic, and a simulation of its first string for any other. It needs no Obicall, DLL or microphone.
+The page always says which input is supplying the measurements. The microphone is asked for only when the learner presses Start. Only one
+thing listens at a time: starting practice stops the tuner.
 
-The page always says which input is supplying the measurements (*Input: Microphone — …*, *Input: Recorded — … (simulated data)*, *Input: Simulated — …*). The microphone's permission is asked for only when the user has chosen it and pressed Start.
-
-Adding the microphone needed no change to the tuning domain's mathematics, the fusion's mathematics, or the logic of the `.obix` components. It added:
-
-- in the domain's ports, the input's description (`InputSource`), and the failures a microphone can have (an insecure page, an unsupported browser, a microphone that can't be opened, audio that can't start);
-- in the session, the choice of input;
-- in the UI, an input selector and a privacy statement.
-
-**Not done yet:** validation with a physical instrument (`docs/MICROPHONE.md`, *the manual acceptance test*). In production the microphone needs HTTPS, since `getUserMedia` requires a secure context; `localhost` counts as secure for development.
-
+Failures (permission denied, no device, a disconnection) are **states**, never exceptions thrown at the UI. In production the microphone
+needs HTTPS, because `getUserMedia` requires a secure context. The Android app serves its page from
+`https://appassets.androidplatform.net`, which is one.

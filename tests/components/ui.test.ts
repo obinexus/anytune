@@ -1,6 +1,6 @@
 /**
  * The UI, on the official Vue runtime (the demo's execution path) in a jsdom document: the components compiled by the OBIX Vue frontend show the view they are
- * given, in words as well as in form, and turn the user's intents into events. They never touch a provider, the fusion or Obicall — they only receive a view.
+ * given, in words as well as in form, and turn the user's intents into events. They never touch a provider, the fusion or native code — they only receive a view.
  */
 import '../support/dom.ts';
 import '../support/obix-loader.ts';

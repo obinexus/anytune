@@ -1,0 +1,17 @@
+{
+  "name": "anytune-import-worker",
+  "version": "0.1.0",
+  "private": true,
+  "description": "AnyTune's companion import worker: local media or a permitted URL -> audio -> transcription -> MIDI -> reference -> timed reference recording (through Polycall). Runs on a desktop host, never on the phone.",
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=26"
+  },
+  "scripts": {
+    "doctor": "node src/cli.ts doctor"
+  },
+  "dependencies": {
+    "@spotify/basic-pitch": "1.0.1"
+  }
+}

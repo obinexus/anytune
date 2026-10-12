@@ -3,3 +3,19 @@
 dist/
 node_modules/
 .native/
+native/.cache/
+native/windows-x86_64/
+native/android/
+native/include/
+native/licenses/
+# Polycall telemetry sink (written where polycall runs)
+.polycall/
+# Android build outputs and machine-local settings
+apps/android/.gradle/
+apps/android/build/
+apps/android/app/build/
+apps/android/app/.cxx/
+apps/android/local.properties
+# the import worker's own dependencies, and the learner's library (media, references, recordings): never committed
+services/import-worker/node_modules/
+library/

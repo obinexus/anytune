@@ -199,3 +199,1065 @@ button.stop {
     transition: none !important;
   }
 }
+
+/* ---------------------------------------------------------------------------------------------------------------------- the journey (the app shell) */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* a grid item never grows wider than the phone because of its content (a long option, a long word) */
+.anytune > *,
+.screen > *,
+.settings > * {
+  min-width: 0;
+}
+
+/*
+ * Native selects, readable in every state. The control has its own background and text colour (never transparent over the page), and so do its options:
+ * the list of options is drawn by the browser — or by Android — on its own surface, and an option that inherited the page's light text in dark mode was
+ * nearly white on a white list. Disabled is said by a dashed border and the muted colour, which keeps its contrast.
+ */
+select {
+  width: 100%;
+  max-width: 100%;
+  background-color: var(--paper);
+  color: var(--ink);
+}
+
+select option,
+select optgroup {
+  background-color: var(--paper);
+  color: var(--ink);
+}
+
+select:disabled {
+  color: var(--muted);
+  border-style: dashed;
+  cursor: not-allowed;
+}
+
+select option:disabled {
+  color: var(--muted);
+}
+
+.shell {
+  max-width: 56rem;
+  margin: 0 auto;
+}
+
+/*
+ * The header is in the page's flow — neither fixed nor sticky — so it takes its own height and can never cover the content below it or a control that
+ * receives the focus. It keeps clear of a notch or a status bar drawn over the page (the safe area).
+ */
+.app-header {
+  display: grid;
+  gap: 0.25rem;
+  padding: max(0.5rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right)) 0.5rem max(1rem, env(safe-area-inset-left));
+  border-bottom: 1px solid var(--muted);
+}
+
+.brand {
+  margin: 0;
+  font-weight: 700;
+}
+
+/* the six screens: one row when there is room, then three columns, then two — never wider than the screen, whatever the text size */
+.nav {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 0.25rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (max-width: 34rem) {
+  .nav {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 22rem) {
+  .nav {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.nav-item {
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0.25rem 0.15rem;
+  border-width: 1px;
+  overflow-wrap: anywhere;
+}
+
+.nav-item[aria-current='page'] {
+  border-width: 3px;
+  font-weight: 700;
+}
+
+.screen {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem max(1rem, env(safe-area-inset-right)) max(3rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
+}
+
+.screen h1 {
+  margin: 0;
+  font-size: 1.6rem;
+}
+
+.lead,
+.arrangement,
+.song-detail,
+.credit,
+.latency,
+.headphones,
+.microphone,
+.attempt,
+.when,
+.empty,
+.fretboard-caption {
+  margin: 0;
+  color: var(--muted);
+}
+
+.journey {
+  margin: 0;
+  padding-left: 1.5rem;
+  line-height: 1.8;
+}
+
+.primary {
+  width: 100%;
+  font-weight: 700;
+  font-size: 1.1rem;
+  min-height: 3.25rem;
+}
+
+.secondary-actions,
+.actions {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.songs,
+.attempts,
+.sentences,
+.bars {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.song {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border: 1px solid var(--muted);
+  border-radius: 0.5rem;
+}
+
+.song-title,
+.title,
+.attempt-title {
+  margin: 0;
+  font-weight: 700;
+}
+
+.import {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.import h2,
+.review h2 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.file {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.message {
+  margin: 0;
+  padding: 0.75rem;
+  border-left: 4px solid var(--focus);
+}
+
+details > summary {
+  min-height: 2.75rem;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.diagnostics p {
+  margin: 0.25rem 0;
+}
+
+/* ------------------------------------------------------------------------------------------------------------------------------------------ practise */
+
+.practice-body {
+  display: grid;
+  gap: 1rem;
+}
+
+.prompt {
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.75rem;
+  border: 2px solid currentColor;
+  border-radius: 0.75rem;
+}
+
+.prompt p {
+  margin: 0;
+}
+
+.prompt .current {
+  font-size: 2.25rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.prompt .position {
+  font-size: 1.05rem;
+}
+
+.prompt .next,
+.prompt .heard,
+.prompt .phase {
+  color: var(--muted);
+}
+
+.step-message {
+  font-weight: 700;
+}
+
+/* ---------------------------------------------------------------------------------------------------------------------------- the guitar, horizontal */
+
+.guitar {
+  display: grid;
+  gap: 0.75rem;
+}
+
+/* the supplied artwork, turned by its coordinates (src/app/guitar-view.ts): as wide as the column, never taller than 40 % of the screen's height */
+.artwork {
+  margin: 0;
+  display: grid;
+  gap: 0.25rem;
+}
+
+.artwork-svg {
+  display: block;
+  width: min(100%, 103vh);
+  height: auto;
+  margin-inline: auto;
+}
+
+.artwork-window {
+  fill: none;
+  stroke: var(--focus);
+  stroke-width: 10;
+}
+
+/* the enlarged fretboard: drawn at one unit per CSS pixel for the width it was given — the labels are never scaled down */
+.fretboard {
+  margin: 0;
+  display: grid;
+  gap: 0.25rem;
+}
+
+.fretboard-scroll {
+  overflow-x: auto;
+}
+
+.diagram {
+  display: block;
+  max-width: none;
+}
+
+.diagram .string {
+  stroke: var(--ink);
+  stroke-width: 2;
+}
+
+.diagram .fret {
+  stroke: var(--muted);
+  stroke-width: 3;
+}
+
+.diagram .fret[data-kind='nut'] {
+  stroke: var(--ink);
+  stroke-width: 8;
+}
+
+.diagram .string-name {
+  fill: var(--ink);
+  font-size: 18px;
+  font-weight: 700;
+  text-anchor: middle;
+}
+
+.diagram .fret-number {
+  fill: var(--ink);
+  font-size: 16px;
+  text-anchor: middle;
+}
+
+.diagram .string-mark {
+  fill: var(--ink);
+  font-size: 20px;
+  font-weight: 700;
+  text-anchor: middle;
+}
+
+.diagram .string-mark[data-kind='next'] {
+  fill: var(--muted);
+}
+
+/* string numbers: in squares, beside the string's name — never confused with a fret (below the board) or a finger (a circle) */
+.diagram .string-box {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 1.5;
+}
+
+.diagram .string-number {
+  fill: var(--ink);
+  font-size: 16px;
+  text-anchor: middle;
+}
+
+.diagram .fret-word,
+.diagram .capo-label {
+  fill: var(--muted);
+  font-size: 16px;
+  text-anchor: middle;
+}
+
+.diagram .capo-label {
+  fill: var(--ink);
+  font-weight: 700;
+}
+
+.diagram .fret[data-kind='capo'] {
+  stroke: var(--focus);
+  stroke-width: 10;
+}
+
+/* a note marker: a rounded box with the note's name — the target now solid ("Current"), the next outlined and dashed ("Next"): shape and fill, not colour
+   alone */
+.note-marker[data-kind='current'] {
+  fill: var(--focus);
+  stroke: var(--ink);
+  stroke-width: 2;
+}
+
+.note-marker[data-kind='next'] {
+  fill: var(--paper);
+  stroke: var(--focus);
+  stroke-width: 3;
+  stroke-dasharray: 5 3;
+}
+
+.note-name {
+  font-size: 16px;
+  font-weight: 700;
+  text-anchor: middle;
+  fill: var(--ink);
+}
+
+.note-name[data-kind='current'] {
+  fill: var(--paper);
+}
+
+/* a finger number: a filled circle on the marker's corner; an open string: 0 in a ring */
+.corner-badge[data-role='finger'] {
+  fill: var(--ink);
+  stroke: var(--paper);
+  stroke-width: 2;
+}
+
+.corner-badge[data-role='open'] {
+  fill: var(--paper);
+  stroke: var(--ink);
+  stroke-width: 2;
+}
+
+.corner-number {
+  font-size: 16px;
+  font-weight: 700;
+  text-anchor: middle;
+  fill: var(--paper);
+}
+
+.corner-number[data-role='open'] {
+  fill: var(--ink);
+}
+
+/* the guitar artwork's markers: a filled dot now, a dashed ring next */
+.artwork-svg .marker[data-kind='current'] {
+  fill: var(--focus);
+  stroke: var(--ink);
+  stroke-width: 6;
+}
+
+.artwork-svg .marker[data-kind='next'] {
+  fill: none;
+  stroke: var(--focus);
+  stroke-width: 8;
+  stroke-dasharray: 14 8;
+}
+
+.fretboard-instruction {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.fretboard-finger {
+  margin: 0;
+}
+
+/* the legend: a swatch drawn before each word — the same shapes as on the board */
+.fretboard-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1rem;
+  align-items: center;
+  color: var(--muted);
+}
+
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--ink);
+}
+
+.legend-item::before {
+  content: '';
+  display: inline-block;
+  width: 1.6rem;
+  height: 1rem;
+  border-radius: 0.5rem;
+  box-sizing: border-box;
+}
+
+.legend-item[data-kind='current']::before {
+  background: var(--focus);
+  border: 2px solid var(--ink);
+}
+
+.legend-item[data-kind='next']::before {
+  background: var(--paper);
+  border: 2px dashed var(--focus);
+}
+
+.legend-item[data-kind='finger']::before {
+  width: 1rem;
+  border-radius: 50%;
+  background: var(--ink);
+}
+
+.legend-item[data-kind='string']::before {
+  width: 1rem;
+  border-radius: 0.15rem;
+  border: 1.5px solid var(--ink);
+}
+
+.legend-caption {
+  flex-basis: 100%;
+}
+
+/* ------------------------------------------------------------------------------------------------------------------------------------------ settings */
+
+.settings {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0.75rem;
+  border: 1px solid var(--muted);
+  border-radius: 0.5rem;
+}
+
+.settings label {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.settings label.check {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2.75rem;
+}
+
+.check input {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.review {
+  display: grid;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border: 2px solid var(--in-tune);
+  border-radius: 0.75rem;
+}
+
+@media (forced-colors: active) {
+  .marker[data-kind='current'],
+  .note-marker[data-kind='current'] {
+    fill: Highlight;
+  }
+
+  .marker[data-kind='next'],
+  .note-marker[data-kind='next'],
+  .artwork-window {
+    stroke: Highlight;
+  }
+
+  .diagram .string,
+  .diagram .fret[data-kind='nut'] {
+    stroke: CanvasText;
+  }
+
+  .diagram .string-name,
+  .diagram .fret-number,
+  .diagram .string-mark {
+    fill: CanvasText;
+  }
+}
+
+/* ------------------------------------------------------------------------------------------------------------- the microphone check, the live word */
+
+.input-check {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border: 2px dashed var(--focus);
+  border-radius: 0.75rem;
+}
+
+.input-check[data-problem='true'] {
+  border-style: solid;
+  border-color: var(--sharp);
+}
+
+.input-text {
+  margin: 0;
+}
+
+.meter-label {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.meter-label meter {
+  width: 100%;
+  height: 1.25rem;
+}
+
+.meter-text {
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+/* the brief word on the last note: text, never only a colour */
+.prompt .live {
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.capture-alert {
+  margin: 0;
+  padding: 0.75rem;
+  border: 2px solid var(--sharp);
+  border-radius: 0.5rem;
+  font-weight: 700;
+}
+
+.capture-lines {
+  margin: 0;
+  padding-left: 1.25rem;
+  color: var(--muted);
+}
+
+.timing-line {
+  color: var(--muted);
+}
+
+/* ------------------------------------------------------------------------------------------------------------------------------------------------ play */
+
+.play-body {
+  display: grid;
+  gap: 1rem;
+}
+
+.play-choice {
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+}
+
+.play-choice label,
+.play-settings label {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.play-now {
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.75rem;
+  border: 2px solid currentColor;
+  border-radius: 0.75rem;
+}
+
+.play-now p {
+  margin: 0;
+}
+
+.play-now .current {
+  font-size: 2.5rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.play-now .phase,
+.play-now .next {
+  color: var(--muted);
+}
+
+.play-now .live {
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+/* the beat: words first ("Bar 3 · beat 2 of 3"), the dots repeat them; the current dot filled and a little larger — no other motion */
+.beat {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.beat-dot {
+  display: inline-block;
+  width: 0.9rem;
+  height: 0.9rem;
+  border: 2px solid var(--ink);
+  border-radius: 50%;
+  transition: transform 80ms ease-out;
+}
+
+.beat-dot[data-on='true'] {
+  background: var(--focus);
+  transform: scale(1.2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .beat-dot {
+    transition: none;
+  }
+
+  .beat-dot[data-on='true'] {
+    transform: none;
+  }
+}
+
+/* the timeline: drawn at one unit per CSS pixel; lanes are strings (high e on top), each prompt its fret */
+.timeline {
+  margin: 0;
+  overflow-x: auto;
+}
+
+.timeline-svg {
+  display: block;
+  max-width: none;
+}
+
+.timeline-svg .lane {
+  stroke: var(--muted);
+  stroke-width: 1.5;
+}
+
+.timeline-svg .beat-line {
+  stroke: var(--muted);
+  stroke-width: 1;
+  stroke-dasharray: 2 4;
+}
+
+.timeline-svg .bar-line {
+  stroke: var(--ink);
+  stroke-width: 2;
+}
+
+.timeline-svg .bar-number,
+.timeline-svg .lane-name,
+.timeline-svg .playhead-label {
+  fill: var(--ink);
+  font-size: 16px;
+  text-anchor: middle;
+}
+
+.timeline-svg .lane-name,
+.timeline-svg .playhead-label {
+  font-weight: 700;
+}
+
+.timeline-svg .lane-column {
+  fill: var(--paper);
+}
+
+/* past: faded; now: filled; next: dashed outline; later: outlined — shape and fill, not colour alone */
+.timeline-svg .prompt {
+  fill: var(--paper);
+  stroke: var(--ink);
+  stroke-width: 2;
+}
+
+.timeline-svg .prompt[data-kind='now'] {
+  fill: var(--focus);
+  stroke-width: 3;
+}
+
+.timeline-svg .prompt[data-kind='next'] {
+  stroke: var(--focus);
+  stroke-width: 3;
+  stroke-dasharray: 5 3;
+}
+
+.timeline-svg .prompt[data-kind='past'] {
+  opacity: 0.4;
+}
+
+.timeline-svg .prompt-text {
+  fill: var(--ink);
+  font-size: 16px;
+  font-weight: 700;
+  text-anchor: middle;
+}
+
+.timeline-svg .prompt-text[data-kind='now'] {
+  fill: var(--paper);
+}
+
+.timeline-svg .prompt-text[data-kind='past'] {
+  opacity: 0.4;
+}
+
+.timeline-svg .playhead {
+  stroke: var(--ink);
+  stroke-width: 3;
+}
+
+.transport {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+  gap: 0.5rem;
+}
+
+.song-progress {
+  margin: 0;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.song-progress progress {
+  width: 100%;
+  height: 0.75rem;
+}
+
+.progress-text {
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+.play-settings .settings {
+  margin-top: 0.5rem;
+}
+
+.play-settings input[type='range'] {
+  width: 100%;
+}
+
+@media (forced-colors: active) {
+  .timeline-svg .prompt[data-kind='now'] {
+    fill: Highlight;
+  }
+
+  .timeline-svg .lane,
+  .timeline-svg .bar-line,
+  .timeline-svg .playhead {
+    stroke: CanvasText;
+  }
+
+  .timeline-svg .bar-number,
+  .timeline-svg .lane-name,
+  .timeline-svg .playhead-label,
+  .timeline-svg .prompt-text {
+    fill: CanvasText;
+  }
+}
+
+.play-song {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.play-song h2 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+/* --------------------------------------------------------------------------------------------------------------------------- play: the mode switch */
+
+.mode-switch {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: 0.5rem;
+}
+
+.mode-switch .mode {
+  min-height: 2.75rem;
+}
+
+/* the mode in use: pressed, said by aria-pressed and shown by a filled button with a heavier edge — not by colour alone */
+.mode-switch .mode[aria-pressed='true'] {
+  background: var(--ink);
+  color: var(--paper);
+  border: 3px solid var(--ink);
+  font-weight: 700;
+}
+
+/* -------------------------------------------------------------------------------------------------------------------- follow my playing */
+
+.follow-body {
+  display: grid;
+  gap: 1rem;
+}
+
+.follow-now {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.75rem;
+  border: 2px solid currentColor;
+  border-radius: 0.75rem;
+}
+
+.follow-now[data-phase='input-paused'] {
+  border-style: dashed;
+  border-color: var(--sharp);
+}
+
+.follow-now p {
+  margin: 0;
+}
+
+/* where the learner is, and the session's time, kept apart: the target never moves with the clock */
+.follow-position {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.follow-position .target-count {
+  font-weight: 700;
+}
+
+.follow-position .session-time {
+  color: var(--muted);
+}
+
+.follow-now .phase,
+.follow-now .next {
+  color: var(--muted);
+}
+
+.follow-now .current {
+  font-size: 2.75rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.follow-now .instruction {
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+/* the finger, in words: apart from the note and the fret */
+.follow-now .finger-text {
+  font-style: italic;
+}
+
+/* what was heard: the words carry it; a symbol and the edge repeat it (✓ correct, ✗ another note, ? not clear) — the colour last of all */
+.follow-message {
+  padding: 0.5rem 0.75rem;
+  border: 2px solid var(--muted);
+  border-left-width: 0.5rem;
+  border-radius: 0.5rem;
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.follow-message[data-tone='correct'] {
+  border-color: var(--in-tune);
+}
+
+.follow-message[data-tone='wrong'] {
+  border-color: var(--sharp);
+}
+
+.follow-message[data-tone='unclear'],
+.follow-message[data-tone='paused'] {
+  border-style: dashed;
+}
+
+.follow-message[data-tone='correct']::before {
+  content: '✓ ';
+  content: '✓ ' / '';
+}
+
+.follow-message[data-tone='wrong']::before {
+  content: '✗ ';
+  content: '✗ ' / '';
+}
+
+.follow-message[data-tone='unclear']::before {
+  content: '? ';
+  content: '? ' / '';
+}
+
+.accompaniment-note {
+  margin: 0;
+  color: var(--muted);
+}
+
+.comparison {
+  margin: 0;
+  font-weight: 700;
+}
+
+.corrections {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+/* ----------------------------------------------------------------------------------------- the fretting hand's legend (an original drawing) */
+
+.hand-legend {
+  margin: 0;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.hand-svg {
+  width: 8rem;
+  height: auto;
+}
+
+.hand-shape {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 2;
+}
+
+.fingertip {
+  fill: var(--paper);
+  stroke: var(--ink);
+  stroke-width: 2;
+}
+
+/* the finger the target wants: filled, with a thicker ring */
+.fingertip[data-active='true'] {
+  fill: var(--focus);
+  stroke-width: 4;
+}
+
+.fingertip-number {
+  fill: var(--ink);
+  font-size: 16px;
+  font-weight: 700;
+  text-anchor: middle;
+}
+
+.fingertip-number[data-active='true'] {
+  fill: var(--paper);
+}
+
+.hand-caption {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.finger-name[data-active='true'] {
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+.hand-text {
+  color: var(--muted);
+}
+
+@media (max-width: 34rem) {
+  .hand-legend {
+    grid-template-columns: 1fr;
+    justify-items: center;
+  }
+
+  .follow-now .current {
+    font-size: 2.25rem;
+  }
+}
+
+@media (forced-colors: active) {
+  .mode-switch .mode[aria-pressed='true'] {
+    background: Highlight;
+    color: HighlightText;
+    border-color: Highlight;
+  }
+
+  .follow-message {
+    border-color: CanvasText;
+  }
+
+  .hand-shape,
+  .fingertip {
+    stroke: CanvasText;
+    fill: Canvas;
+  }
+
+  .fingertip[data-active='true'] {
+    fill: Highlight;
+  }
+
+  .fingertip-number {
+    fill: CanvasText;
+  }
+
+  .fingertip-number[data-active='true'] {
+    fill: HighlightText;
+  }
+}

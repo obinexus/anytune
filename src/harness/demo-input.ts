@@ -6,7 +6,7 @@
  *   Chromatic         a RECORDING: A4 at 440 Hz, four readings — the generic pitch model, with no string to capture it
  *   any other         a SIMULATION: the instrument's first string heard 30 cents flat, 18 cents sharp, then in tune, twice
  *
- * Every recording here is of the SIMULATED origin — made by AnyTune, not recorded from an instrument. The demo needs no Obicall, no DLL and no microphone. A
+ * Every recording here is of the SIMULATED origin — made by AnyTune, not recorded from an instrument. The demo needs no native library and no microphone. A
  * microphone is a later PitchProvider (docs/ARCHITECTURE.md, "The next adapter: MicrophonePitchProvider"); it replaces this input, and nothing else changes.
  */
 import type { FusionEvent, FusionState, InputSource, PitchFusionPort, Scheduler } from '../domain/ports.ts';

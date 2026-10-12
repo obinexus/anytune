@@ -1,0 +1,33 @@
+<script setup lang="ts">
+defineProps<{ library: { message: string; songs: { id: string; title: string; detail: string; selected: boolean; intent: string }[] } }>();
+// a file chosen is said, not carried: the harness reads it from its input (#midi-file, #obr-file) — files are the harness's, never the UI's
+const emit = defineEmits<{ (e: "choose", id: string): void; (e: "import-recording"): void; (e: "open-midi"): void; (e: "open-obr"): void }>();
+</script>
+
+<template>
+  <main class="screen library">
+    <h1>Library</h1>
+    <ul class="songs">
+      <li v-for="song in library.songs" :key="song.id" class="song">
+        <div class="song-text">
+          <p class="song-title">{{ song.title }}</p>
+          <p class="song-detail">{{ song.detail }}</p>
+        </div>
+        <button type="button" @click="emit('choose', song.id)">Practise</button>
+      </li>
+    </ul>
+    <section class="import" aria-labelledby="import-heading">
+      <h2 id="import-heading">Add music</h2>
+      <label class="file">
+        <span>Import a MIDI file</span>
+        <input id="midi-file" type="file" accept=".mid,.midi,audio/midi" @change="emit('open-midi')" />
+      </label>
+      <label class="file">
+        <span>Open an .obr recording</span>
+        <input id="obr-file" type="file" accept=".obr" @change="emit('open-obr')" />
+      </label>
+      <button type="button" @click="emit('import-recording')">Import a recording or a link</button>
+      <p v-if="library.message" class="message" role="status">{{ library.message }}</p>
+    </section>
+  </main>
+</template>

@@ -27,7 +27,19 @@
       "mayImport": [],
       "modules": [],
       "forbiddenGlobals": "domGlobals",
-      "why": "the musical tuning domain: pure, framework-neutral, testable without a browser, Vue, Obicall or a microphone"
+      "why": "the musical tuning domain: pure, framework-neutral, testable without a browser, Vue, Polycall or a microphone"
+    },
+    {
+      "name": "music",
+      "paths": [
+        "src/music/"
+      ],
+      "mayImport": [
+        "domain"
+      ],
+      "modules": [],
+      "forbiddenGlobals": "domGlobals",
+      "why": "the music model: MIDI files, tempo maps and timelines, references, chords, tunings and the guitar fretboard — pure, framework-neutral, with no microphone, subprocess, Polycall or DOM"
     },
     {
       "name": "instruments",
@@ -86,7 +98,93 @@
       ],
       "modules": [],
       "forbiddenGlobals": "domGlobals",
-      "why": "readers of foreign formats (the Obicall replay format); never a component, never the DOM"
+      "why": "readers and writers of file formats AnyTune keeps compatible with (the .obr journal), implemented here — never a component, never the DOM"
+    },
+    {
+      "name": "polycall-node",
+      "paths": [
+        "src/polycall/node/"
+      ],
+      "mayImport": [
+        "polycall"
+      ],
+      "modules": [
+        "node:net"
+      ],
+      "forbiddenGlobals": "domGlobals",
+      "why": "a Node transport of polycall_rpc v1 (TCP to a loopback Polycall runtime), for AnyTune's tools and import worker; never in the browser bundle"
+    },
+    {
+      "name": "polycall",
+      "paths": [
+        "src/polycall/"
+      ],
+      "mayImport": [],
+      "modules": [],
+      "forbiddenGlobals": "domGlobals",
+      "why": "Polycall's wire (polycall_rpc v1) and the transport port: framing and payloads only. Polycall connects components across languages and decides nothing musical"
+    },
+    {
+      "name": "recording",
+      "paths": [
+        "src/recording/"
+      ],
+      "mayImport": [
+        "polycall"
+      ],
+      "modules": [],
+      "forbiddenGlobals": "domGlobals",
+      "why": "anytune-recording/1: an independent codec (to check the recorder module) and the recorder client, which reaches the C recorder module through Polycall"
+    },
+    {
+      "name": "synthesis",
+      "paths": [
+        "src/synthesis/"
+      ],
+      "mayImport": [],
+      "modules": [],
+      "forbiddenGlobals": "domGlobals",
+      "why": "sound sources rendered from notes (Karplus-Strong plucked strings): reference playback that follows any tempo, and the analysis's test signals — never mistaken for a recording"
+    },
+    {
+      "name": "analysis",
+      "paths": [
+        "src/analysis/"
+      ],
+      "mayImport": [
+        "music",
+        "audio",
+        "domain"
+      ],
+      "modules": [],
+      "forbiddenGlobals": "domGlobals",
+      "why": "what the sound says, uncertainly: onsets, chroma and chord candidates of a declared vocabulary (refusing what is not in it), monophonic notes — pure frame processing, no microphone, no UI"
+    },
+    {
+      "name": "lesson",
+      "paths": [
+        "src/lesson/"
+      ],
+      "mayImport": [
+        "music",
+        "domain"
+      ],
+      "modules": [],
+      "forbiddenGlobals": "domGlobals",
+      "why": "practice: aligning what was heard with the arrangement (pitch and timing apart), feedback in words, the lesson clock (count-in, tempo, A-B loops, latency) and step mode — pure, with no microphone, DSP or Polycall"
+    },
+    {
+      "name": "import",
+      "paths": [
+        "src/import/"
+      ],
+      "mayImport": [
+        "music",
+        "domain"
+      ],
+      "modules": [],
+      "forbiddenGlobals": "domGlobals",
+      "why": "the import's decisions: which URLs are fetched and with which arguments, the job's stages, what is done with a transcription engine's notes and how they are scored — pure; the worker (services/import-worker) runs the subprocesses"
     },
     {
       "name": "app",
@@ -95,11 +193,15 @@
       ],
       "mayImport": [
         "domain",
-        "instruments"
+        "instruments",
+        "music",
+        "lesson",
+        "analysis",
+        "adapters"
       ],
       "modules": [],
       "forbiddenGlobals": "domGlobals",
-      "why": "the application service and its state: framework-neutral; providers and fusion are injected, never imported"
+      "why": "the application services and their state: the tuning session and the practice session (Listen, Practise, Review, Repeat), the views and the announcement policy — framework-neutral; providers, capture, playback and the recorder are injected as ports, never imported"
     },
     {
       "name": "components",
@@ -153,14 +255,18 @@
         "fusion",
         "adapters",
         "app",
-        "components"
+        "components",
+        "music",
+        "analysis",
+        "synthesis",
+        "polycall"
       ],
       "modules": [
         "vue",
         "#anytune-mount"
       ],
       "forbiddenGlobals": [],
-      "why": "the demo execution boundary: composes the layers and mounts the UI on the official Vue runtime — the one TypeScript place that may import vue; the browser entry picks the mount (#anytune-mount: the Vue harness by default, the native harness in --mode native)"
+      "why": "the execution boundary: composes the layers — the tuner, the journey's shell, practice audio (one AudioContext clock for capture and playback), the recorder through the Android bridge — and mounts the UI on the official Vue runtime; the one TypeScript place that may import vue (mount.ts) and touch the browser's APIs"
     },
     {
       "name": "styles",

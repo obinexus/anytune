@@ -4,7 +4,7 @@
  * so the tests exercise this very composition.
  *
  *   Microphone   MicrophonePitchProvider → InverseVarianceFusion (the microphone is its only source)
- *   Demo         DemoInput: a recording for Standard Guitar and Chromatic, a simulation for the others — no microphone, no Obicall
+ *   Demo         DemoInput: a recording for Standard Guitar and Chromatic, a simulation for the others — no microphone, no native code
  *
  * The demo is the input the page starts on: nothing asks for the microphone until the user chooses it and presses Start.
  */

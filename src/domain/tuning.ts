@@ -1,7 +1,7 @@
 /**
  * The tuning domain: what a pitch means for the instrument being tuned. An instrument's tuning is data (its strings, or none for a chromatic instrument); a
  * policy says how close is in tune and how sure a reading must be; `readPitch` turns one pitch into a reading — the target, the note, the cents, and flat / in
- * tune / sharp / uncertain — or into nothing when there is no signal. Pure: it knows no browser, no Vue, no Obicall and no microphone.
+ * tune / sharp / uncertain — or into nothing when there is no signal. Pure: it knows no browser, no Vue, no Polycall and no microphone.
  */
 import { centsBetween, midiToFrequency, nearestNote, noteOf } from './pitch.ts';
 

@@ -1,6 +1,6 @@
 /**
  * The tuning domain: a pitch observation, an instrument's tuning and a policy make a reading — the target, the note, the cents and flat / in tune / sharp /
- * uncertain — or no reading at all when there is no signal. Pure: no browser, no Vue, no Obicall, no microphone.
+ * uncertain — or no reading at all when there is no signal. Pure: no browser, no Vue, no Polycall, no microphone.
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';

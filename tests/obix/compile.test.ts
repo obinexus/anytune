@@ -16,15 +16,26 @@ import { checkObixImports } from '../../tools/obix/allowlist.ts';
 
 const ROOT = path.resolve(import.meta.dirname, '..', '..');
 
-test('the components of the directive, and no other: small components with one responsibility each', () => {
+test('the components, and no other: small components with one responsibility each — the tuner\'s, and the journey\'s shell with its screens', () => {
   assert.deepEqual(componentFiles(ROOT).map((f) => path.basename(f)), [
     'AnyTuneApp.obix',
+    'AnyTuneShell.obix',
     'ConfidenceIndicator.obix',
+    'FollowScreen.obix',
+    'FretboardDiagram.obix',
+    'GuitarArtwork.obix',
+    'HandLegend.obix',
+    'HomeScreen.obix',
     'InputSelector.obix',
     'InputStatus.obix',
     'InstrumentSelector.obix',
+    'LibraryScreen.obix',
     'NoteDisplay.obix',
     'PitchMeter.obix',
+    'PlayScreen.obix',
+    'PlayTimeline.obix',
+    'PracticeScreen.obix',
+    'ProgressScreen.obix',
     'TunerDisplay.obix',
     'TuningStatus.obix',
   ]);

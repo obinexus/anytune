@@ -1,7 +1,7 @@
 /**
  * A9 — the input of the browser demo (src/harness/demo-input.ts): a PitchFusionPort that, at each start, plays the input made for the chosen instrument —
  * a recording for Standard Guitar (the directive's acceptance sequence) and for Chromatic (A4 at 440 Hz), a simulation of its first string rising to pitch
- * for every other instrument — and says which. It needs no Obicall, no DLL and no microphone. The session, the domain and the UI are those of the application.
+ * for every other instrument — and says which. It needs no native library and no microphone. The session, the domain and the UI are those of the application.
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';

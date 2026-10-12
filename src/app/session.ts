@@ -1,7 +1,7 @@
 /**
  * The tuning session: AnyTune's application state, and the service that moves it. The user's intents (select an instrument, start, stop) and the fusion's
  * events are its only inputs; the state it publishes is plain, frozen data, the same for the same inputs. Framework-neutral — the UI reads it through a view
- * (view.ts) and the demo harness bridges it into the UI's reactivity. The fusion is injected: this layer never names a provider, an Obicall reader or Vue.
+ * (view.ts) and the demo harness bridges it into the UI's reactivity. The fusion is injected: this layer never names a provider, a format reader or Vue.
  */
 import type { FusionEvent, FusionState, PitchFusionPort } from '../domain/ports.ts';
 import { SOURCE_FAILURES } from '../domain/ports.ts';

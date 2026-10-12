@@ -36,6 +36,21 @@ test('what the current OBIX pipeline makes of each component: what it can expres
     PitchMeter: ['compiled', []],
     TunerDisplay: ['compiled', []],
     TuningStatus: ['compiled', []],
+    // the journey's shell and its screens: written within what the IR expresses today — prop types written inline, state shown as data-* attributes for
+    // the stylesheet rather than a bound class, one event per control — and lowered whole (docs/OBIX-GAPS.md says what was written around)
+    AnyTuneShell: ['compiled', []],
+    FretboardDiagram: ['compiled', []],
+    GuitarArtwork: ['compiled', []],
+    HomeScreen: ['compiled', []],
+    LibraryScreen: ['compiled', []],
+    // Follow my playing, and the fretting hand's legend (an original drawing)
+    FollowScreen: ['compiled', []],
+    HandLegend: ['compiled', []],
+    PlayScreen: ['compiled', []],
+    // Play's timeline: placed by bound SVG coordinates — the IR has no bound style (docs/OBIX-GAPS.md)
+    PlayTimeline: ['compiled', []],
+    PracticeScreen: ['compiled', []],
+    ProgressScreen: ['compiled', []],
   });
 });
 

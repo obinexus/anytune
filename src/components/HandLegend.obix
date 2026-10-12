@@ -1,0 +1,30 @@
+<script setup lang="ts">
+// which finger is which: an original drawing of the fretting hand (not the reference image the owner showed, which is stock artwork under a watermark),
+// its fingertips numbered 1 index, 2 middle, 3 ring, 4 little — the finger the target wants filled; the thumb stays behind the neck
+defineProps<{
+  hand: {
+    visible: boolean;
+    text: string;
+    fingers: { number: string; name: string; active: boolean; cx: number; cy: number; textY: number; key: string; textKey: string; nameKey: string }[];
+  };
+}>();
+</script>
+
+<template>
+  <figure class="hand-legend">
+    <svg class="hand-svg" viewBox="0 0 200 190" width="200" height="190" role="img" aria-label="The fretting hand: 1 index, 2 middle, 3 ring, 4 little finger; the thumb, unnumbered, stays behind the neck">
+      <rect class="hand-shape" x="46" y="98" width="112" height="80" rx="28" />
+      <rect class="hand-shape" x="48" y="40" width="22" height="80" rx="11" />
+      <rect class="hand-shape" x="76" y="26" width="22" height="94" rx="11" />
+      <rect class="hand-shape" x="104" y="34" width="22" height="86" rx="11" />
+      <rect class="hand-shape" x="132" y="54" width="20" height="66" rx="10" />
+      <rect class="hand-shape" x="14" y="112" width="20" height="58" rx="10" transform="rotate(-35 24 141)" />
+      <circle v-for="finger in hand.fingers" :key="finger.key" class="fingertip" :data-active="finger.active" :cx="finger.cx" :cy="finger.cy" r="13" />
+      <text v-for="finger in hand.fingers" :key="finger.textKey" class="fingertip-number" :data-active="finger.active" :x="finger.cx" :y="finger.textY" aria-hidden="true">{{ finger.number }}</text>
+    </svg>
+    <figcaption class="hand-caption">
+      <span v-for="finger in hand.fingers" :key="finger.nameKey" class="finger-name" :data-active="finger.active">{{ finger.number }} = {{ finger.name }}</span>
+      <span class="hand-text">{{ hand.text }}</span>
+    </figcaption>
+  </figure>
+</template>

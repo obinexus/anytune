@@ -1,2 +1,17 @@
-# Obicall replay recordings are binary: never convert their line endings (a CRLF conversion would tear every record)
+# .obr journals are binary: never convert their line endings (a CRLF conversion would tear every record)
 *.obr binary
+
+# Standard MIDI Files are binary
+*.mid binary
+*.midi binary
+
+# shell scripts run on Linux and in WSL: always LF; Windows batch files: CRLF
+gradlew text eol=lf
+*.sh text eol=lf
+*.bat text eol=crlf
+
+# supplied artwork is kept byte for byte: never a line-ending conversion
+assets/instruments/**/*.svg -text
+
+# generated data module: kept byte for byte (it carries the artwork base64)
+src/harness/assets.generated.ts -text
