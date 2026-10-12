@@ -2,7 +2,8 @@
  * Play on the page — the Play screen in the journey's shell, on the Vue runtime and on OBIX's native runtime, in jsdom, through the real ShellApp, play
  * session, views and components (tests/support/shell-harness.ts fakes only the audio device and the display's frames): the navigation's six screens; the
  * song and the arrangement; what to play now, big; the timeline's prompts arriving at a stationary "Now"; Play, Pause, Resume, Restart and Stop; a tempo
- * change; Play with feedback after the microphone check — and none without.
+ * change; Play with feedback after the microphone check — and none without. Play opens on Follow my playing (tests/components/follow.test.ts); these tests
+ * switch to Play along, the mode that keeps time.
  */
 import '../support/dom.ts';
 import '../support/obix-loader.ts';
@@ -20,6 +21,7 @@ for (const runtime of RUNTIMES) {
   async function playScreen(): Promise<Ui> {
     const ui = shellUi(runtime);
     await ui.click(ui.button('Play'));
+    await ui.click(ui.button('Play along (keeps time)'));
     return ui;
   }
 
@@ -46,7 +48,7 @@ for (const runtime of RUNTIMES) {
     assert.deepEqual(ui.texts('.play-choice label:nth-child(2) option'), ['Guitar — melody (octave lower)']);
     assert.equal(ui.text('.play-now .current'), 'First: E4');
     assert.equal(ui.text('.play-now .position'), 'high E string, open — a suggestion');
-    assert.equal(ui.text('.play-now .next'), 'Then: D#4');
+    assert.equal(ui.text('.play-now .next'), 'Then: D♯4');
     assert.equal(ui.text('.playhead-label'), 'Now');
     assert.deepEqual(ui.texts('.lane-name'), ['e', 'B', 'G', 'D', 'A', 'E']);
     const first = ui.$('.timeline-svg .prompt');

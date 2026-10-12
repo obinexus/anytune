@@ -83,17 +83,22 @@ for (const runtime of RUNTIMES) {
     assert.equal(ui.text('.phase'), 'Press Start: the microphone is checked first — pluck a string — then a count-in, and play along.');
     assert.equal(ui.text('.current'), 'First: E4');
     assert.match(ui.text('.position'), /^high E string, open — a suggestion$/);
-    assert.equal(ui.text('.next'), 'Then: D#4');
-    // the enlarged fretboard: the first note is the open high e (○ before the nut), the next D#4 a dashed preview at fret 4 with its finger, at one unit per px
+    assert.equal(ui.text('.next'), 'Then: D♯4');
+    // the enlarged fretboard: the current note is the open high e — its name on a solid marker beside the nut, its corner 0; the next, D♯4, an outlined
+    // marker at fret 4 of the B string with the little finger (4) on its corner — drawn at one unit per px
     const diagram = ui.$('svg.diagram');
-    assert.deepEqual(ui.$$('svg.diagram circle.marker').map((m) => m.dataset['kind']), ['next']);
-    assert.deepEqual(ui.$$('svg.diagram .open-mark').map((m) => m.dataset['kind']), ['now'], 'the open string: a ring before the nut');
+    assert.equal(ui.text('.fretboard-instruction'), 'Play E4 — high E string, open (0).');
+    assert.equal(ui.text('.fretboard-finger'), 'No finger: an open string — a suggestion');
+    assert.deepEqual(ui.$$('svg.diagram .note-marker').map((m) => m.dataset['kind']), ['current', 'next']);
+    assert.deepEqual(ui.texts('svg.diagram .note-name'), ['E4', 'D♯4']);
+    assert.deepEqual(ui.$$('svg.diagram .corner-number').map((m) => [m.dataset['role'], m.textContent]), [['open', '0'], ['finger', '4']]);
     assert.equal(ui.$$('svg.diagram .string-mark').length, 0, 'no muted strings for a single note');
-    assert.deepEqual(ui.$$('svg.diagram .finger').map((m) => m.textContent), ['4']);
-    assert.deepEqual(ui.$$('svg.diagram .string-name').map((m) => m.textContent), ['e', 'B', 'G', 'D', 'A', 'E']);
-    assert.deepEqual(ui.$$('svg.diagram .fret-number').map((m) => m.textContent), ['', '1', '2', '3', '4']);
+    assert.deepEqual(ui.texts('svg.diagram .string-number'), ['1', '2', '3', '4', '5', '6']);
+    assert.deepEqual(ui.texts('svg.diagram .string-name'), ['e', 'B', 'G', 'D', 'A', 'E']);
+    assert.deepEqual(ui.texts('svg.diagram .fret-number'), ['', '1', '2', '3', '4']);
+    assert.deepEqual(ui.texts('.fretboard-legend .legend-item'), ['Current: E4', 'Next: D♯4', 'Finger number', 'String number']);
     assert.equal(diagram.getAttribute('viewBox'), `0 0 ${diagram.getAttribute('width')} ${diagram.getAttribute('height')}`, 'one unit per CSS pixel');
-    assert.match(diagram.getAttribute('aria-label') ?? '', /Now: E4, high E string, open — a suggestion\. Next: D#4, B string, fret 4, little finger \(4\) — a suggestion\./);
+    assert.match(diagram.getAttribute('aria-label') ?? '', /Current: Play E4 — high E string, open \(0\)\. No finger: an open string — a suggestion\. Next: D♯4 — B string, fret 4\./);
     // the artwork, horizontal: the image and the markers under one transformation, the whole drawing decorative (the words and the fretboard carry it)
     const artwork = ui.$('.artwork-svg');
     assert.equal(artwork.getAttribute('aria-hidden'), 'true');

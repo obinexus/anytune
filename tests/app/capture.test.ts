@@ -81,6 +81,6 @@ test('the input check: ready on the first clearly heard note — and only then; 
 
   // an onset with no pitch: unclear
   const c4 = new InputCheck(0);
-  const v4 = c4.update(faint, 6, [{ kind: 'unclear', time: 5.9, strength: 0.2 }]);
+  const v4 = c4.update(faint, 6, [{ kind: 'unclear', time: 5.9, strength: 0.2, observations: [] }]);
   assert.deepEqual(v4, { kind: 'checking', hint: 'unclear' });
 });

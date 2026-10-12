@@ -10,7 +10,7 @@ import assert from 'node:assert/strict';
 import type { LiveEvent } from '../../src/analysis/live.ts';
 import { melodyArrangement } from '../../src/app/arrangement.ts';
 import { PlaySession } from '../../src/app/play.ts';
-import { TIMELINE, timelineView } from '../../src/app/play-view.ts';
+import { playTimelineInput, TIMELINE, timelineView } from '../../src/app/play-view.ts';
 import type { Playback } from '../../src/app/practice.ts';
 import { PlayClock, beatGrid } from '../../src/lesson/play-clock.ts';
 import { furElise } from '../support/fur-elise.ts';
@@ -81,7 +81,7 @@ test('pause, resume, a tempo change and a restart: every note sounds once, when 
       const before = playback.sounded().length;
       play.tick(now);
       // a note that has just sounded: its prompt is where "Now" is, less the real time since it sounded (the timeline runs at a fixed real speed)
-      const view = timelineView(play.getState(), 360);
+      const view = timelineView(playTimelineInput(play.getState()), 360);
       for (const n of playback.sounded().slice(0, before)) {
         if (n.at > now - FRAME && n.at <= now) {
           const target = arrangement.targets.find((t) => t.key === n.key && Math.abs((play.getState().position - t.time) - (now - n.at) * play.getState().settings.tempoFactor) < 1e-6);
@@ -151,7 +151,7 @@ test('the song times of the sounded notes are exactly their targets\' times, rea
 });
 
 /** A learner, heard: each note as the live analysis would report it, at its capture time. */
-const heard = (time: number, key: number): LiveEvent => ({ kind: 'note', time, key, cents: 2, confidence: 0.9 });
+const heard = (time: number, key: number): LiveEvent => ({ kind: 'note', time, key, cents: 2, confidence: 0.9, observations: [] });
 
 test('feedback in Play: judged against the arrangement as the song passes; a note heard during a pause is no part of it; only what the capture covered counts', () => {
   const reference = furElise();
@@ -226,7 +226,7 @@ test('what is "now": the note at the playhead while it sounds; in a rest, nothin
   const rest = (release(note.id) + coming.time) / 2;
   play.tick(audioAt(rest));
   assert.deepEqual([play.getState().current?.id, play.getState().atPlayhead], [coming.id, false]);
-  const view = timelineView(play.getState(), 360);
+  const view = timelineView(playTimelineInput(play.getState()), 360);
   assert.equal(view.prompts.find((p) => p.key === `prompt-${coming.id}`)?.kind, 'next');
   assert.equal(view.prompts.filter((p) => p.kind === 'now').length, 0, 'nothing filled at "Now" in a rest');
 });

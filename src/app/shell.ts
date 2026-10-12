@@ -132,6 +132,18 @@ export class Shell {
     this.#set({ attempts: [{ songTitle: song.reference.song.title, when: this.#now(), text }, ...this.#state.attempts] });
   }
 
+  /** The song chosen, made again — after a setting its arrangement depends on (the capo) changed; the screen stays. */
+  rebuild(): void {
+    const song = this.#state.songs.find((s) => s.id === this.#state.selected);
+    if (song === undefined) return;
+    this.#offPractice?.();
+    const session = this.#factory(song);
+    const serial = ++this.#serial;
+    this.#practice = session;
+    this.#offPractice = session.subscribe((p) => this.#watch(song, p, serial));
+    this.#set({});
+  }
+
   /** A finished run of Play, listed in Progress. */
   addAttempt(songTitle: string, text: string): void {
     this.#set({ attempts: [{ songTitle, when: this.#now(), text }, ...this.#state.attempts] });

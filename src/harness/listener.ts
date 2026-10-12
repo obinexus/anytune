@@ -11,7 +11,7 @@
  *
  * Renders are coalesced to the display's frame: the meter does not re-render the page for each of the ~47 frames a second.
  */
-import { LiveAnalyser, type LiveEvent } from '../analysis/live.ts';
+import { LiveAnalyser, type LiveEvent, type LiveOptions } from '../analysis/live.ts';
 import { CaptureMonitor, type CaptureSummary } from '../app/capture.ts';
 import { InputCheck } from '../app/input-check.ts';
 import type { CaptureInfo, InputState } from '../app/input-view.ts';
@@ -43,6 +43,8 @@ export class Listener {
   #last: CaptureRecord | null = null;
   #renderPending: (() => void) | null = null;
   #hadProblem = false;
+  /** how the analysis listens: notes or chords, the observation window — set at open() */
+  #analysis: Partial<LiveOptions> = {};
   /** where the analysis events go while listening */
   onEvents: ((events: readonly LiveEvent[]) => void) | null = null;
 
@@ -78,15 +80,16 @@ export class Listener {
     this.#changed();
   }
 
-  /** Open the microphone and check it: the learner plucks a string. */
-  async open(processing = false): Promise<void> {
+  /** Open the microphone and check it: the learner plucks a string. `analysis`: what the analysis listens for, and its observation window. */
+  async open(processing = false, analysis: Partial<LiveOptions> = this.#analysis): Promise<void> {
+    this.#analysis = analysis;
     if (this.#state.kind === 'requesting' || this.#state.kind === 'listening') return;
     this.#close(false);
     this.#last = null;
     this.#set({ kind: 'requesting' });
     const audio = this.#audio;
     const monitor = new CaptureMonitor(audio.sampleRate);
-    const analyser = new LiveAnalyser({ sampleRate: audio.sampleRate, listenFor: 'notes' });
+    const analyser = new LiveAnalyser({ listenFor: 'notes', ...analysis, sampleRate: audio.sampleRate });
     this.#monitor = monitor;
     this.#check = new InputCheck(audio.now());
     this.#loudestDb = Number.NEGATIVE_INFINITY;
@@ -142,6 +145,12 @@ export class Listener {
     this.#hadProblem = false;
     this.#set({ kind: 'listening', processing: s.processing });
     return this.#monitor;
+  }
+
+  /** While listening: whether the capture is delivering sound now — frames arriving, not digital silence, the device not ended. */
+  healthy(now: number): boolean {
+    const m = this.#monitor;
+    return this.#state.kind === 'listening' && m !== null && m.endedAt === null && m.stalledFor(now) < STALL_SECONDS && m.silentFor() < SILENT_SECONDS;
   }
 
   /** While listening: what is wrong with the capture now, in words, or '' — and, after a problem has passed, that assessment has resumed. */

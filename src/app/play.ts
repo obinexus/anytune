@@ -12,7 +12,7 @@
  * to and no score of any kind is given.
  */
 import type { LiveEvent } from '../analysis/live.ts';
-import { noteOf } from '../domain/pitch.ts';
+import { noteName } from './guitar-view.ts';
 import { DEFAULT_POLICY, assessNotes, unassessedWhereUnheard, type HeardNote, type NoteResult } from '../lesson/assessment.ts';
 import { feedbackOf, type Feedback } from '../lesson/feedback.ts';
 import { PlayClock, beatGrid, type Beat } from '../lesson/play-clock.ts';
@@ -315,7 +315,7 @@ export class PlaySession {
     for (const t of this.#targets) if (Math.abs(t.time - note.time) <= DEFAULT_POLICY.windowSeconds && (nearest === null || Math.abs(t.time - note.time) < Math.abs(nearest.time - note.time))) nearest = t;
     if (nearest === null) return null;
     if (!(note.confidence >= DEFAULT_POLICY.minConfidence)) return 'I could not hear that one clearly';
-    const label = noteOf(nearest.key).label;
+    const label = noteName(nearest.key);
     if (note.key !== nearest.key) return (note.key - nearest.key) % 12 === 0 ? `Right note, other octave — try ${label}` : `Try ${label}`;
     const dt = note.time - nearest.time;
     return Math.abs(dt) <= DEFAULT_POLICY.onTimeSeconds ? 'On time' : dt < 0 ? 'A little early' : 'A little late';

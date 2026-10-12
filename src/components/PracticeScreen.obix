@@ -17,6 +17,7 @@ defineProps<{
     toBarOptions: { value: string; label: string; selected: boolean }[];
     modeOptions: { value: string; label: string; selected: boolean }[];
     handOptions: { value: string; label: string; selected: boolean }[];
+    capoOptions: { value: string; label: string; selected: boolean }[];
     metronome: boolean;
     playReference: boolean;
     countInText: string;
@@ -39,12 +40,19 @@ defineProps<{
         hand: string;
         caption: string;
         description: string;
+        instruction: string;
+        fingerText: string;
+        currentName: string;
+        nextName: string;
+        nextInstruction: string;
         strings: { x1: number; y1: number; x2: number; y2: number; label: string; labelX: number; labelY: number; kind: string; key: string; labelKey: string }[];
+        stringLabels: { y: number; number: string; boxX: number; boxY: number; numberX: number; name: string; nameX: number; textY: number; key: string; numberKey: string; nameKey: string }[];
         frets: { x1: number; y1: number; x2: number; y2: number; label: string; labelX: number; labelY: number; kind: string; key: string; labelKey: string }[];
-        markers: { x: number; y: number; textY: number; kind: string; label: string; key: string; labelKey: string }[];
-        marks: { x: number; y: number; textY: number; kind: string; state: string; label: string; key: string }[];
-        opens: { x: number; y: number; kind: string; key: string }[];
+        markers: { x: number; y: number; width: number; height: number; kind: string; text: string; textX: number; textY: number; key: string; textKey: string }[];
+        badges: { cx: number; cy: number; textY: number; kind: string; role: string; label: string; key: string; textKey: string }[];
         mutes: { x: number; textY: number; kind: string; key: string }[];
+        fretWord: { x: number; y: number };
+        capoLabel: { text: string; x: number; y: number };
       };
       artwork: {
         url: string;
@@ -80,6 +88,7 @@ const emit = defineEmits<{
   (e: "to", value: string): void;
   (e: "mode", value: string): void;
   (e: "hand", value: string): void;
+  (e: "capo", value: string): void;
   (e: "metronome", on: boolean): void;
   (e: "reference", on: boolean): void;
 }>();
@@ -98,6 +107,9 @@ function onMode(event: Event): void {
 }
 function onHand(event: Event): void {
   emit("hand", (event.target as HTMLSelectElement).value);
+}
+function onCapo(event: Event): void {
+  emit("capo", (event.target as HTMLSelectElement).value);
 }
 function onMetronome(event: Event): void {
   emit("metronome", (event.target as HTMLInputElement).checked);
@@ -184,6 +196,11 @@ function onReference(event: Event): void {
         <label>Guitar
           <select @change="onHand">
             <option v-for="o in practice.handOptions" :key="o.value" :value="o.value" :selected="o.selected">{{ o.label }}</option>
+          </select>
+        </label>
+        <label>Capo
+          <select @change="onCapo">
+            <option v-for="o in practice.capoOptions" :key="o.value" :value="o.value" :selected="o.selected">{{ o.label }}</option>
           </select>
         </label>
         <label class="check"><input type="checkbox" :checked="practice.metronome" @change="onMetronome" /> Metronome click</label>

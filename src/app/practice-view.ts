@@ -6,10 +6,10 @@
  * kind. The review says how much was assessed, what the capture delivered, and — only when there is enough to go on — which bar to repeat.
  */
 import type { NoteResult } from '../lesson/assessment.ts';
-import { noteOf } from '../domain/pitch.ts';
 import type { FretboardMap } from '../music/fretboard.ts';
 import { captureText, type CaptureSummary } from './capture.ts';
-import { guitarView, shapeText, type GuitarView, type Shape } from './guitar-view.ts';
+import { guitarView, noteName, shapeText, type GuitarView, type Shape } from './guitar-view.ts';
+import { capoOptions } from './capo.ts';
 import type { InputView } from './input-view.ts';
 import type { PracticeState, Target } from './practice.ts';
 
@@ -45,6 +45,7 @@ export interface PracticeView {
   readonly toBarOptions: readonly Option[];
   readonly modeOptions: readonly Option[];
   readonly handOptions: readonly Option[];
+  readonly capoOptions: readonly Option[];
   readonly metronome: boolean;
   readonly playReference: boolean;
   readonly countInText: string;
@@ -86,7 +87,7 @@ export function positionText(t: Target | null): string {
   return shapeText(shapeOf(t));
 }
 
-const noteText = (t: Target | null): string => (t === null ? '' : noteOf(t.key).label);
+const noteText = (t: Target | null): string => (t === null ? '' : noteName(t.key));
 
 export interface PracticeViewContext {
   readonly map: FretboardMap;
@@ -124,7 +125,7 @@ export function toPracticeView(state: PracticeState | null, ctx: PracticeViewCon
   if (state === null) {
     return {
       available: false, title: '', arrangementText: 'Choose a song in the Library to practise it.', phase: 'none', phaseText: '', running: false, canConfigure: false,
-      tempoOptions: [], fromBarOptions: [], toBarOptions: [], modeOptions: [], handOptions: [], metronome: false, playReference: false, countInText: '', currentText: '',
+      tempoOptions: [], fromBarOptions: [], toBarOptions: [], modeOptions: [], handOptions: [], capoOptions: [], metronome: false, playReference: false, countInText: '', currentText: '',
       positionText: '', nextText: '', heardText: '', stepMessage: '', liveText: '', input: ctx.input,
       controls: { start: false, startLabel: 'Start', begin: false, cancel: false, free: false, stop: false, listen: false }, alertText: '', headphonesText: '', timing: ctx.timing,
       guitar: guitarView(ctx.map, ctx.artworkUrl, null, null, ctx.width, hand), announcement: '',
@@ -171,13 +172,14 @@ export function toPracticeView(state: PracticeState | null, ctx: PracticeViewCon
       { value: 'right', label: 'Right-handed', selected: !ctx.leftHanded },
       { value: 'left', label: 'Left-handed', selected: ctx.leftHanded },
     ],
+    capoOptions: capoOptions(state.tuning.capo),
     metronome: s.metronome,
     playReference: s.playReference,
     countInText: state.phase === 'count-in' ? `Starting in ${Math.ceil(state.secondsToStart ?? 0)}` : '',
     currentText: state.current === null ? (state.phase === 'reviewing' ? '' : '—') : `${state.phase === 'ready' || state.phase === 'reviewing' ? 'First' : 'Now'}: ${noteText(state.current)}`,
     positionText: positionText(state.current),
     nextText: state.next === null ? '' : `Then: ${noteText(state.next)}`,
-    heardText: last === undefined || !running ? '' : `Heard ${noteOf(last.key).label}${Math.abs(last.cents) >= 5 ? `, ${Math.abs(Math.round(last.cents))} cents ${last.cents < 0 ? 'flat' : 'sharp'}` : ''}`,
+    heardText: last === undefined || !running ? '' : `Heard ${noteName(last.key)}${Math.abs(last.cents) >= 5 ? `, ${Math.abs(Math.round(last.cents))} cents ${last.cents < 0 ? 'flat' : 'sharp'}` : ''}`,
     stepMessage: state.stepMessage ?? '',
     liveText: running && state.assessing ? state.liveText : '',
     input: ctx.input,
@@ -193,7 +195,7 @@ export function toPracticeView(state: PracticeState | null, ctx: PracticeViewCon
     alertText: running && state.assessing ? ctx.alertText : '',
     headphonesText: s.playReference ? 'Use headphones: if the microphone hears the speaker, it can mistake the reference for you.' : '',
     timing: ctx.timing,
-    guitar: guitarView(ctx.map, ctx.artworkUrl, shapeOf(state.current), shapeOf(state.next), ctx.width, hand),
+    guitar: guitarView(ctx.map, ctx.artworkUrl, shapeOf(state.current), shapeOf(state.next), ctx.width, hand, state.tuning),
     announcement:
       state.phase === 'ready' ? ''
       : state.phase === 'count-in' ? 'Count-in'

@@ -7,6 +7,7 @@ import PlayTimeline from "./PlayTimeline.obix";
 defineProps<{
   play: {
     available: boolean;
+    modes: { value: string; label: string; pressed: string; key: string }[];
     title: string;
     songOptions: { value: string; label: string; selected: boolean }[];
     arrangementOptions: { value: string; label: string; selected: boolean }[];
@@ -43,12 +44,19 @@ defineProps<{
         hand: string;
         caption: string;
         description: string;
+        instruction: string;
+        fingerText: string;
+        currentName: string;
+        nextName: string;
+        nextInstruction: string;
         strings: { x1: number; y1: number; x2: number; y2: number; label: string; labelX: number; labelY: number; kind: string; key: string; labelKey: string }[];
+        stringLabels: { y: number; number: string; boxX: number; boxY: number; numberX: number; name: string; nameX: number; textY: number; key: string; numberKey: string; nameKey: string }[];
         frets: { x1: number; y1: number; x2: number; y2: number; label: string; labelX: number; labelY: number; kind: string; key: string; labelKey: string }[];
-        markers: { x: number; y: number; textY: number; kind: string; label: string; key: string; labelKey: string }[];
-        marks: { x: number; y: number; textY: number; kind: string; state: string; label: string; key: string }[];
-        opens: { x: number; y: number; kind: string; key: string }[];
+        markers: { x: number; y: number; width: number; height: number; kind: string; text: string; textX: number; textY: number; key: string; textKey: string }[];
+        badges: { cx: number; cy: number; textY: number; kind: string; role: string; label: string; key: string; textKey: string }[];
         mutes: { x: number; textY: number; kind: string; key: string }[];
+        fretWord: { x: number; y: number };
+        capoLabel: { text: string; x: number; y: number };
       };
       artwork: {
         url: string;
@@ -66,7 +74,7 @@ defineProps<{
     };
     controls: { play: boolean; playLabel: string; feedback: boolean; feedbackLabel: string; begin: boolean; cancel: boolean; pause: boolean; resume: boolean; restart: boolean; stop: boolean };
     input: { state: string; text: string; problem: boolean; meter: { visible: boolean; value: number; text: string } };
-    settings: { tempoOptions: { value: string; label: string; selected: boolean }[]; referenceVolume: string; clickVolume: string; metronome: boolean; handOptions: { value: string; label: string; selected: boolean }[] };
+    settings: { tempoOptions: { value: string; label: string; selected: boolean }[]; referenceVolume: string; clickVolume: string; metronome: boolean; handOptions: { value: string; label: string; selected: boolean }[]; capoOptions: { value: string; label: string; selected: boolean }[] };
     timing: string[];
     review: { visible: boolean; sentences: string[]; capture: string[] };
     announcement: string;
@@ -76,6 +84,8 @@ defineProps<{
 
 // one event per control — the play session does the rest
 const emit = defineEmits<{
+  (e: "mode", value: string): void;
+  (e: "capo", value: string): void;
   (e: "song", id: string): void;
   (e: "start"): void;
   (e: "feedback"): void;
@@ -107,6 +117,9 @@ function onClickVolume(event: Event): void {
 function onMetronome(event: Event): void {
   emit("metronome", (event.target as HTMLInputElement).checked);
 }
+function onCapo(event: Event): void {
+  emit("capo", (event.target as HTMLSelectElement).value);
+}
 function onHand(event: Event): void {
   emit("hand", (event.target as HTMLSelectElement).value);
 }
@@ -115,6 +128,9 @@ function onHand(event: Event): void {
 <template>
   <main class="screen play">
     <h1>Play</h1>
+    <div class="mode-switch" role="group" aria-label="How to play">
+      <button v-for="mode in play.modes" :key="mode.key" type="button" class="mode" :aria-pressed="mode.pressed" @click="emit('mode', mode.value)">{{ mode.label }}</button>
+    </div>
     <p v-if="play.available" class="title">{{ play.title }}</p>
     <p class="arrangement">{{ play.arrangementText }}</p>
     <div v-if="play.available" class="play-body">
@@ -197,6 +213,11 @@ function onHand(event: Event): void {
             <input type="range" min="0" max="100" step="5" :value="play.settings.clickVolume" @input="onClickVolume" />
           </label>
           <label class="check"><input type="checkbox" :checked="play.settings.metronome" @change="onMetronome" /> Metronome click</label>
+          <label>Capo
+            <select :disabled="play.playing" @change="onCapo">
+              <option v-for="o in play.settings.capoOptions" :key="o.value" :value="o.value" :selected="o.selected">{{ o.label }}</option>
+            </select>
+          </label>
           <label>Guitar
             <select @change="onHand">
               <option v-for="o in play.settings.handOptions" :key="o.value" :value="o.value" :selected="o.selected">{{ o.label }}</option>

@@ -8,10 +8,11 @@
  * it). Wall-clock time is metadata only.
  */
 import type { LiveEvent } from '../analysis/live.ts';
-import { noteOf } from '../domain/pitch.ts';
+import { noteName } from './guitar-view.ts';
 import { DEFAULT_POLICY, assessNotes, unassessedWhereUnheard, type HeardNote, type NoteResult } from '../lesson/assessment.ts';
 import { feedbackOf, type Feedback } from '../lesson/feedback.ts';
 import { LessonClock, StepPractice, barOfTick, targetsIn } from '../lesson/practice.ts';
+import type { GuitarTuning } from '../music/guitar.ts';
 import { melodyArrangement, type Target } from './arrangement.ts';
 import { tempoMapOf, type Reference } from '../music/reference.ts';
 
@@ -54,6 +55,8 @@ export interface PracticeState {
   readonly title: string;
   readonly arrangementText: string;
   readonly octaveShift: number;
+  /** the tuning the positions are for, capo included */
+  readonly tuning: GuitarTuning;
   readonly settings: PracticeSettings;
   readonly bars: number;
   readonly targets: readonly Target[];
@@ -129,19 +132,20 @@ export class PracticeSession {
   /** the latest event time queued: every event's t is at least this, so the attempt's events never go back in time */
   #lastT = 0;
 
-  constructor(reference: Reference, track: number, options: { readonly pickupTicks?: number; readonly playback?: Playback | null; readonly store?: AttemptStore | null; readonly storeUnavailableWhy?: string } = {}) {
+  constructor(reference: Reference, track: number, options: { readonly pickupTicks?: number; readonly playback?: Playback | null; readonly store?: AttemptStore | null; readonly storeUnavailableWhy?: string; readonly tuning?: GuitarTuning } = {}) {
     this.#reference = reference;
     this.#track = track;
     this.#pickupTicks = options.pickupTicks ?? 0;
     this.#playback = options.playback ?? null;
     this.#store = options.store ?? null;
-    const arrangement = melodyArrangement(reference, track, this.#pickupTicks);
+    const arrangement = melodyArrangement(reference, track, this.#pickupTicks, options.tuning);
     const targets = [...arrangement.targets];
     const bars = targets.reduce((m, t) => Math.max(m, t.bar), 0);
     this.#state = {
       phase: 'ready',
       title: reference.song.title,
       arrangementText: arrangement.text,
+      tuning: arrangement.tuning,
       octaveShift: arrangement.octaveShift,
       settings: DEFAULT_SETTINGS,
       bars,
@@ -335,7 +339,7 @@ export class PracticeSession {
     for (const t of this.#state.loopTargets) if (Math.abs(t.time - note.time) <= window && (nearest === null || Math.abs(t.time - note.time) < Math.abs(nearest.time - note.time))) nearest = t;
     if (nearest === null) return null;
     if (!(note.confidence >= DEFAULT_POLICY.minConfidence)) return 'I could not hear that one clearly';
-    const label = noteOf(nearest.key).label;
+    const label = noteName(nearest.key);
     if (note.key !== nearest.key) return (note.key - nearest.key) % 12 === 0 ? `Right note, other octave — try ${label}` : `Try ${label}`;
     const dt = note.time - nearest.time;
     return Math.abs(dt) <= DEFAULT_POLICY.onTimeSeconds ? 'On time' : dt < 0 ? 'A little early' : 'A little late';

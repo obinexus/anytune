@@ -49,7 +49,7 @@ class Sounds implements Playback {
   }
 }
 
-const note = (time: number, key: number): LiveEvent => ({ kind: 'note', time, key, cents: 3, confidence: 0.9 });
+const note = (time: number, key: number): LiveEvent => ({ kind: 'note', time, key, cents: 3, confidence: 0.9, observations: [] });
 
 test('the arrangement: the melody an octave lower, in first position, bar by bar after the pickup — said, and the reference untouched', () => {
   const reference = furElise();

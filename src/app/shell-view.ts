@@ -1,6 +1,7 @@
 /**
  * The whole app's view, for the shell component: the screen shown, the navigation, and each screen's own view. Composed here; the components bind it.
  */
+import type { FollowView } from './follow-view.ts';
 import type { PlayView } from './play-view.ts';
 import type { PracticeView } from './practice-view.ts';
 import { SCREENS, type HomeView, type LibraryView, type ProgressView, type Screen } from './shell.ts';
@@ -22,6 +23,9 @@ export interface ShellView {
   readonly tuner: TunerView;
   readonly practice: PracticeView;
   readonly play: PlayView;
+  readonly follow: FollowView;
+  /** on the Play screen: Follow my playing, or Play along — "none" elsewhere */
+  readonly playScreen: 'follow' | 'along' | 'none';
   readonly progress: ProgressView;
 }
 

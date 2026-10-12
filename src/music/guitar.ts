@@ -16,7 +16,7 @@ export interface GuitarTuning {
   readonly name: string;
   /** the open strings' MIDI notes, string 1 first: standard is E4 B3 G3 D3 A2 E2 */
   readonly open: readonly [number, number, number, number, number, number];
-  /** the fret the capo is at; 0 for none. Frets are counted from the nut, the capo's fret sounding as "open" */
+  /** the fret the capo is at; 0 for none. Positions count frets FROM THE CAPO (as tablature does): fret 0 is the string stopped by the capo */
   readonly capo: number;
 }
 

@@ -21,5 +21,5 @@ function propBlock(source: string, prop: string): string {
 
 test('the shell passes each screen the view the screen declares: the inline prop types are the same text', () => {
   const shell = component('AnyTuneShell');
-  for (const [screen, prop] of [['PracticeScreen', 'practice'], ['PlayScreen', 'play']] as const) assert.equal(propBlock(shell, prop), propBlock(component(screen), prop), `${screen}.${prop}`);
+  for (const [screen, prop] of [['PracticeScreen', 'practice'], ['PlayScreen', 'play'], ['FollowScreen', 'follow']] as const) assert.equal(propBlock(shell, prop), propBlock(component(screen), prop), `${screen}.${prop}`);
 });

@@ -49,14 +49,14 @@ global, as a test (`npm run test:architecture`, part of `npm test`).
 | audio | `src/audio/` | pitch providers (simulated, recorded, microphone) and the pure YIN detector | domain |
 | fusion | `src/fusion/` | inverse-variance fusion, and the simulated and recorded fusions | domain, audio |
 | analysis | `src/analysis/` | the live analysis of what a learner plays: spectrum, onsets and strums, chord candidates with an open-set refusal, notes (`LiveAnalyser`) | music, audio, domain |
-| lesson | `src/lesson/` | assessment (pitch and timing judged apart; unassessed where the capture did not cover), feedback in words, the practice clock (count-in, tempo, loops, latency), step mode, the play clock and the beat grid | music, domain |
+| lesson | `src/lesson/` | assessment (pitch and timing judged apart; unassessed where the capture did not cover), feedback in words, the practice clock (count-in, tempo, loops, latency), step mode, the play clock and the beat grid, Follow's consensus on one attack (`consensus.ts`) | music, domain |
 | synthesis | `src/synthesis/` | the plucked-string synthesiser, used for the reference's playback and the test signals | nothing |
 | import | `src/import/` | the URL policy, the import job's stages, transcription to a reference | music, domain |
 | polycall | `src/polycall/` | `polycall_rpc v1` framing and replies, with no I/O | nothing |
 | polycall-node | `src/polycall/node/` | the TCP transport, for Node | polycall, `node:net` |
 | recording | `src/recording/` | `anytune-recording/1` (`.atrec`) and `PolycallRecorder`, the recorder's client | polycall |
 | adapters | `src/adapters/` | formats kept compatible: AnyTune's own `.obr` reader and writer (`docs/OBR.md`) | domain |
-| app | `src/app/` | the application without a screen: the tuning session, the journey's shell (`shell.ts`), the arrangement (`arrangement.ts`), the practice and play sessions (`practice.ts`, `play.ts`), the capture's coverage and the input check (`capture.ts`, `input-check.ts`), the guitar view (`guitar-view.ts`), and every view (all formatting) | domain, instruments, music, lesson, analysis, adapters |
+| app | `src/app/` | the application without a screen: the tuning session, the journey's shell (`shell.ts`), the arrangement (`arrangement.ts`), the practice, play and follow sessions (`practice.ts`, `play.ts`, `follow.ts`), the capture's coverage and the input check (`capture.ts`, `input-check.ts`), the guitar view (`guitar-view.ts`), and every view (all formatting) | domain, instruments, music, lesson, analysis, adapters |
 | components | `src/components/*.obix` | the UI: binds the views and emits intents | the app's view types, `"obix"` |
 | native-harness | `src/harness/mount-native.ts` | mounts the same UI, lowered to IR, on OBIX's native runtime | `obix-runtime-browser`, never Vue |
 | harness | `src/harness/` | the composition: the tuner, the shell (`shell-app.ts`), the microphone (`listener.ts`), practice audio (`practice-audio.ts`), the Android recorder bridge, the browser entry (which measures the content's width for the fretboard and the timeline); mounts on Vue (`mount.ts`) | the layers it composes, `vue` |
@@ -149,6 +149,43 @@ PlayClock (src/lesson/play-clock.ts): segments of the audio clock — [audioFrom
   covered them.
 - **Lyrics.** None: no reference of AnyTune's carries timed lyrics, and none are invented.
 
+## Follow my playing: the target, not the clock
+
+Play opens on **Follow my playing**. The current target stays until it is heard or the learner skips it. Time passing never moves it.
+**Play along (keeps time)** is the strict mode above, with early and late.
+
+```
+LiveAnalyser (src/analysis/live.ts): an attack → its pitch observations, 30–120 ms after it (or its chord readings at 20, 90, 160 ms)
+   └─► FollowSession.hear (src/app/follow.ts): each attack consumed once; attacks from before the target, a demonstration or a pause dropped
+         └─► judgeNote / judgeChord (src/lesson/consensus.ts)
+               ├─ YES   → "Correct" for 0.8 s; exactly one target on; its accompaniment queued up to the next target
+               ├─ NO    → "Heard F4; try E4 again." The same target; what was heard kept in its record
+               └─ MAYBE → nothing marked; said ("I could not make that out") only when something was played
+```
+
+- **One attack, one decision.** A ringing note makes no new attack. It cannot answer the next target, even when that target is the same
+  note; playing it again, with a fresh attack, can.
+- **The target index and the clock are separate.** "Target 7 of 35" counts targets; the session's time is shown apart and never
+  scored. The time from a target appearing to its answer is kept, as information only.
+- **Notes and chords are judged apart.** A note target wants its own key, octave included; the right note an octave off is said as
+  such. A chord target wants the chord's readings, so its root alone is a NO ("Heard only A2 — strum all the strings of Am"). A strum's
+  spread is allowed by reading it at several offsets. A chord outside the supported set (C D E G A Am Em Dm) is always MAYBE, and Skip
+  is offered. No song has a chord arrangement yet, so in the app every target is a note; chords are tested on the session.
+- **Demonstrations.** "Hear this target" plays it and suspends assessment until it has died away. Its own sound is never an answer.
+- **The microphone.** Follow uses the same listener and check as Practise and Play. If frames stop for 0.25 s, the device ends, or the
+  input falls digitally silent, assessment pauses and the place is kept, with nothing marked. When frames return it listens again. After
+  the device ends, "Check the microphone again" then Begin resumes at the same target. "Move on without listening" skips a target as
+  unassessed.
+- **Accompaniment.** Optional, per target: when a target is accepted, the other parts sounding between it and the next target are
+  scheduled once, clipped at the next target. The position is the target's, not a clock's, so nothing is duplicated or left hanging.
+  The choices are the other parts, a click on the beats, or none. A song with one part (a one-track file, or a transcription of a mixed
+  recording) offers only the click or none, and says why: separate instruments need stems or a transcription per instrument.
+- **AnyTune's own sound.** Without headphones, an attack during a note AnyTune is sounding, of that note's pitch class, is treated as
+  the speaker heard through the microphone. It is a MAYBE, not an answer. The headphones setting turns this guard off.
+- **Records.** Each pass keeps every target's outcome apart: first try, corrected (with what was heard on each retry), skipped, and
+  unassessed. "Repeat this bar" and "Repeat this phrase" start a new pass over the same targets, compared with the last one ("You
+  corrected this passage with two fewer retries (0; last time 2)."). Each pass is listed in Progress.
+
 ## The formats
 
 | Format | What it holds | Where |
@@ -161,7 +198,7 @@ MIDI and JSON are never renamed to `.obr`, and music is never written into `.obr
 
 ## One source, two proof paths
 
-There are 18 components, each one `.obix` file, and no `.vue` file anywhere.
+There are 20 components, each one `.obix` file, and no `.vue` file anywhere.
 
 ```
                           AnyTune .obix
@@ -188,7 +225,7 @@ There are 18 components, each one `.obix` file, and no `.vue` file anywhere.
   - `src/harness/mount-native.ts` runs it on `obix-runtime-browser`, with no Vue in the page (`npm run dev:native`;
     `tests/build/native-build.test.ts` audits the bundle's module graph).
   - Every UI suite runs on both runtimes, the shell's included (`tests/components/shell.test.ts`).
-- **Semantics.** All 18 components lower to `obix-dop-ir/3` with no deferral (`npm run trace`, `tests/obix/trace.test.ts`).
+- **Semantics.** All 20 components lower to `obix-dop-ir/3` with no deferral (`npm run trace`, `tests/obix/trace.test.ts`).
   - The journey's screens were written within what the IR expresses today: prop types written inline, `data-*` attributes rather than a
     bound class, and one event per control.
   - Each limit worked around is reproduced in `docs/OBIX-GAPS.md`.

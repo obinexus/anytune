@@ -20,7 +20,7 @@ after(async () => {
   await running?.stop();
 });
 
-const note = (time: number, key: number): LiveEvent => ({ kind: 'note', time, key, cents: -4, confidence: 0.92 });
+const note = (time: number, key: number): LiveEvent => ({ kind: 'note', time, key, cents: -4, confidence: 0.92, observations: [] });
 
 test('an attempt at bar 1, looped twice, is saved through Polycall and replayed whole: its reference named, every note and judgement in order, finished', { skip: SKIP }, async () => {
   assert.ok(running);

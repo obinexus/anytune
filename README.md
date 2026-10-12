@@ -32,7 +32,14 @@ It is built with [OBIX](https://github.com/obinexus) (the UI, in `.obix` compone
   - **Review.** How each bar went, how much was actually assessed, what the microphone delivered, and — only when there is enough to go
     on — which bar to practise slowly.
   - **Play along without assessment.** No microphone, and no score of any kind.
-- **Play.** Instrument karaoke: the song runs from start to end.
+- **Play.** Two modes.
+  - **Follow my playing** (the default). Each target waits for you, with no clock and no rush. It is shown big, with where to play it
+    ("Play D♯4 — B string, fret 4."), the finger as a suggestion ("Little finger (4)"), and the next target outlined.
+    - **A wrong note** is said ("Heard F4; try E4 again."), and you try the same target again.
+    - **A right note** shows "Correct" and moves on by exactly one target.
+    - **The controls.** Hear this target, Show fingering (with a numbered hand legend), Skip, and Repeat this bar.
+    - **Records.** First tries, corrections and skips are counted apart. A repeated passage is compared with the last time.
+  - **Play along (keeps time).** Instrument karaoke: the song runs from start to end.
   - **The prompts.** The note to play now is shown big. The next notes arrive on a tablature timeline at a fixed playhead labelled
     "Now", as they sound.
   - **The controls.** Play song, Pause, Resume, Restart and Stop, with a count-in, the song's progress, the beat, and reference and click
@@ -68,11 +75,12 @@ attempts are listed but not saved: the recorder runs in the Android app and the 
 
 | | |
 |---|---|
-| The journey's UI | 18 `.obix` components, rendered and tested on the Vue runtime and on OBIX's native runtime. axe-core finds no violation on any screen or state (automated only). In a real browser, on every screen, at desktop, phone portrait, phone landscape and doubled text size: no horizontal overflow, the navigation inside the viewport, the first and last controls reachable and uncovered, and musical labels at 16 px or more. |
+| The journey's UI | 20 `.obix` components, rendered and tested on the Vue runtime and on OBIX's native runtime. axe-core finds no violation on any screen or state (automated only). In a real browser, on every screen, at desktop, phone portrait, phone landscape and doubled text size: no horizontal overflow, the navigation inside the viewport, the first and last controls reachable and uncovered, and musical labels at 16 px or more. |
 | Music core | Standard MIDI Files, the tempo-map timeline, and the teaching reference (`anytune-reference/1`), tested against an independent MIDI implementation |
 | Guitar model | open voicings with suggested fingerings for C D E G A Am Em Dm, melody positions, and a fretboard map derived from the supplied artwork |
 | Practice | count-in, metronome, tempo, bar loops, step mode, review per bar, and attempts saved in order. Tested end to end as captured audio, through the real analysis and session, on both runtimes, including: a refused microphone (no score), a stall part-way (that part unassessed), a disconnection ("could not be assessed"), digital silence (retried with processing, then "muted"), faint input, no assessment (no score), and a performance with known mistakes, each explained. |
 | Play | the song on one clock: playback and prompts are scheduled from the same segments, through pause, resume, tempo change and restart, with every note sounding once and its prompt at "Now". With feedback, a whole melody played in time as captured audio is judged 35 of 35 right and on time. |
+| Follow my playing | tested as captured audio of **synthetic** plucks, through the real live analysis, session and UI on both runtimes: nothing played (the target stays), a wrong note (the same target, what was heard said), the right one (exactly one on), a ringing note (no extra step), the same note again with a fresh attack (recognised), the microphone stalling and ending (paused, place kept, nothing marked), a demonstration (never its own answer), Skip (recorded apart), a repeated bar (compared: fewer retries), and on the session, chords (the root alone refused; a strum's spread accepted; an unsupported chord MAYBE). |
 | Guitar, horizontal | the artwork turned by a coordinate transformation, not CSS; its markers under the same transformation, tested to stay on their string and between their fret wires for every string and fret, both hands |
 | Recording | `anytune-recording/1`, written and replayed by AnyTune's recorder module (C) through Polycall: on Windows through `polycall.exe`, and on Android in-process (`docs/RECORDING.md`) |
 | Polycall | built from its pinned commit and staged with SHA-256s; reproducible builds; its own ctest suite passes 16/16 (`docs/integration-audit.md`) |
@@ -87,6 +95,7 @@ attempts are listed but not saved: the recorder runs in the Android app and the 
 |---|---|
 | Accuracy | Note, strum and chord analysis is measured **only on synthetic plucked strings** (`docs/evaluation/`), not on a real guitar, room or phone microphone. The same holds for transcription (Basic Pitch on a synthesised MP4 of the score). No accuracy is claimed beyond those measurements. |
 | Android on a device | Tested on the emulator only. There, Play ran and the native dropdown's options were readable. The microphone permission path is verified, but **no audio has been captured on Android**: the emulator had no input device, and no phone was attached. |
+| Follow my playing with a real guitar | **Not yet tried with a real microphone or a real guitar recording.** The consensus thresholds (confidence 0.6, 3 observations, 60 % agreement, 2 chord readings) are calibrated on synthetic plucks only; how often a real guitar in a real room gets YES, NO or MAYBE is unknown (`docs/MICROPHONE.md`). |
 | Latency | The correction is what the browser reports — AudioContext.baseLatency, outputLatency and the track's latency setting — named as such in the collapsed timing details. It is not a measured speaker-to-microphone delay. Nothing has been measured or calibrated. |
 | Transcriptions | The worker marks them unreviewed. But the app opens the worker's `transcription.mid` as a plain MIDI file, so that mark is **not carried into the app** (it does not read the worker's `reference.json` yet). There is no correction UI. |
 | URL import | The URL policy and yt-dlp's arguments are tested, and yt-dlp is checksum-verified. No video was downloaded. |
@@ -94,7 +103,9 @@ attempts are listed but not saved: the recorder runs in the Android app and the 
 **Not built yet**
 
 - **Chord practice and chord prompts.** The chord analysis and the fretboard's chord drawing (open ○, muted ×, fingers) exist, but no
-  song has a chord arrangement, so Practise and Play offer melodies only.
+  song has a chord arrangement, so Practise and Play offer melodies only. Follow judges chord targets, but only its tests have any.
+- **Accompaniment from a mixed recording.** A transcription of a mixed recording is one part, so Follow can offer only a click or
+  nothing between targets; separate instruments would need stems or a transcription per instrument.
 - **Lyrics in Play.** None of AnyTune's references carries timed lyrics, and AnyTune does not read MIDI lyric events.
 - **Piano and electric guitar.** There are no practice profiles or MIDI-keyboard input; only the reference format names these instruments.
 - **Phone to worker.** Nothing transfers files between the phone and the worker: a MIDI file is moved by hand.

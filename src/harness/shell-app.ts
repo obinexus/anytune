@@ -7,6 +7,8 @@
 import { Announcer } from '../app/announcer.ts';
 import { melodyArrangement } from '../app/arrangement.ts';
 import { inputView, reportedTotal, timingLines } from '../app/input-view.ts';
+import { FollowSession, noteTargets } from '../app/follow.ts';
+import { followPassText, toFollowView } from '../app/follow-view.ts';
 import { PlaySession } from '../app/play.ts';
 import { playAttemptText, toPlayView } from '../app/play-view.ts';
 import { PracticeSession, type AttemptStore } from '../app/practice.ts';
@@ -15,7 +17,9 @@ import { IMPORT_NOTE, Shell, toHomeView, toLibraryView, toProgressView, type Scr
 import { navOf, type ShellView } from '../app/shell-view.ts';
 import { toView } from '../app/view.ts';
 import type { Scheduler } from '../domain/ports.ts';
+import { STANDARD_TUNING, type GuitarTuning } from '../music/guitar.ts';
 import { referenceFromMidi } from '../music/reference.ts';
+import type { LiveOptions } from '../analysis/live.ts';
 import { FRETBOARD_MAP, FUR_ELISE_MIDI_BASE64, GUITAR_ARTWORK_DATA_URL } from './assets.generated.ts';
 import type { ComposedAnyTune } from './compose.ts';
 import { Listener } from './listener.ts';
@@ -60,6 +64,30 @@ export interface ShellHandlers {
   /** Play along without assessment: no microphone, no verdict */
   practiceFree(): Promise<void>;
   practiceStop(): Promise<void>;
+  /** Play: Follow my playing, or Play along */
+  playMode(mode: string): void;
+  /** the capo, for every screen's arrangement */
+  capo(value: string): void;
+  followSong(id: string): void;
+  /** Follow: open and check the microphone */
+  followStart(): Promise<void>;
+  /** the microphone is ready: follow from the first target — or, after a pause, from the same place */
+  followBegin(): void;
+  followCancel(): void;
+  followHear(): void;
+  followFingering(): void;
+  followSkip(): void;
+  followRepeatBar(): void;
+  followMoveOn(): void;
+  followRecheck(): Promise<void>;
+  followAgain(): void;
+  followContinue(): void;
+  followStop(): void;
+  followTempo(value: string): void;
+  followAccompaniment(value: string): void;
+  followHeadphones(on: boolean): void;
+  followConfidence(value: string): void;
+  followWindow(value: string): void;
   /** Play: choose the song */
   playSong(id: string): void;
   /** Play the song without feedback */
@@ -118,7 +146,19 @@ export class ShellApp {
   #alert = '';
   #cancelFrame: (() => void) | null = null;
   /** who has the microphone while it listens: Practise or Play */
-  #listeningFor: 'practice' | 'play' | null = null;
+  #listeningFor: 'practice' | 'play' | 'follow' | null = null;
+  /** Play's mode: Follow my playing (the default) or Play along */
+  #playMode: 'follow' | 'along' = 'follow';
+  /** Follow my playing: the song chosen there, its session, the passes already listed in Progress */
+  #follow: { readonly songId: string; readonly session: FollowSession; readonly off: () => void; readonly listed: Set<number> } | null = null;
+  #followFrame: (() => void) | null = null;
+  #showFingering = false;
+  /** the capo, for every arrangement: positions count frets from it */
+  #capo = 0;
+  /** Follow's observation window: how long after an attack the pitch is read (its end, seconds) */
+  #followWindow = 0.12;
+  /** the audio clock at the last frame, for the session's elapsed time */
+  #clock = 0;
   /** Play: the song chosen there, its session, and the runs already listed in Progress */
   #play: { readonly songId: string; readonly session: PlaySession; readonly off: () => void; readonly listed: Set<number> } | null = null;
   #playFrame: (() => void) | null = null;
@@ -131,7 +171,7 @@ export class ShellApp {
     this.#deps = deps;
     const store = deps.recorder.store;
     const why = deps.recorder.store === null ? deps.recorder.why : '';
-    this.shell = new Shell(songs, (song) => new PracticeSession(song.reference, song.melodyTrack, { pickupTicks: song.pickupTicks, playback: deps.audio?.playback ?? null, store, storeUnavailableWhy: why }), deps.now);
+    this.shell = new Shell(songs, (song) => new PracticeSession(song.reference, song.melodyTrack, { pickupTicks: song.pickupTicks, playback: deps.audio?.playback ?? null, store, storeUnavailableWhy: why, tuning: this.#tuning() }), deps.now);
     this.#listener = deps.audio === null ? null : new Listener(deps.audio, deps.frame, () => this.#changed());
     this.#announcer = new Announcer(deps.clock);
     this.#offs.push(this.#announcer.subscribe((text) => {
@@ -199,9 +239,101 @@ export class ShellApp {
         capture: this.#listener?.lastRecord() ?? null,
         alertText: this.#alert,
         levels: this.#levels,
+        capo: this.#capo,
         errorText: this.#error,
       }),
+      follow: toFollowView(this.#follow?.session.getState() ?? null, {
+        songs: s.songs.map((song) => ({ id: song.id, title: song.reference.song.title })),
+        songId: this.#follow?.songId ?? null,
+        map: FRETBOARD_MAP,
+        artworkUrl: GUITAR_ARTWORK_DATA_URL,
+        leftHanded: this.#leftHanded,
+        width: this.#width,
+        tuning: this.#tuning(),
+        beats: this.#follow?.session.beats ?? [],
+        input: inputView(this.#listener?.state ?? { kind: 'idle' }, this.#listener?.levelDb() ?? Number.NEGATIVE_INFINITY, this.#listener?.loudestDb() ?? Number.NEGATIVE_INFINITY),
+        listening: this.#listeningFor === 'follow',
+        timing: timingLines(this.#deps.audio?.latency() ?? null, this.#deps.audio?.captureInfo() ?? this.#listener?.lastRecord()?.info ?? null),
+        capture: this.#listener?.lastRecord() ?? null,
+        alertText: this.#alert,
+        showFingering: this.#showFingering,
+        windowSeconds: this.#followWindow,
+        now: this.#clock,
+        errorText: this.#error,
+      }),
+      playScreen: s.screen !== 'play' ? 'none' : this.#playMode,
     };
+  }
+
+  #tuning(): GuitarTuning {
+    return { ...STANDARD_TUNING, capo: this.#capo };
+  }
+
+  /** Follow's session for a song — the one chosen there, else the one chosen to practise, else the first; made when first needed. */
+  #followFor(songId: string | null): FollowSession | null {
+    const state = this.shell.getState();
+    const song = state.songs.find((x) => x.id === songId) ?? state.songs.find((x) => x.id === this.#follow?.songId) ?? state.songs.find((x) => x.id === state.selected) ?? state.songs[0];
+    if (song === undefined) return null;
+    if (this.#follow?.songId === song.id) return this.#follow.session;
+    this.#stopFollow();
+    this.#follow?.off();
+    const arrangement = melodyArrangement(song.reference, song.melodyTrack, song.pickupTicks, this.#tuning());
+    const session = new FollowSession(song.reference, arrangement, noteTargets(arrangement), { playback: this.#deps.audio?.playback ?? null, melodyTrack: song.melodyTrack, pickupTicks: song.pickupTicks });
+    const listed = new Set<number>();
+    const off = session.subscribe((st) => {
+      for (const pass of st.history) {
+        if (listed.has(pass.id)) continue;
+        listed.add(pass.id);
+        this.shell.addAttempt(song.reference.song.title, followPassText(pass));
+      }
+      if (st.phase === 'finished') {
+        this.#followFrame?.();
+        this.#followFrame = null;
+        if (this.#listeningFor === 'follow') this.#endRun();
+      }
+      this.#changed();
+    });
+    this.#follow = { songId: song.id, session, off, listed };
+    return session;
+  }
+
+  /** How Follow's analysis listens: notes (or chords too, when the arrangement has any), over the observation window chosen. */
+  #followAnalysis(session: FollowSession): Partial<LiveOptions> {
+    const chords = session.getState().targets.some((t) => t.kind === 'chord');
+    return { listenFor: chords ? 'both' : 'notes', noteWindow: { from: 0.03, to: this.#followWindow, step: 0.015 }, chordOffsets: [0.02, 0.09, 0.16] };
+  }
+
+  /** Follow's display loop: the session's tick, the microphone's health — a pause when it stops, listening again when it is back — and the clock. */
+  #followLoop(): void {
+    const audio = this.#deps.audio;
+    const session = this.#follow?.session;
+    if (audio === null || session === undefined) return;
+    this.#followFrame?.();
+    const now = audio.now();
+    const second = Math.floor(now) !== Math.floor(this.#clock);
+    this.#clock = now;
+    session.tick(now);
+    if (this.#listeningFor === 'follow') {
+      session.inputAvailable(this.#listener?.healthy(now) ?? false, now);
+      const alert = this.#listener?.alert(now) ?? '';
+      if (alert !== this.#alert) {
+        this.#alert = alert;
+        this.#changed();
+      }
+    }
+    if (second) this.#changed();
+    const phase = session.getState().phase;
+    this.#followFrame = phase === 'listening' || phase === 'demonstrating' || phase === 'input-paused' || phase === 'phrase-done' ? this.#deps.frame(() => this.#followLoop()) : null;
+  }
+
+  /** Follow's run, ended: stopped, its pass kept. */
+  #stopFollow(): void {
+    const session = this.#follow?.session;
+    const phase = session?.getState().phase;
+    if (session !== undefined && phase !== 'ready' && phase !== 'finished') session.stop(this.#deps.audio?.now() ?? 0);
+    this.#followFrame?.();
+    this.#followFrame = null;
+    if (this.#listeningFor === 'follow') this.#endRun();
   }
 
   /** Play's session for a song — the one chosen there, else the one chosen to practise, else the first; made when first needed. */
@@ -212,7 +344,7 @@ export class ShellApp {
     if (this.#play?.songId === song.id) return this.#play.session;
     this.#stopPlay();
     this.#play?.off();
-    const session = new PlaySession(song.reference, melodyArrangement(song.reference, song.melodyTrack, song.pickupTicks), { playback: this.#deps.audio?.playback ?? null, pickupTicks: song.pickupTicks });
+    const session = new PlaySession(song.reference, melodyArrangement(song.reference, song.melodyTrack, song.pickupTicks, this.#tuning()), { playback: this.#deps.audio?.playback ?? null, pickupTicks: song.pickupTicks });
     const listed = new Set<number>();
     const off = session.subscribe((st) => {
       if (st.phase === 'finished') {
@@ -272,6 +404,7 @@ export class ShellApp {
     const phase = this.shell.practice?.getState().phase;
     if (phase === 'count-in' || phase === 'playing') void this.handlers.practiceStop();
     this.#stopPlay();
+    this.#stopFollow();
     this.#listener?.close();
     this.#listeningFor = null;
     void this.#deps.tuning.session.stop();
@@ -321,9 +454,13 @@ export class ShellApp {
         }
         if (leaving === 'play' && screen !== 'play') {
           this.#stopPlay();
+          this.#stopFollow();
           if (this.#listeningFor === null) this.#listener?.close();
         }
-        if (screen === 'play') this.#playFor(null);
+        if (screen === 'play') {
+          if (this.#playMode === 'follow') this.#followFor(null);
+          else this.#playFor(null);
+        }
         // Practise opens on a song: the one chosen, else the first — as Play does
         const first = this.shell.getState().songs[0];
         if (screen === 'practice' && this.shell.practice === null && first !== undefined) {
@@ -503,6 +640,115 @@ export class ShellApp {
         this.#changed();
       },
       playMetronome: (on) => this.#play?.session.configure(this.#deps.audio?.now() ?? 0, { metronome: on }),
+      playMode: (mode) => {
+        const next = mode === 'along' ? 'along' : 'follow';
+        if (next === this.#playMode) return;
+        this.#stopPlay();
+        this.#stopFollow();
+        if (this.#listeningFor === null) this.#listener?.close();
+        this.#playMode = next;
+        if (next === 'follow') this.#followFor(null);
+        else this.#playFor(null);
+        this.#changed();
+      },
+      capo: (value) => {
+        const capo = Math.max(0, Math.min(9, Math.round(Number(value))));
+        const p = practice();
+        const busy = (p !== null && running(p)) || this.#listeningFor !== null;
+        if (busy || capo === this.#capo || !Number.isFinite(capo)) return;
+        this.#capo = capo;
+        // every arrangement again, for the new capo: positions move, notes do not
+        this.shell.rebuild();
+        const playSong = this.#play?.songId ?? null;
+        const followSong = this.#follow?.songId ?? null;
+        this.#play?.off();
+        this.#play = null;
+        this.#follow?.off();
+        this.#follow = null;
+        if (playSong !== null) this.#playFor(playSong);
+        if (followSong !== null) this.#followFor(followSong);
+        this.#changed();
+      },
+      followSong: (id) => {
+        if (this.#listeningFor === 'follow') return;
+        this.#followFor(id);
+        this.#changed();
+      },
+      followStart: async () => {
+        const session = this.#followFor(null);
+        if (session === null) return;
+        if (this.#listener === null) {
+          this.#error = 'This browser has no Web Audio: Follow my playing cannot hear you here.';
+          this.#changed();
+          return;
+        }
+        await this.#deps.tuning.session.stop();
+        this.#error = '';
+        await this.#listener.open(false, this.#followAnalysis(session));
+      },
+      followBegin: () => {
+        const session = this.#follow?.session;
+        const audio = this.#deps.audio;
+        const listener = this.#listener;
+        if (session === undefined || audio === null || listener === null) return;
+        const coverage = listener.listen();
+        if (coverage === null) return;
+        this.#listeningFor = 'follow';
+        this.#alert = '';
+        listener.onEvents = (events) => session.hear(events, audio.now());
+        audio.setLevels(this.#levels.reference, this.#levels.click);
+        session.configure({ latencySeconds: reportedTotal(audio.latency()) });
+        const now = audio.now();
+        this.#clock = now;
+        // after a fresh check in a pause: the same place; otherwise from the first target
+        if (session.getState().phase === 'input-paused') session.inputAvailable(true, now);
+        else session.start(now);
+        this.#followLoop();
+        this.#changed();
+      },
+      followCancel: () => this.#listener?.close(),
+      followHear: () => this.#follow?.session.demonstrate(this.#deps.audio?.now() ?? 0),
+      followFingering: () => {
+        this.#showFingering = !this.#showFingering;
+        this.#changed();
+      },
+      followSkip: () => this.#follow?.session.skip(this.#deps.audio?.now() ?? 0),
+      followRepeatBar: () => this.#follow?.session.repeatBar(this.#deps.audio?.now() ?? 0),
+      followMoveOn: () => this.#follow?.session.skip(this.#deps.audio?.now() ?? 0),
+      followRecheck: async () => {
+        const session = this.#follow?.session;
+        if (session === undefined || this.#listener === null) return;
+        this.#listener.close();
+        this.#listeningFor = null;
+        await this.#listener.open(false, this.#followAnalysis(session));
+      },
+      followAgain: () => {
+        this.#follow?.session.repeatPhrase(this.#deps.audio?.now() ?? 0);
+        this.#followLoop();
+      },
+      followContinue: () => {
+        this.#follow?.session.continueAfter(this.#deps.audio?.now() ?? 0);
+        this.#followLoop();
+      },
+      followStop: () => {
+        this.#stopFollow();
+        this.#changed();
+      },
+      followTempo: (value) => this.#follow?.session.configure({ tempoFactor: Number(value) }),
+      followAccompaniment: (value) => this.#follow?.session.configure({ accompaniment: value === 'parts' ? 'parts' : value === 'click' ? 'click' : 'none' }),
+      followHeadphones: (on) => this.#follow?.session.configure({ headphones: on }),
+      followConfidence: (value) => {
+        const session = this.#follow?.session;
+        const c = Number(value);
+        if (session === undefined || !(c > 0 && c < 1)) return;
+        session.configure({ consensus: { ...session.getState().settings.consensus, minConfidence: c } });
+      },
+      followWindow: (value) => {
+        const w = Number(value);
+        if (this.#listeningFor !== null || !(w >= 0.06 && w <= 0.3)) return;
+        this.#followWindow = w;
+        this.#changed();
+      },
       practiceListen: () => {
         const p = practice();
         const audio = this.#deps.audio;

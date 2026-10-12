@@ -11,12 +11,21 @@ import { createYinDetector, type PitchDetector } from '../audio/pitch-detector.t
 import { CHORD_FRAME_SIZE, createChordAnalyser, type ChordAnalyser, type ChordReading } from './chords.ts';
 import { OnsetDetector, type Onset } from './onsets.ts';
 
+/** One pitch reading after an onset: the fractional MIDI note YIN found (null: no pitch at all) and how sure it was. */
+export interface Observation {
+  readonly time: number;
+  readonly midi: number | null;
+  readonly confidence: number;
+}
+
 export type LiveEvent =
-  | { readonly kind: 'note'; readonly time: number; readonly key: number; readonly cents: number; readonly confidence: number }
+  /** an onset whose pitch settled: its key, and every reading of its window (the observations a consensus is taken over) */
+  | { readonly kind: 'note'; readonly time: number; readonly key: number; readonly cents: number; readonly confidence: number; readonly observations: readonly Observation[] }
   /** something was struck — an onset — but no pitch settled after it with confidence: a note too faint, too short or too noisy to name. Said apart, so that
    * it is never mistaken for a note not played. */
-  | { readonly kind: 'unclear'; readonly time: number; readonly strength: number }
-  | { readonly kind: 'chord'; readonly time: number; readonly reading: ChordReading }
+  | { readonly kind: 'unclear'; readonly time: number; readonly strength: number; readonly observations: readonly Observation[] }
+  /** a strum: its chord readings (one per chord frame after it, the first also as `reading`) and the pitch readings of the same window */
+  | { readonly kind: 'chord'; readonly time: number; readonly reading: ChordReading; readonly readings: readonly ChordReading[]; readonly observations: readonly Observation[] }
   | { readonly kind: 'onset'; readonly time: number; readonly strength: number }
   | { readonly kind: 'pitch'; readonly time: number; readonly frequencyHz: number; readonly confidence: number };
 
@@ -28,7 +37,13 @@ export interface LiveOptions {
   readonly minConfidence: number;
   /** the most onsets waiting to be settled */
   readonly maxPending: number;
+  /** the pitch readings after an onset: from `from` to `to` seconds after it, every `step` — the observation window */
+  readonly noteWindow: { readonly from: number; readonly to: number; readonly step: number };
+  /** the chord frames read after a strum: seconds after the onset (each frame is CHORD_FRAME_SIZE samples) */
+  readonly chordOffsets: readonly number[];
 }
+
+export const DEFAULT_NOTE_WINDOW = Object.freeze({ from: 0.03, to: 0.12, step: 0.015 });
 
 const PITCH_FRAME = 2048;
 
@@ -47,12 +62,13 @@ export class LiveAnalyser {
   dropped = 0;
 
   constructor(options: Partial<LiveOptions> & Pick<LiveOptions, 'sampleRate'>) {
-    this.#o = { listenFor: 'notes', referenceHz: 440, minConfidence: 0.6, maxPending: 8, ...options };
+    this.#o = { listenFor: 'notes', referenceHz: 440, minConfidence: 0.6, maxPending: 8, noteWindow: DEFAULT_NOTE_WINDOW, chordOffsets: [0.02], ...options };
     this.#onsets = new OnsetDetector({ sampleRate: this.#o.sampleRate });
     this.#yin = createYinDetector();
     this.#chords = createChordAnalyser();
-    // the chord frame after a strum, 20 ms of attack before it, and room for the frames still to come
-    this.#ring = new Float32Array(2 ** Math.ceil(Math.log2(CHORD_FRAME_SIZE + this.#o.sampleRate * 0.4)));
+    // the chord frames after a strum (the last starts at the largest offset), the pitch window, and room for the frames still to come
+    const reach = Math.max(this.#o.noteWindow.to, ...this.#o.chordOffsets);
+    this.#ring = new Float32Array(2 ** Math.ceil(Math.log2(CHORD_FRAME_SIZE + this.#o.sampleRate * (reach + 0.3))));
   }
 
   /** Push captured samples whose first sample was captured at `captureTime` (seconds, monotonic). Returns the events they complete, in time order. */
@@ -120,36 +136,48 @@ export class LiveAnalyser {
     while (this.#pending.length > 0) {
       const onset = this.#pending[0] as Onset;
       const start = Math.round((onset.time - (this.#origin as number)) * sr);
-      const needNote = this.#o.listenFor !== 'chords' ? start + Math.round(0.12 * sr) + PITCH_FRAME / 2 : 0;
-      const needChord = this.#o.listenFor !== 'notes' ? start + Math.round(0.02 * sr) + CHORD_FRAME_SIZE : 0;
+      const w = this.#o.noteWindow;
+      const needNote = start + Math.round(w.to * sr) + PITCH_FRAME / 2;
+      const needChord = this.#o.listenFor !== 'notes' ? start + Math.round(Math.max(...this.#o.chordOffsets) * sr) + CHORD_FRAME_SIZE : 0;
       if (this.#written < Math.max(needNote, needChord)) break;
       this.#pending.shift();
       if (this.#written - start > this.#ring.length - CHORD_FRAME_SIZE) continue; // too old: its samples are gone
+      const { note, observations } = this.#noteAfter(start, onset.time);
       if (this.#o.listenFor !== 'chords') {
-        const note = this.#noteAfter(start);
-        out.push(note !== null ? { kind: 'note', time: onset.time, ...note } : { kind: 'unclear', time: onset.time, strength: onset.strength });
+        out.push(note !== null ? { kind: 'note', time: onset.time, ...note, observations } : { kind: 'unclear', time: onset.time, strength: onset.strength, observations });
       }
       if (this.#o.listenFor !== 'notes') {
-        const reading = this.#chords.read(this.#window(start + Math.round(0.02 * sr), CHORD_FRAME_SIZE), sr);
-        if (reading !== null) out.push({ kind: 'chord', time: onset.time, reading });
+        const readings = this.#o.chordOffsets.flatMap((offset) => {
+          const r = this.#chords.read(this.#window(start + Math.round(offset * sr), CHORD_FRAME_SIZE), sr);
+          return r === null ? [] : [r];
+        });
+        const first = readings[0];
+        if (first !== undefined) out.push({ kind: 'chord', time: onset.time, reading: first, readings, observations });
       }
     }
     return out;
   }
 
-  /** The pitch that settles from 30 ms to 120 ms after an onset: the median of the confident YIN readings there. */
-  #noteAfter(start: number): { key: number; cents: number; confidence: number } | null {
+  /**
+   * The pitch that settles after an onset — the median of the confident YIN readings in the observation window (30 ms to 120 ms after it, by default) —
+   * and every reading of the window, confident or not: the observations a consensus is taken over.
+   */
+  #noteAfter(start: number, onsetTime: number): { note: { key: number; cents: number; confidence: number } | null; observations: Observation[] } {
     const sr = this.#o.sampleRate;
+    const w = this.#o.noteWindow;
     const readings: { midi: number; confidence: number }[] = [];
-    for (let centre = start + Math.round(0.03 * sr); centre <= start + Math.round(0.12 * sr); centre += Math.round(0.015 * sr)) {
+    const observations: Observation[] = [];
+    for (let centre = start + Math.round(w.from * sr); centre <= start + Math.round(w.to * sr); centre += Math.max(1, Math.round(w.step * sr))) {
       const d = this.#yin.detect(this.#window(centre - PITCH_FRAME / 2, PITCH_FRAME), sr);
-      if (d !== null && d.confidence >= this.#o.minConfidence) readings.push({ midi: 69 + 12 * Math.log2(d.frequencyHz / this.#o.referenceHz), confidence: d.confidence });
+      const midi = d === null ? null : 69 + 12 * Math.log2(d.frequencyHz / this.#o.referenceHz);
+      observations.push({ time: onsetTime + (centre - start) / sr, midi, confidence: d?.confidence ?? 0 });
+      if (d !== null && midi !== null && d.confidence >= this.#o.minConfidence) readings.push({ midi, confidence: d.confidence });
     }
-    if (readings.length === 0) return null;
+    if (readings.length === 0) return { note: null, observations };
     const sorted = readings.map((r) => r.midi).sort((a, b) => a - b);
     const m = sorted[Math.floor(sorted.length / 2)] as number;
     const key = Math.round(m);
     const confidences = readings.map((r) => r.confidence).sort((a, b) => a - b);
-    return { key, cents: Math.round((m - key) * 1000) / 10, confidence: confidences[Math.floor(confidences.length / 2)] as number };
+    return { note: { key, cents: Math.round((m - key) * 1000) / 10, confidence: confidences[Math.floor(confidences.length / 2)] as number }, observations };
   }
 }

@@ -2,6 +2,7 @@
 import AnyTuneApp from "./AnyTuneApp.obix";
 import HomeScreen from "./HomeScreen.obix";
 import LibraryScreen from "./LibraryScreen.obix";
+import FollowScreen from "./FollowScreen.obix";
 import PlayScreen from "./PlayScreen.obix";
 import PracticeScreen from "./PracticeScreen.obix";
 import ProgressScreen from "./ProgressScreen.obix";
@@ -55,6 +56,7 @@ defineProps<{
     toBarOptions: { value: string; label: string; selected: boolean }[];
     modeOptions: { value: string; label: string; selected: boolean }[];
     handOptions: { value: string; label: string; selected: boolean }[];
+    capoOptions: { value: string; label: string; selected: boolean }[];
     metronome: boolean;
     playReference: boolean;
     countInText: string;
@@ -77,12 +79,19 @@ defineProps<{
         hand: string;
         caption: string;
         description: string;
+        instruction: string;
+        fingerText: string;
+        currentName: string;
+        nextName: string;
+        nextInstruction: string;
         strings: { x1: number; y1: number; x2: number; y2: number; label: string; labelX: number; labelY: number; kind: string; key: string; labelKey: string }[];
+        stringLabels: { y: number; number: string; boxX: number; boxY: number; numberX: number; name: string; nameX: number; textY: number; key: string; numberKey: string; nameKey: string }[];
         frets: { x1: number; y1: number; x2: number; y2: number; label: string; labelX: number; labelY: number; kind: string; key: string; labelKey: string }[];
-        markers: { x: number; y: number; textY: number; kind: string; label: string; key: string; labelKey: string }[];
-        marks: { x: number; y: number; textY: number; kind: string; state: string; label: string; key: string }[];
-        opens: { x: number; y: number; kind: string; key: string }[];
+        markers: { x: number; y: number; width: number; height: number; kind: string; text: string; textX: number; textY: number; key: string; textKey: string }[];
+        badges: { cx: number; cy: number; textY: number; kind: string; role: string; label: string; key: string; textKey: string }[];
         mutes: { x: number; textY: number; kind: string; key: string }[];
+        fretWord: { x: number; y: number };
+        capoLabel: { text: string; x: number; y: number };
       };
       artwork: {
         url: string;
@@ -104,6 +113,7 @@ defineProps<{
   };
   play: {
     available: boolean;
+    modes: { value: string; label: string; pressed: string; key: string }[];
     title: string;
     songOptions: { value: string; label: string; selected: boolean }[];
     arrangementOptions: { value: string; label: string; selected: boolean }[];
@@ -140,12 +150,19 @@ defineProps<{
         hand: string;
         caption: string;
         description: string;
+        instruction: string;
+        fingerText: string;
+        currentName: string;
+        nextName: string;
+        nextInstruction: string;
         strings: { x1: number; y1: number; x2: number; y2: number; label: string; labelX: number; labelY: number; kind: string; key: string; labelKey: string }[];
+        stringLabels: { y: number; number: string; boxX: number; boxY: number; numberX: number; name: string; nameX: number; textY: number; key: string; numberKey: string; nameKey: string }[];
         frets: { x1: number; y1: number; x2: number; y2: number; label: string; labelX: number; labelY: number; kind: string; key: string; labelKey: string }[];
-        markers: { x: number; y: number; textY: number; kind: string; label: string; key: string; labelKey: string }[];
-        marks: { x: number; y: number; textY: number; kind: string; state: string; label: string; key: string }[];
-        opens: { x: number; y: number; kind: string; key: string }[];
+        markers: { x: number; y: number; width: number; height: number; kind: string; text: string; textX: number; textY: number; key: string; textKey: string }[];
+        badges: { cx: number; cy: number; textY: number; kind: string; role: string; label: string; key: string; textKey: string }[];
         mutes: { x: number; textY: number; kind: string; key: string }[];
+        fretWord: { x: number; y: number };
+        capoLabel: { text: string; x: number; y: number };
       };
       artwork: {
         url: string;
@@ -163,12 +180,105 @@ defineProps<{
     };
     controls: { play: boolean; playLabel: string; feedback: boolean; feedbackLabel: string; begin: boolean; cancel: boolean; pause: boolean; resume: boolean; restart: boolean; stop: boolean };
     input: { state: string; text: string; problem: boolean; meter: { visible: boolean; value: number; text: string } };
-    settings: { tempoOptions: { value: string; label: string; selected: boolean }[]; referenceVolume: string; clickVolume: string; metronome: boolean; handOptions: { value: string; label: string; selected: boolean }[] };
+    settings: { tempoOptions: { value: string; label: string; selected: boolean }[]; referenceVolume: string; clickVolume: string; metronome: boolean; handOptions: { value: string; label: string; selected: boolean }[]; capoOptions: { value: string; label: string; selected: boolean }[] };
     timing: string[];
     review: { visible: boolean; sentences: string[]; capture: string[] };
     announcement: string;
     errorText: string;
   };
+  follow: {
+    available: boolean;
+    modes: { value: string; label: string; pressed: string; key: string }[];
+    songOptions: { value: string; label: string; selected: boolean }[];
+    arrangementOptions: { value: string; label: string; selected: boolean }[];
+    title: string;
+    arrangementText: string;
+    phase: string;
+    phaseText: string;
+    listening: boolean;
+    positionText: string;
+    sessionText: string;
+    currentName: string;
+    instruction: string;
+    fingerText: string;
+    nextText: string;
+    message: { text: string; tone: string };
+    alertText: string;
+    controls: { start: boolean; startLabel: string; begin: boolean; cancel: boolean; hear: boolean; fingering: boolean; fingeringLabel: string; skip: boolean; repeatBar: boolean; moveOn: boolean; recheck: boolean; again: boolean; continueOn: boolean; stop: boolean };
+    input: { state: string; text: string; problem: boolean; meter: { visible: boolean; value: number; text: string } };
+    guitar: {
+      fretboard: {
+        width: number;
+        height: number;
+        viewBox: string;
+        hand: string;
+        caption: string;
+        description: string;
+        instruction: string;
+        fingerText: string;
+        currentName: string;
+        nextName: string;
+        nextInstruction: string;
+        strings: { x1: number; y1: number; x2: number; y2: number; label: string; labelX: number; labelY: number; kind: string; key: string; labelKey: string }[];
+        stringLabels: { y: number; number: string; boxX: number; boxY: number; numberX: number; name: string; nameX: number; textY: number; key: string; numberKey: string; nameKey: string }[];
+        frets: { x1: number; y1: number; x2: number; y2: number; label: string; labelX: number; labelY: number; kind: string; key: string; labelKey: string }[];
+        markers: { x: number; y: number; width: number; height: number; kind: string; text: string; textX: number; textY: number; key: string; textKey: string }[];
+        badges: { cx: number; cy: number; textY: number; kind: string; role: string; label: string; key: string; textKey: string }[];
+        mutes: { x: number; textY: number; kind: string; key: string }[];
+        fretWord: { x: number; y: number };
+        capoLabel: { text: string; x: number; y: number };
+      };
+      artwork: {
+        url: string;
+        viewBox: string;
+        width: number;
+        height: number;
+        imageWidth: number;
+        imageHeight: number;
+        transform: string;
+        hand: string;
+        credit: string;
+        window: { x: number; y: number; width: number; height: number };
+        markers: { x: number; y: number; kind: string; key: string }[];
+      };
+    };
+    hand: {
+      visible: boolean;
+      text: string;
+      fingers: { number: string; name: string; active: boolean; cx: number; cy: number; textY: number; key: string; textKey: string; nameKey: string }[];
+    };
+    timeline: {
+      width: number;
+      height: number;
+      viewBox: string;
+      playheadX: number;
+      playheadTop: number;
+      playheadBottom: number;
+      labelColumn: number;
+      description: string;
+      lanes: { y: number; x1: number; x2: number; label: string; labelX: number; labelY: number; key: string; labelKey: string }[];
+      bars: { x: number; label: string; labelY: number; key: string; labelKey: string }[];
+      beats: { x: number; key: string }[];
+      prompts: { x: number; y: number; width: number; height: number; textX: number; textY: number; label: string; kind: string; key: string; textKey: string }[];
+    };
+    summary: { visible: boolean; lines: string[]; corrections: string[]; comparison: string };
+    settings: {
+      tempoOptions: { value: string; label: string; selected: boolean }[];
+      accompanimentOptions: { value: string; label: string; selected: boolean }[];
+      accompanimentNote: string;
+      headphones: boolean;
+      confidenceOptions: { value: string; label: string; selected: boolean }[];
+      windowOptions: { value: string; label: string; selected: boolean }[];
+      capoOptions: { value: string; label: string; selected: boolean }[];
+      handOptions: { value: string; label: string; selected: boolean }[];
+      detectionLocked: boolean;
+    };
+    capture: string[];
+    timing: string[];
+    announcement: string;
+    errorText: string;
+  };
+  playScreen: string;
 }>();
 
 // every intent goes up as an event of its own; the harness hands it to the shell, the tuning session or the practice session
@@ -210,6 +320,26 @@ const emit = defineEmits<{
   (e: "play-reference-volume", value: string): void;
   (e: "play-click-volume", value: string): void;
   (e: "play-metronome", on: boolean): void;
+  (e: "play-mode", value: string): void;
+  (e: "capo", value: string): void;
+  (e: "follow-song", id: string): void;
+  (e: "follow-start"): void;
+  (e: "follow-begin"): void;
+  (e: "follow-cancel"): void;
+  (e: "follow-hear"): void;
+  (e: "follow-fingering"): void;
+  (e: "follow-skip"): void;
+  (e: "follow-repeat-bar"): void;
+  (e: "follow-move-on"): void;
+  (e: "follow-recheck"): void;
+  (e: "follow-again"): void;
+  (e: "follow-continue"): void;
+  (e: "follow-stop"): void;
+  (e: "follow-tempo", value: string): void;
+  (e: "follow-accompaniment", value: string): void;
+  (e: "follow-headphones", on: boolean): void;
+  (e: "follow-confidence", value: string): void;
+  (e: "follow-window", value: string): void;
 }>();
 </script>
 
@@ -285,10 +415,38 @@ const emit = defineEmits<{
       @hand="(value: string) => emit('practice-hand', value)"
       @metronome="(on: boolean) => emit('practice-metronome', on)"
       @reference="(on: boolean) => emit('practice-reference', on)"
+      @capo="(value: string) => emit('capo', value)"
+    />
+    <FollowScreen
+      v-if="playScreen === 'follow'"
+      :follow="follow"
+      @mode="(value: string) => emit('play-mode', value)"
+      @song="(id: string) => emit('follow-song', id)"
+      @start="emit('follow-start')"
+      @begin="emit('follow-begin')"
+      @cancel="emit('follow-cancel')"
+      @hear="emit('follow-hear')"
+      @fingering="emit('follow-fingering')"
+      @skip="emit('follow-skip')"
+      @repeat-bar="emit('follow-repeat-bar')"
+      @move-on="emit('follow-move-on')"
+      @recheck="emit('follow-recheck')"
+      @again="emit('follow-again')"
+      @continue="emit('follow-continue')"
+      @stop="emit('follow-stop')"
+      @tempo="(value: string) => emit('follow-tempo', value)"
+      @accompaniment="(value: string) => emit('follow-accompaniment', value)"
+      @headphones="(on: boolean) => emit('follow-headphones', on)"
+      @confidence="(value: string) => emit('follow-confidence', value)"
+      @window="(value: string) => emit('follow-window', value)"
+      @capo="(value: string) => emit('capo', value)"
+      @hand="(value: string) => emit('practice-hand', value)"
     />
     <PlayScreen
-      v-if="screen === 'play'"
+      v-if="playScreen === 'along'"
       :play="play"
+      @mode="(value: string) => emit('play-mode', value)"
+      @capo="(value: string) => emit('capo', value)"
       @song="(id: string) => emit('play-song', id)"
       @start="emit('play-start')"
       @feedback="emit('play-feedback')"
